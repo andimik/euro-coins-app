@@ -67,6 +67,7 @@ import com.michele.eurocoins.data.RegularCollectionItem
 import com.michele.eurocoins.data.RegularIssueImage
 import com.michele.eurocoins.data.RegularIssueSeries
 import com.michele.eurocoins.data.YearOption
+import com.michele.eurocoins.data.chipLabel
 import com.michele.eurocoins.data.defaultYearOption
 import com.michele.eurocoins.data.regularYearOptions
 import com.michele.eurocoins.data.seriesTitle
@@ -292,7 +293,7 @@ private fun YearStrip(
             FilterChip(
                 selected = isSelected,
                 onClick = { onSelect(option) },
-                label = { Text(if (option.variety.isEmpty()) "${option.year}" else "${option.year} ${option.variety}") },
+                label = { Text(option.chipLabel()) },
                 leadingIcon = if (hasData) {
                     { Box(Modifier.size(8.dp).background(colors.primary, CircleShape)) }
                 } else null,

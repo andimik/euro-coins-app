@@ -127,6 +127,13 @@ class QuickAddTest {
     }
 
     @Test
+    fun theChipTextNamesTheNoYearEntryAndTheVariety() {
+        assertEquals("No year", YearOption(NO_YEAR).chipLabel())
+        assertEquals("2008", YearOption(2008).chipLabel())
+        assertEquals("2002 EFS", YearOption(2002, VARIETY_EFS).chipLabel())
+    }
+
+    @Test
     fun theNoYearOptionIsListedFirstOnlyWhenTheRowHasIt() {
         val s = forCountry("Grecia").first()
         val image = s.immagini.first { it.taglio == "2 euro" }

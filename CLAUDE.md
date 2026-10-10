@@ -444,9 +444,13 @@ comparire né sparire monete; barre, filtri, Home, backup e Reset sono identici 
 - **Backup versione 4** (`BackupFile.SCHEMA_VERSION`): le voci Regular possono avere `anno` 0. Un file v4 non si
   apre con un'app più vecchia (rifiutato come "più nuovo"). Nessun cambio al database (nessuna migrazione: `anno`
   è già un intero nella chiave).
-- **Non verificato sul telefono** (staccato durante il lavoro): solo test JVM (`QuickAddTest`, `BackupFileTest`) e
-  compilazione. Da provare: tocco su commemorativa, su riga Regular ereditata (Francia 5 cent serie 2), moneta con
-  dettagli che apre il pannello, chip "No year", barre della Home.
+- **Verificato sul telefono** (2026-10-10, build debug, senza salvare dati veri: monete non possedute aggiunte e subito
+  tolte, contatori della Home tornati a 93 / 613 e 194 / 328): tocco su una commemorativa (Monaco: la casella si
+  riempie, nessun pannello, il secondo tocco la svuota); riga Regular ereditata (Francia 5 cent serie 2: diventa
+  "Owned", la serie 1 resta "1 year owned", la serie 3 "Not owned", il secondo tocco la toglie); card COLLECTION
+  "Standard · No year"; chip "No year" nel pannello; moneta con un anno vero (Grecia 2 euro, 2002 e 2002 EFS): il
+  tocco apre il pannello. **Bug trovato e corretto**: il chip del pannello mostrava "0" (aveva un'etichetta sua);
+  ora c'è un'unica `YearOption.chipLabel()` in `RegularYearOptions.kt` usata da pannello e dettaglio.
 - **Non fatto**: pulsante "Remove" o conferma per le voci semplici, feedback aptico (valutato e lasciato fuori), un
   modo di convertire le voci senza anno in un anno vero in blocco.
 
@@ -1794,7 +1798,7 @@ lingua da servire.
 Unit test JVM in `app/src/test` (`./gradlew.bat --offline :app:testDebugUnitTest`).
 `ProStateTest` (proprietà del Pro, una verifica fallita non lo toglie, pagamento in sospeso) e
 `InterstitialPolicyTest` (6 monete E 30 secondi, né una né l'altra da sole, più l'orologio portato indietro) coprono la logica pura di Pro e
-annuncio a tutto schermo; il billing e gli annunci veri non sono testabili in JVM. Oggi 227 test, nessuno saltato.
+annuncio a tutto schermo; il billing e gli annunci veri non sono testabili in JVM. Oggi 228 test, nessuno saltato.
 `UnsharpMaskTest` copre `unsharpMask()` (immagine uniforme invariata, intensità 0 = identità, bordo
 netto accentuato dai due lati e invariato lontano, valori nel campo 0-255, alfa intatta); il
 rendering con `Bitmap` di `ThumbnailSharpen` non è testabile in JVM.

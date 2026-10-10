@@ -57,3 +57,10 @@ fun defaultYearOption(options: List<YearOption>, owned: Collection<YearOption>):
     options.firstOrNull { it in owned }
         ?: options.firstOrNull { it.variety.isEmpty() && it.year >= FIRST_CIRCULATION_YEAR }
         ?: options.first()
+
+/** Testo breve di un anno nei chip e nelle etichette: "2008", "2002 EFS" per la varietà, "No year" per la voce senza anno. */
+fun YearOption.chipLabel(): String = when {
+    year == NO_YEAR -> "No year"
+    variety.isEmpty() -> "$year"
+    else -> "$year $variety"
+}
