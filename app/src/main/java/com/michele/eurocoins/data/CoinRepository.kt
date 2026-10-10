@@ -91,14 +91,14 @@ class CoinRepository(
 
     /**
      * Tocco con Quick add su una commemorativa ([QuickTap], deciso da [quickTapFor] su [items], le voci della
-     * moneta): aggiunge Standard senza prezzo né data, o la toglie. [QuickTap.OPEN_FORM] non fa niente: lo
-     * gestisce la schermata aprendo il pannello.
+     * moneta): aggiunge Standard senza prezzo né data, o la toglie. [QuickTap.CONFIRM_REMOVE] non fa niente: lo
+     * gestisce la schermata mostrando la conferma di rimozione.
      */
     suspend fun quickToggle(coin: Coin, items: List<CollectionItem>) {
         when (quickTapFor(items)) {
             QuickTap.ADD -> saveCollection(coin, mapOf(CoinQuality.STANDARD to FinishEntry(priceCents = null, purchasedOn = null)))
             QuickTap.REMOVE -> saveCollection(coin, emptyMap())
-            QuickTap.OPEN_FORM -> Unit
+            QuickTap.CONFIRM_REMOVE -> Unit
         }
     }
 

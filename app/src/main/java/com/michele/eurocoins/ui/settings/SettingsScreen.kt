@@ -147,7 +147,7 @@ fun SettingsScreen(
                         withStyle(SpanStyle(fontWeight = FontWeight.Medium, color = MaterialTheme.colorScheme.onSurface)) {
                             append("BU or Proof, a year, a price or a date")
                         }
-                        append(" opens its details instead, so nothing is removed by mistake.")
+                        append(" asks you to confirm before it's removed.")
                     },
                     verticalAlignment = Alignment.Top,
                 )

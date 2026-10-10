@@ -138,14 +138,14 @@ class RegularIssueRepository(
 
     /**
      * Tocco con Quick add su una riga ([QuickTap], deciso da [quickTapForRegular] su [items], le voci della riga):
-     * aggiunge la voce senza anno o la toglie. [QuickTap.OPEN_FORM] non fa niente: lo gestisce la schermata
-     * aprendo il pannello.
+     * aggiunge la voce senza anno o la toglie. [QuickTap.CONFIRM_REMOVE] non fa niente: lo gestisce la schermata
+     * mostrando la conferma di rimozione.
      */
     suspend fun quickToggle(window: SeriesDenomination, items: List<RegularCollectionItem>) {
         val entries = when (quickTapForRegular(items)) {
             QuickTap.ADD -> listOf(RegularCollectionEntry(anno = NO_YEAR, quality = CoinQuality.STANDARD, priceCents = null))
             QuickTap.REMOVE -> emptyList()
-            QuickTap.OPEN_FORM -> return
+            QuickTap.CONFIRM_REMOVE -> return
         }
         saveCollection(window.series.stableKey, window.image.taglio, window.series.paese, entries, window)
     }

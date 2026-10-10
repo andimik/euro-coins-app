@@ -18,18 +18,22 @@ enum class QuickTap {
     /** Solo la voce semplice: si toglie, senza perdere nulla. */
     REMOVE,
 
-    /** Ci sono dettagli (BU, Proof, prezzo, data, anno): si apre il pannello invece di cancellarli. */
-    OPEN_FORM,
+    /**
+     * Ci sono dettagli (BU, Proof, prezzo, data, anno): si chiede conferma prima di toglierli, con il dialog "Remove"
+     * dei pannelli. Il tocco NON apre il pannello: la casella vuol dire sempre "ce l'ho / non ce l'ho", e un gesto
+     * che a volte alterna e a volte apre un pannello (secondo uno stato che non si vede) era incoerente.
+     */
+    CONFIRM_REMOVE,
 }
 
 /**
  * Tocco su una commemorativa: nulla → si aggiunge Standard; solo Standard senza prezzo né data → si toglie;
- * altrimenti si apre il pannello, perché togliere cancellerebbe in silenzio ciò che l'utente ha scritto.
+ * altrimenti si chiede conferma, perché togliere cancellerebbe ciò che l'utente ha scritto.
  */
 fun quickTapFor(items: List<CollectionItem>): QuickTap = when {
     items.isEmpty() -> QuickTap.ADD
     items.all { it.quality == CoinQuality.STANDARD && it.priceCents == null && it.purchasedOn == null } -> QuickTap.REMOVE
-    else -> QuickTap.OPEN_FORM
+    else -> QuickTap.CONFIRM_REMOVE
 }
 
 /**
@@ -43,7 +47,7 @@ fun quickTapForRegular(items: List<RegularCollectionItem>): QuickTap = when {
         it.anno == NO_YEAR && it.quality == CoinQuality.STANDARD && it.variety.isEmpty() &&
             it.priceCents == null && it.purchasedOn == null
     } -> QuickTap.REMOVE
-    else -> QuickTap.OPEN_FORM
+    else -> QuickTap.CONFIRM_REMOVE
 }
 
 /**

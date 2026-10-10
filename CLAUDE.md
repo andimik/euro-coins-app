@@ -410,8 +410,8 @@ Impostazione GLOBALE (Impostazioni → sezione "Collection", interruttore "Quick
 `UserSettings.quickAdd`, fornita alle schermate con `LocalQuickAdd` da `MainActivity`): il tocco sulla casella di
 una moneta aggiunge o toglie la voce più semplice senza aprire il pannello. **Dentro la stessa card**, sotto un filetto,
 una `InfoNote` su più righe (icona allineata alla prima, `InfoNote(AnnotatedString, verticalAlignment = Top)`): "A coin
-with **BU or Proof, a year, a price or a date** opens its details instead, so nothing is removed by mistake." (2026-10-10,
-variante A dopo mockup: prima era fuori dalla card e diceva "Coins with a price, date or extra details still open the
+with **BU or Proof, a year, a price or a date** asks you to confirm before it's removed." (2026-10-10,
+variante A dopo mockup, poi il verbo cambiato quando il tocco ha smesso di aprire il pannello (era "opens its details instead, so nothing is removed by mistake"): prima era fuori dalla card e diceva "Coins with a price, date or extra details still open the
 form", giudicata poco esplicativa: "extra details" non dice quali e "the form" non è un nome che l'utente conosce, il
 pannello si chiama My collection; scartata la variante B, tutto nel sottotitolo, che andava su tre righe strette).
 
@@ -422,15 +422,20 @@ collezione la ritroverebbe vuota. Il modello adottato: il possesso è il dato di
 dettagli facoltativi sopra; l'on/off è il caso più semplice dello stesso dato. Cambiare impostazione non fa
 comparire né sparire monete; barre, filtri, Home, backup e Reset sono identici in entrambi i modi.
 
-- **Regola del tocco** (`QuickAdd.kt`, `quickTapFor`/`quickTapForRegular`, `QuickAddTest`): nulla in
-  collezione → `ADD` (Standard senza prezzo né data; per le Regular la voce senza anno); solo la voce semplice →
-  `REMOVE`; qualunque altra cosa (BU, Proof, prezzo, data, un anno vero, la varietà EFS) → `OPEN_FORM`, il tocco
-  apre il pannello invece di cancellare in silenzio. Nessun Undo e nessuna conferma: aggiungere e togliere una
-  voce semplice non perde niente. `CoinRepository.quickToggle` / `RegularIssueRepository.quickToggle` applicano la
-  regola; la schermata decide se aprire il pannello. Punti coperti: elenco commemorative (e scheda All) e le tre
-  schermate Regular con la casella (serie del paese, elenco di un taglio, All). **Il dettaglio non cambia**: la card
-  COLLECTION e i suoi pulsanti aprono sempre il pannello completo (è lì che si aggiungono i dettagli a una voce
-  semplice).
+- **Regola del tocco** (`QuickAdd.kt`, `quickTapFor`/`quickTapForRegular`, `QuickAddTest`): **la casella vuol dire
+  sempre "ce l'ho / non ce l'ho" e non apre mai il pannello** (2026-10-10, scelta dell'utente: prima, con dettagli, il
+  tocco apriva il pannello, un gesto con due esiti secondo uno stato che non si vede, "strano"). Nulla in collezione →
+  `ADD` (Standard senza prezzo né data; per le Regular la voce senza anno); solo la voce semplice → `REMOVE`, subito;
+  qualunque altra cosa (BU, Proof, prezzo, data, un anno vero, la varietà EFS) → `CONFIRM_REMOVE`: dialog "Remove from
+  collection?" (`RemoveConfirmDialog`, lo stesso del "Remove" dei pannelli, con `commemorativeRemovalMessage`/
+  `regularRemovalMessage` che dicono cosa si perde); Cancel lascia tutto, Remove toglie tutto ciò che la riga vede
+  (il salvataggio con zero voci). La conferma è solo una protezione per il caso raro in cui togliere farebbe perdere
+  dati scritti a mano; i dettagli si modificano dal dettaglio ("Edit collection"). Nessun Undo (il messaggio
+  flottante starebbe sopra la barra di ricerca e l'utente voleva farne a meno). `CoinRepository.quickToggle` /
+  `RegularIssueRepository.quickToggle` fanno ADD e REMOVE; la schermata mostra la conferma e, se confermata, salva con
+  `onSaveCollection(…, vuoto)`. Punti coperti: elenco commemorative (e scheda All) e le tre schermate Regular con la
+  casella (serie del paese, elenco di un taglio, All). **Il dettaglio non cambia**: la card COLLECTION e i suoi
+  pulsanti aprono sempre il pannello completo (è lì che si aggiungono i dettagli a una voce semplice).
 - **"Anno non indicato" per le Regular** (`NO_YEAR = 0` in `RegularCollectionItem.anno`; il tocco semplice non può
   inventare un anno). Una voce senza anno appartiene alla riga GUARDATA, non alla serie di origine: un taglio
   rimasto invariato è la stessa moneta in più serie (il 5 cent francese è della serie 1 e compare nelle righe delle
@@ -453,7 +458,7 @@ comparire né sparire monete; barre, filtri, Home, backup e Reset sono identici 
   riempie, nessun pannello, il secondo tocco la svuota); riga Regular ereditata (Francia 5 cent serie 2: diventa
   "Owned", la serie 1 resta "1 year owned", la serie 3 "Not owned", il secondo tocco la toglie); card COLLECTION
   "Standard · No year"; chip "No year" nel pannello; moneta con un anno vero (Grecia 2 euro, 2002 e 2002 EFS): il
-  tocco apre il pannello. **Bug trovato e corretto**: il chip del pannello mostrava "0" (aveva un'etichetta sua);
+  tocco apriva il pannello (dal 2026-10-10 chiede invece la conferma di rimozione: vedi sopra, ancora da provare sul telefono). **Bug trovato e corretto**: il chip del pannello mostrava "0" (aveva un'etichetta sua);
   ora c'è un'unica `YearOption.chipLabel()` in `RegularYearOptions.kt` usata da pannello e dettaglio.
 - **Non fatto**: pulsante "Remove" o conferma per le voci semplici, feedback aptico (valutato e lasciato fuori), un
   modo di convertire le voci senza anno in un anno vero in blocco.

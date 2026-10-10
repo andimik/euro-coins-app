@@ -1,5 +1,8 @@
 package com.michele.eurocoins.ui.regular
 
+import com.michele.eurocoins.data.YearOption
+import com.michele.eurocoins.ui.components.regularRemovalMessage
+import com.michele.eurocoins.ui.components.RemoveConfirmDialog
 import com.michele.eurocoins.data.QuickTap
 import com.michele.eurocoins.data.quickTapForRegular
 import com.michele.eurocoins.ui.components.LocalQuickAdd
@@ -90,6 +93,8 @@ fun RegularIssueCountryScreen(
     val quickAdd = LocalQuickAdd.current
     val state by viewModel.uiState.collectAsState()
     var editing by remember { mutableStateOf<DenominationUiState?>(null) }
+    // Quick add su un taglio con dettagli (anni, finiture, prezzo, data): conferma di rimozione, mai il pannello.
+    var removing by remember { mutableStateOf<DenominationUiState?>(null) }
     val scrollState = rememberScrollState()
     var viewport by remember { mutableStateOf<Rect?>(null) }
 
@@ -129,7 +134,11 @@ fun RegularIssueCountryScreen(
                         denom = denom,
                         onClick = { state.selectedSeries?.let { onDenominationClick(it, denom.image.taglio) } },
                         onEditCollection = {
-                            if (quickAdd && quickTapForRegular(denom.items) != QuickTap.OPEN_FORM) viewModel.onQuickToggle(denom.denomination, denom.items) else editing = denom
+                            when {
+                                !quickAdd -> editing = denom
+                                quickTapForRegular(denom.items) == QuickTap.CONFIRM_REMOVE -> removing = denom
+                                else -> viewModel.onQuickToggle(denom.denomination, denom.items)
+                            }
                         },
                     )
                 }
@@ -162,6 +171,21 @@ fun RegularIssueCountryScreen(
                 editing = null
             },
             onDismiss = { editing = null },
+        )
+    }
+
+    removing?.let { target ->
+        RemoveConfirmDialog(
+            message = regularRemovalMessage(
+                denomination = target.image.taglio,
+                where = "${state.countryName} · ${seriesTitle(state.selectedIndex + 1)}",
+                years = target.items.map { YearOption(it.anno, it.variety) },
+            ),
+            onConfirm = {
+                viewModel.onSaveCollection(target.denomination, emptyList())
+                removing = null
+            },
+            onDismiss = { removing = null },
         )
     }
 }

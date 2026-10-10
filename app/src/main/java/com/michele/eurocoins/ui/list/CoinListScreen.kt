@@ -1,5 +1,7 @@
 package com.michele.eurocoins.ui.list
 
+import com.michele.eurocoins.ui.components.commemorativeRemovalMessage
+import com.michele.eurocoins.ui.components.RemoveConfirmDialog
 import com.michele.eurocoins.data.QuickTap
 import com.michele.eurocoins.data.quickTapFor
 import com.michele.eurocoins.ui.components.LocalQuickAdd
@@ -153,6 +155,8 @@ fun CoinListContent(
     val state by viewModel.uiState.collectAsState()
     val quickAdd = LocalQuickAdd.current
     var editing by remember { mutableStateOf<Coin?>(null) }
+    // Quick add su una moneta con dettagli (BU, Proof, prezzo, data): conferma di rimozione, mai il pannello.
+    var removing by remember { mutableStateOf<Coin?>(null) }
 
     editing?.let { coin ->
         CollectionSheet(
@@ -163,6 +167,17 @@ fun CoinListContent(
                 editing = null
             },
             onDismiss = { editing = null },
+        )
+    }
+
+    removing?.let { coin ->
+        RemoveConfirmDialog(
+            message = commemorativeRemovalMessage(coin.displayTema(), state.collection[coin.stableKey].orEmpty().map { it.quality }),
+            onConfirm = {
+                viewModel.onSaveCollection(coin, emptyMap())
+                removing = null
+            },
+            onDismiss = { removing = null },
         )
     }
 
@@ -227,7 +242,11 @@ fun CoinListContent(
                 onClick = { onCoinClick(coin.id) },
                 onEditCollection = {
                     val items = state.collection[coin.stableKey].orEmpty()
-                    if (quickAdd && quickTapFor(items) != QuickTap.OPEN_FORM) viewModel.onQuickToggle(coin, items) else editing = coin
+                    when {
+                        !quickAdd -> editing = coin
+                        quickTapFor(items) == QuickTap.CONFIRM_REMOVE -> removing = coin
+                        else -> viewModel.onQuickToggle(coin, items)
+                    }
                 },
             )
         }

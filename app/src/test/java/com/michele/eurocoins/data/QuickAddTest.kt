@@ -51,11 +51,11 @@ class QuickAddTest {
     }
 
     @Test
-    fun anythingWithDetailsOpensTheFormInsteadOfDeleting() {
-        assertEquals(QuickTap.OPEN_FORM, quickTapFor(listOf(commemorative(priceCents = 350))))
-        assertEquals(QuickTap.OPEN_FORM, quickTapFor(listOf(commemorative(purchasedOn = 20_000L))))
-        assertEquals(QuickTap.OPEN_FORM, quickTapFor(listOf(commemorative(CoinQuality.BU))))
-        assertEquals(QuickTap.OPEN_FORM, quickTapFor(listOf(commemorative(), commemorative(CoinQuality.PROOF))))
+    fun anythingWithDetailsAsksBeforeDeleting() {
+        assertEquals(QuickTap.CONFIRM_REMOVE, quickTapFor(listOf(commemorative(priceCents = 350))))
+        assertEquals(QuickTap.CONFIRM_REMOVE, quickTapFor(listOf(commemorative(purchasedOn = 20_000L))))
+        assertEquals(QuickTap.CONFIRM_REMOVE, quickTapFor(listOf(commemorative(CoinQuality.BU))))
+        assertEquals(QuickTap.CONFIRM_REMOVE, quickTapFor(listOf(commemorative(), commemorative(CoinQuality.PROOF))))
     }
 
     @Test
@@ -66,13 +66,13 @@ class QuickAddTest {
     }
 
     @Test
-    fun aRegularRowWithAYearOrDetailsOpensTheForm() {
+    fun aRegularRowWithAYearOrDetailsAsksBeforeRemoving() {
         val s = forCountry("Grecia").first()
-        assertEquals(QuickTap.OPEN_FORM, quickTapForRegular(listOf(regular(s, "2 euro", 2002))))
-        assertEquals(QuickTap.OPEN_FORM, quickTapForRegular(listOf(regular(s, "2 euro", NO_YEAR, priceCents = 100))))
-        assertEquals(QuickTap.OPEN_FORM, quickTapForRegular(listOf(regular(s, "2 euro", NO_YEAR, CoinQuality.BU))))
-        assertEquals(QuickTap.OPEN_FORM, quickTapForRegular(listOf(regular(s, "2 euro", NO_YEAR, variety = VARIETY_EFS))))
-        assertEquals(QuickTap.OPEN_FORM, quickTapForRegular(listOf(regular(s, "2 euro", NO_YEAR), regular(s, "2 euro", 2003))))
+        assertEquals(QuickTap.CONFIRM_REMOVE, quickTapForRegular(listOf(regular(s, "2 euro", 2002))))
+        assertEquals(QuickTap.CONFIRM_REMOVE, quickTapForRegular(listOf(regular(s, "2 euro", NO_YEAR, priceCents = 100))))
+        assertEquals(QuickTap.CONFIRM_REMOVE, quickTapForRegular(listOf(regular(s, "2 euro", NO_YEAR, CoinQuality.BU))))
+        assertEquals(QuickTap.CONFIRM_REMOVE, quickTapForRegular(listOf(regular(s, "2 euro", NO_YEAR, variety = VARIETY_EFS))))
+        assertEquals(QuickTap.CONFIRM_REMOVE, quickTapForRegular(listOf(regular(s, "2 euro", NO_YEAR), regular(s, "2 euro", 2003))))
     }
 
     // ---- la voce senza anno appartiene alla riga guardata ---------------------------------------------
