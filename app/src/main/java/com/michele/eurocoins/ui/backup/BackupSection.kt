@@ -153,6 +153,7 @@ fun BackupSection(viewModel: BackupViewModel) {
     state.restorePrompt?.let { prompt ->
         RestoreDialog(
             prompt = prompt,
+            localStatus = state.localStatus,
             onReplace = { viewModel.restore(activity) },
             onUsePrevious = { viewModel.restorePrevious(activity) },
             onDismiss = viewModel::dismissRestore,

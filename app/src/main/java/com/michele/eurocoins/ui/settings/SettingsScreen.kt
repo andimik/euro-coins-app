@@ -578,12 +578,14 @@ internal fun SwitchRow(title: String, subtitle: String, checked: Boolean, onChec
 internal fun resetBackupNote(state: BackupUiState, coins: Int = 2): String {
     if (state.account == null) return "You're not signed in, so there's no backup to restore from."
     val last = state.lastBackup ?: state.lastBackupLocal
-    // Spazi non separabili dentro la data: a capo non deve restare "07:44)" da solo.
-    val dated = last?.let { " (${it.replace(' ', ' ')})" } ?: ""
+    // Spazi non separabili dentro la data (U+00A0): a capo non deve restare "07:44" da solo. Senza parentesi e con
+    // "from"/"on" davanti: la data tra parentesi, tenuta intera, saltava a capo lasciando una prima riga corta.
+    val stamp = last?.replace(' ', ' ')
     val pronoun = if (coins == 1) "it" else "them"
     return when {
-        state.localStatus == BackupStatus.UpToDate -> "Your Google Drive backup$dated has $pronoun, so you can restore $pronoun."
-        last != null -> "Anything added since your last backup$dated can't be restored."
+        state.localStatus == BackupStatus.UpToDate ->
+            "Your Google Drive backup${stamp?.let { " from $it" } ?: ""} has $pronoun, so you can restore $pronoun."
+        last != null -> "Anything added since your last backup on $stamp can't be restored."
         else -> "There's no backup on Google Drive, so this can't be undone."
     }
 }

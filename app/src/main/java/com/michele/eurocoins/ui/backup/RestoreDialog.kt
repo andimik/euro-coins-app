@@ -22,6 +22,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.michele.eurocoins.data.backup.BackupContents
+import com.michele.eurocoins.data.backup.BackupStatus
 import com.michele.eurocoins.ui.components.CountsBox
 import com.michele.eurocoins.ui.components.DialogTitle
 import com.michele.eurocoins.ui.components.DialogWarning
@@ -39,6 +40,8 @@ import com.michele.eurocoins.ui.components.coinsText
 @Composable
 fun RestoreDialog(
     prompt: RestorePrompt,
+    /** Rapporto tra la collezione del telefono e l'ultimo backup: decide se l'avviso c'è e quanto dice (vedi [restoreNote]). */
+    localStatus: BackupStatus,
     onReplace: () -> Unit,
     onUsePrevious: () -> Unit,
     onDismiss: () -> Unit,
@@ -68,7 +71,7 @@ fun RestoreDialog(
                     // Un backup precedente a Regular Issues non le porta: il ripristino non le tocca, e "0" farebbe credere il contrario.
                     footnote = if (prompt.latest.regular == null) "Regular Issues aren't in this backup: yours stay as they are." else null,
                 )
-                DialogWarning("Anything added since will be lost.")
+                restoreNote(localStatus).let { note -> if (note.isWarning) DialogWarning(note.text) else Text(note.text) }
                 prompt.previous?.let { previous ->
                     HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f))
                     OlderCopy(date = prompt.previousDate, contents = previous, onUse = onUsePrevious)
@@ -104,9 +107,25 @@ private fun OlderCopy(date: String?, contents: BackupContents, onUse: () -> Unit
             color = MaterialTheme.colorScheme.primary,
             modifier = Modifier
                 .fillMaxWidth()
-                .heightIn(min = 48.dp)
+                .heightIn(min = 44.dp)
                 .clickable(role = Role.Button, onClick = onUse)
                 .wrapContentHeight(Alignment.CenterVertically),
         )
     }
+}
+
+/** La nota sotto il riquadro del ripristino: [isWarning] = rossa con icona (qualcosa andrebbe perso), altrimenti testo normale. */
+internal data class RestoreNote(val text: String, val isWarning: Boolean)
+
+/**
+ * Cosa dire su ciò che si perde, secondo lo stato del backup (lo stesso criterio del Reset: il rosso solo dove
+ * qualcosa va perso davvero). Collezione aggiornata: niente da perdere, nota normale; modifiche non salvate: rosso e
+ * quantificato con le parole della card di stato ("N changes not backed up"); stato non verificabile (telefono nuovo,
+ * dopo il ripristino della versione precedente): l'avviso generico, perché non si sa cosa c'è oltre il backup.
+ */
+internal fun restoreNote(status: BackupStatus): RestoreNote = when (status) {
+    BackupStatus.UpToDate -> RestoreNote("Your collection is already up to date with this backup.", isWarning = false)
+    is BackupStatus.Pending ->
+        RestoreNote("${status.changes} ${if (status.changes == 1) "change" else "changes"} not backed up will be lost.", isWarning = true)
+    BackupStatus.Unknown -> RestoreNote("Anything added since will be lost.", isWarning = true)
 }

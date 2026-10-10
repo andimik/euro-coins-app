@@ -11,6 +11,9 @@ class ResetBackupNoteTest {
 
     private val account = GoogleAccount("a@b.c", null)
 
+    /** Spazi non separabili dentro la data, come nel testo (a capo non deve restare "07:44" da solo). */
+    private fun nbsp(date: String) = date.replace(' ', Char(0x00A0))
+
     @Test
     fun notSignedInHasNoBackupToRestoreFrom() {
         assertEquals(
@@ -25,7 +28,7 @@ class ResetBackupNoteTest {
             BackupUiState(configured = true, account = account, localStatus = BackupStatus.UpToDate, lastBackup = "6 Oct 2026, 07:44"),
             coins = 6,
         )
-        assertEquals("Your Google Drive backup (6 Oct 2026, 07:44) has them, so you can restore them.", note)
+        assertEquals("Your Google Drive backup from " + nbsp("6 Oct 2026, 07:44") + " has them, so you can restore them.", note)
     }
 
     @Test
@@ -42,7 +45,7 @@ class ResetBackupNoteTest {
         val note = resetBackupNote(
             BackupUiState(configured = true, account = account, localStatus = BackupStatus.Unknown, lastBackupLocal = "5 Oct 2026, 10:00"),
         )
-        assertEquals("Anything added since your last backup (5 Oct 2026, 10:00) can't be restored.", note)
+        assertEquals("Anything added since your last backup on " + nbsp("5 Oct 2026, 10:00") + " can't be restored.", note)
     }
 
     @Test

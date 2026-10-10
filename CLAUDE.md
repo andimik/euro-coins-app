@@ -572,6 +572,14 @@ collezione su Drive.
   del testo a capo; è un `Text` cliccabile. Se la precedente non si legge (assente, rete, file rovinato) la sezione non
   compare ma l'ultimo backup deve leggersi. Il dialog sta nell'area del testo (sopra Cancel/Replace: AlertDialog non
   ammette una sezione sotto i pulsanti) e scorre con il font ingrandito.
+  **La nota sulla perdita dipende dallo stato del backup** (`restoreNote`, `RestoreNoteTest`; stesso criterio del
+  Reset: il rosso solo dove qualcosa va perso davvero): collezione aggiornata → testo normale "Your collection is
+  already up to date with this backup."; modifiche non salvate → rosso "N changes not backed up will be lost." (le
+  parole della card di stato); stato non verificabile → il generico "Anything added since will be lost.". Prima era
+  sempre rossa, anche quando telefono e backup coincidevano e non c'era niente da perdere. Rifiniture: il link
+  "Restore this one instead" alto 44 dp (era 48, lasciava troppo vuoto sopra i pulsanti); nella nota del Reset la data
+  senza parentesi con "from"/"on" davanti ("…backup from 9 Oct 2026, 07:52 has them…"), perché la data tra parentesi,
+  tenuta intera da spazi non separabili, andava a capo lasciando una prima riga corta.
 - **Pro e pubblicità**: card Go Pro sotto quella del backup, banner nella Home e annuncio a tutto
   schermo — vedi § Pro e pubblicità.
 - **Sovrascrittura del backup**: "Back up now" controlla prima se su Drive
