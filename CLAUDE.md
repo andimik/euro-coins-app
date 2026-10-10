@@ -408,8 +408,12 @@ nella card COLLECTION), così c'è un solo modo di registrare.
 
 Impostazione GLOBALE (Impostazioni → sezione "Collection", interruttore "Quick add", spento di default,
 `UserSettings.quickAdd`, fornita alle schermate con `LocalQuickAdd` da `MainActivity`): il tocco sulla casella di
-una moneta aggiunge o toglie la voce più semplice senza aprire il pannello. Sotto l'interruttore una `InfoNote`:
-"Coins with a price, date or extra details still open the form."
+una moneta aggiunge o toglie la voce più semplice senza aprire il pannello. **Dentro la stessa card**, sotto un filetto,
+una `InfoNote` su più righe (icona allineata alla prima, `InfoNote(AnnotatedString, verticalAlignment = Top)`): "A coin
+with **BU or Proof, a year, a price or a date** opens its details instead, so nothing is removed by mistake." (2026-10-10,
+variante A dopo mockup: prima era fuori dalla card e diceva "Coins with a price, date or extra details still open the
+form", giudicata poco esplicativa: "extra details" non dice quali e "the form" non è un nome che l'utente conosce, il
+pannello si chiama My collection; scartata la variante B, tutto nel sottotitolo, che andava su tre righe strette).
 
 **Decisione presa dopo tre giri (da ricordare): UNA collezione sola, due modi di toccarla.** Prima si era
 pensato a due liste separate ("semplice" e "dettagliata", che non si parlano), poi scartato su parere UX: due fonti

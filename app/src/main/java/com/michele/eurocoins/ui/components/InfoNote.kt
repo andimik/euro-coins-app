@@ -12,6 +12,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
@@ -26,17 +27,29 @@ fun InfoNote(
     text: String,
     modifier: Modifier = Modifier,
     horizontalArrangement: Arrangement.Horizontal = Arrangement.Start,
+) = InfoNote(AnnotatedString(text), modifier, horizontalArrangement)
+
+/**
+ * Come sopra, con testo formattato (una parte in evidenza) e, per le note su più righe, l'icona allineata alla
+ * PRIMA riga ([verticalAlignment] = [Alignment.Top]) invece che al centro del blocco.
+ */
+@Composable
+fun InfoNote(
+    text: AnnotatedString,
+    modifier: Modifier = Modifier,
+    horizontalArrangement: Arrangement.Horizontal = Arrangement.Start,
+    verticalAlignment: Alignment.Vertical = Alignment.CenterVertically,
 ) {
     Row(
         modifier = modifier,
         horizontalArrangement = horizontalArrangement,
-        verticalAlignment = Alignment.CenterVertically,
+        verticalAlignment = verticalAlignment,
     ) {
         Icon(
             Icons.Outlined.Info,
             contentDescription = null,
             tint = MaterialTheme.colorScheme.primary,
-            modifier = Modifier.size(16.dp),
+            modifier = Modifier.padding(top = if (verticalAlignment == Alignment.Top) 2.dp else 0.dp).size(16.dp),
         )
         Text(
             text = text,

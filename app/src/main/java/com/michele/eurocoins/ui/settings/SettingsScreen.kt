@@ -63,7 +63,10 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.unit.dp
 import com.michele.eurocoins.BuildConfig
@@ -135,11 +138,20 @@ fun SettingsScreen(
                     checked = quickAdd,
                     onCheckedChange = settingsViewModel::setQuickAdd,
                 )
+                HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f))
+                // Cosa succede con una moneta che ha dettagli: nominati uno per uno ("details" da solo non lo dice) e
+                // dentro la card, perché spiega l'interruttore. "Its details" e non "the form": il pannello si chiama My collection.
+                InfoNote(
+                    text = buildAnnotatedString {
+                        append("A coin with ")
+                        withStyle(SpanStyle(fontWeight = FontWeight.Medium, color = MaterialTheme.colorScheme.onSurface)) {
+                            append("BU or Proof, a year, a price or a date")
+                        }
+                        append(" opens its details instead, so nothing is removed by mistake.")
+                    },
+                    verticalAlignment = Alignment.Top,
+                )
             }
-            InfoNote(
-                text = "Coins with a price, date or extra details still open the form.",
-                modifier = Modifier.padding(start = 4.dp, end = 4.dp, top = 8.dp),
-            )
 
             // Una sezione per catalogo, ciascuna con le sue due impostazioni (interruttore, poi selettore):
             // i microstati si nascondono in modo indipendente e la scheda iniziale è quella del catalogo.
