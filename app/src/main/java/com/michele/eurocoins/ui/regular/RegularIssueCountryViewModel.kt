@@ -11,6 +11,8 @@ import com.michele.eurocoins.data.RegularIssueSeries
 import com.michele.eurocoins.data.SeriesDenomination
 import com.michele.eurocoins.data.denominationsOf
 import com.michele.eurocoins.data.displayCountry
+import com.michele.eurocoins.data.ownedYearsOf
+import com.michele.eurocoins.data.rowItems
 import com.michele.eurocoins.data.flagEmojiForCountry
 import com.michele.eurocoins.data.stableKey
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -88,13 +90,10 @@ class RegularIssueCountryViewModel(
         val selected = forCountry.getOrNull(safeIndex)
         val denominations = selected?.let { series ->
             denominationsOf(forCountry, series).sortedByDescending { denominationRank(it.image.taglio) }.map { denomination ->
-                val key = denomination.series.stableKey
-                val items = collection.filter {
-                    it.seriesKey == key && it.taglio == denomination.image.taglio && denomination.contains(it.anno)
-                }
+                val items = denomination.rowItems(collection)
                 DenominationUiState(
                     denomination = denomination,
-                    ownedYears = items.map { it.anno }.distinct().size,
+                    ownedYears = ownedYearsOf(items),
                     items = items,
                 )
             }
@@ -110,6 +109,11 @@ class RegularIssueCountryViewModel(
 
     fun onSelectSeries(index: Int) {
         selectedIndex.value = index
+    }
+
+    /** Tocco con Quick add sulla casella di un taglio: aggiunge la voce senza anno o la toglie (vedi `quickTapForRegular`). */
+    fun onQuickToggle(denomination: SeriesDenomination, items: List<RegularCollectionItem>) {
+        viewModelScope.launch { repository.quickToggle(denomination, items) }
     }
 
     fun onSaveCollection(denomination: SeriesDenomination, entries: List<RegularCollectionEntry>) {

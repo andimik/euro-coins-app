@@ -46,6 +46,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.ui.unit.sp
 import com.michele.eurocoins.ui.components.DialogTitle
+import com.michele.eurocoins.ui.components.InfoNote
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -96,6 +97,7 @@ fun SettingsScreen(
     val defaultTab by settingsViewModel.defaultTab.collectAsState()
     val defaultRegularTab by settingsViewModel.defaultRegularTab.collectAsState()
     val rotateHomeCoins by settingsViewModel.rotateHomeCoins.collectAsState()
+    val quickAdd by settingsViewModel.quickAdd.collectAsState()
     val themeMode by settingsViewModel.themeMode.collectAsState()
     val owned by settingsViewModel.ownedCounts.collectAsState()
     val backupState by backupViewModel.state.collectAsState()
@@ -124,6 +126,20 @@ fun SettingsScreen(
 
             Spacer(Modifier.height(12.dp))
             ProSection(monetization)
+
+            SectionHeader("Collection")
+            SettingsCard {
+                SwitchRow(
+                    title = "Quick add",
+                    subtitle = "Tap the box to add or remove a coin",
+                    checked = quickAdd,
+                    onCheckedChange = settingsViewModel::setQuickAdd,
+                )
+            }
+            InfoNote(
+                text = "Coins with a price, date or extra details still open the form.",
+                modifier = Modifier.padding(start = 4.dp, end = 4.dp, top = 8.dp),
+            )
 
             // Una sezione per catalogo, ciascuna con le sue due impostazioni (interruttore, poi selettore):
             // i microstati si nascondono in modo indipendente e la scheda iniziale è quella del catalogo.

@@ -29,6 +29,7 @@ class UserSettings(context: Context) {
     private val _defaultTab = MutableStateFlow(loadDefaultTab())
     private val _defaultRegularTab = MutableStateFlow(parseRegularBrowseMode(prefs.getString(KEY_DEFAULT_REGULAR_TAB, null)))
     private val _rotateHomeCoins = MutableStateFlow(prefs.getBoolean(KEY_ROTATE_HOME_COINS, true))
+    private val _quickAdd = MutableStateFlow(prefs.getBoolean(KEY_QUICK_ADD, false))
 
     /** true = nasconde monete e card di Andorra, Monaco, San Marino e Città del Vaticano nelle commemorative. */
     val hideCommemorativeMicrostates: StateFlow<Boolean> = _hideCommemorativeMicrostates.asStateFlow()
@@ -115,6 +116,18 @@ class UserSettings(context: Context) {
         }
     }
 
+    /**
+     * true = il tocco sulla casella aggiunge o toglie la moneta senza aprire il pannello (Quick add). Vale per
+     * tutta l'app, spento di default. Una moneta con dettagli (prezzo, data, BU, Proof, anno) apre comunque il
+     * pannello, vedi `quickTapFor`.
+     */
+    val quickAdd: StateFlow<Boolean> = _quickAdd.asStateFlow()
+
+    fun setQuickAdd(value: Boolean) {
+        prefs.edit().putBoolean(KEY_QUICK_ADD, value).apply()
+        _quickAdd.value = value
+    }
+
     fun setRotateHomeCoins(value: Boolean) {
         prefs.edit().putBoolean(KEY_ROTATE_HOME_COINS, value).apply()
         _rotateHomeCoins.value = value
@@ -136,6 +149,7 @@ class UserSettings(context: Context) {
         const val KEY_HIDE_REGULAR_MICROSTATES = "hide_regular_microstates"
         const val KEY_DEFAULT_REGULAR_TAB = "default_regular_tab"
         const val KEY_ROTATE_HOME_COINS = "rotate_home_coins"
+        const val KEY_QUICK_ADD = "quick_add"
         const val KEY_LAST_SHOWCASE = "last_showcase"
         const val KEY_SHOWCASE_DAY_PREFIX = "showcase_day_"
         const val KEY_LAST_SHOWCASE_REGULAR = "last_showcase_regular"

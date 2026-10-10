@@ -152,6 +152,11 @@ class CoinListViewModel(
         options.value = newOptions
     }
 
+    /** Tocco con Quick add sulla casella: aggiunge Standard o la toglie (vedi `quickTapFor`). */
+    fun onQuickToggle(coin: Coin, items: List<CollectionItem>) {
+        viewModelScope.launch { repository.quickToggle(coin, items) }
+    }
+
     fun onSaveCollection(coin: Coin, entries: Map<CoinQuality, FinishEntry>) {
         viewModelScope.launch { repository.saveCollection(coin, entries) }
     }

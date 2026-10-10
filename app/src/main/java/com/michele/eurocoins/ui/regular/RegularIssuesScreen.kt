@@ -1,5 +1,8 @@
 package com.michele.eurocoins.ui.regular
 
+import com.michele.eurocoins.data.QuickTap
+import com.michele.eurocoins.data.quickTapForRegular
+import com.michele.eurocoins.ui.components.LocalQuickAdd
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -81,6 +84,7 @@ fun RegularIssuesScreen(
     val state by viewModel.uiState.collectAsState()
     val hazeState = remember { HazeState() }
     var showFilters by remember { mutableStateOf(false) }
+    val quickAdd = LocalQuickAdd.current
     var editing by remember { mutableStateOf<DenominationRow?>(null) }
 
     Scaffold(
@@ -211,7 +215,9 @@ fun RegularIssuesScreen(
                                         onClick = { onRowClick(row.viewedSeries, row.denomination.image.taglio) },
                                         highlighted = highlight.key ==
                                             RegularPageKey(row.paese, row.viewedSeries.ordineCronologico, row.denomination.image.taglio),
-                                        onEditCollection = { editing = row },
+                                        onEditCollection = {
+                                            if (quickAdd && quickTapForRegular(row.items) != QuickTap.OPEN_FORM) viewModel.onQuickToggle(row) else editing = row
+                                        },
                                     )
                                 }
                             }

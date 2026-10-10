@@ -21,14 +21,14 @@ fun List<Coin>.progress(ownedKeys: Set<String>): Progress =
  * e per quella della card del paese. Una serie senza immagini (Vaticano 2026) non ha righe.
  */
 fun List<RegularIssueSeries>.regularProgress(collection: List<RegularCollectionItem>): Progress {
-    val years = collection.groupBy({ it.seriesKey to it.taglio }, { it.anno })
+    val byKey = collection.groupBy { it.seriesKey to it.taglio }
     var owned = 0
     var total = 0
     for (country in groupBy { it.paese }.values) {
         for (series in country) {
             for (row in denominationsOf(country, series)) {
                 total++
-                if (years[row.series.stableKey to row.image.taglio]?.any { row.contains(it) } == true) owned++
+                if (row.rowItemsFrom(byKey).isNotEmpty()) owned++
             }
         }
     }

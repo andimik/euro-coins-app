@@ -1,5 +1,8 @@
 package com.michele.eurocoins.ui.regular
 
+import com.michele.eurocoins.data.QuickTap
+import com.michele.eurocoins.data.quickTapForRegular
+import com.michele.eurocoins.ui.components.LocalQuickAdd
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -84,6 +87,7 @@ fun RegularIssueCountryScreen(
     onDenominationClick: (RegularIssueSeries, String) -> Unit,
     onBack: () -> Unit,
 ) {
+    val quickAdd = LocalQuickAdd.current
     val state by viewModel.uiState.collectAsState()
     var editing by remember { mutableStateOf<DenominationUiState?>(null) }
     val scrollState = rememberScrollState()
@@ -124,7 +128,9 @@ fun RegularIssueCountryScreen(
                     DenominationRow(
                         denom = denom,
                         onClick = { state.selectedSeries?.let { onDenominationClick(it, denom.image.taglio) } },
-                        onEditCollection = { editing = denom },
+                        onEditCollection = {
+                            if (quickAdd && quickTapForRegular(denom.items) != QuickTap.OPEN_FORM) viewModel.onQuickToggle(denom.denomination, denom.items) else editing = denom
+                        },
                     )
                 }
             }
@@ -242,10 +248,15 @@ private fun SeriesAbout(
 private fun DenominationRow(denom: DenominationUiState, onClick: () -> Unit, onEditCollection: () -> Unit) {
     RegularCoinRow(
         image = denom.image,
-        status = if (denom.ownedYears == 0) "Not owned" else "${denom.ownedYears} ${if (denom.ownedYears == 1) "year" else "years"} owned",
-        statusHighlight = denom.ownedYears > 0,
+        // Solo la voce senza anno (Quick add): "Owned", non "0 years owned".
+        status = when {
+            denom.items.isEmpty() -> "Not owned"
+            denom.ownedYears == 0 -> "Owned"
+            else -> "${denom.ownedYears} ${if (denom.ownedYears == 1) "year" else "years"} owned"
+        },
+        statusHighlight = denom.items.isNotEmpty(),
         title = denom.image.taglio,
-        owned = denom.ownedYears > 0,
+        owned = denom.items.isNotEmpty(),
         onClick = onClick,
         onEditCollection = onEditCollection,
     )

@@ -14,10 +14,12 @@ data class SeriesDenomination(
     val series: RegularIssueSeries,
     val image: RegularIssueImage,
     val inherited: Boolean,
+    /** La serie GUARDATA (quella in cui compare la riga): [series] è quella di origine, uguale se il taglio non è ereditato. */
+    val viewed: RegularIssueSeries,
 ) {
-    /** `true` se [year] cade nella finestra di questa serie (estremi mancanti = nessun limite). */
+    /** `true` se [year] cade nella finestra di questa serie (estremi mancanti = nessun limite); [NO_YEAR] mai. */
     fun contains(year: Int): Boolean =
-        (image.annoInizio?.let { year >= it } ?: true) && (image.annoFine?.let { year <= it } ?: true)
+        year != NO_YEAR && (image.annoInizio?.let { year >= it } ?: true) && (image.annoFine?.let { year <= it } ?: true)
 }
 
 /**
@@ -53,10 +55,10 @@ fun denominationsOf(allForCountry: List<RegularIssueSeries>, selected: RegularIs
         // da quando la serie parte (se noto). Senza queste righe non si potrebbero spuntare e la barra
         // del paese non arriverebbe mai al 100%.
         val from = seriesPeriod(allForCountry, selected).from
-        return REGULAR_DENOMINATIONS.map { SeriesDenomination(selected, placeholderImage(it, from), inherited = false) }
+        return REGULAR_DENOMINATIONS.map { SeriesDenomination(selected, placeholderImage(it, from), inherited = false, viewed = selected) }
     }
     val start = selected.immagini.mapNotNull { it.annoInizio }.minOrNull()
-        ?: return selected.immagini.map { SeriesDenomination(selected, it, inherited = false) }
+        ?: return selected.immagini.map { SeriesDenomination(selected, it, inherited = false, viewed = selected) }
     val end = allForCountry
         .filter { it.ordineCronologico > selected.ordineCronologico }
         .sortedBy { it.ordineCronologico }
@@ -80,6 +82,7 @@ fun denominationsOf(allForCountry: List<RegularIssueSeries>, selected: RegularIs
                 zecchePerAnno = image.zecchePerAnno.filter { inWindow(it.anno) },
             ),
             inherited = inherited,
+            viewed = selected,
         )
     }
 

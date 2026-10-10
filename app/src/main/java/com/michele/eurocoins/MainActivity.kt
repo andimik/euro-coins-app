@@ -22,6 +22,7 @@ import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import com.michele.eurocoins.ui.home.preloadHomeShowcase
+import com.michele.eurocoins.ui.components.LocalQuickAdd
 import com.michele.eurocoins.ui.detail.LocalSwipeHint
 import com.michele.eurocoins.ui.navigation.EuroCoinsNavHost
 import com.michele.eurocoins.ui.theme.EuroCoinsTheme
@@ -81,7 +82,8 @@ class MainActivity : ComponentActivity() {
 
             EuroCoinsTheme(darkTheme = darkTheme) {
                 Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
-                    CompositionLocalProvider(LocalSwipeHint provides app.swipeHint) {
+                    val quickAdd by app.userSettings.quickAdd.collectAsState()
+                    CompositionLocalProvider(LocalSwipeHint provides app.swipeHint, LocalQuickAdd provides quickAdd) {
                         EuroCoinsNavHost(
                             repository = app.repository,
                             regularIssueRepository = app.regularIssueRepository,

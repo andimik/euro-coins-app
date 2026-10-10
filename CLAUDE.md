@@ -404,10 +404,56 @@ nella card COLLECTION), così c'è un solo modo di registrare.
   v3. `PurchaseDatesTest`. Non ancora fatto: esemplari multipli, note libere, valuta diversa
   dall'euro, export CSV.
 
+### Quick add (2026-10-10)
+
+Impostazione GLOBALE (Impostazioni → sezione "Collection", interruttore "Quick add", spento di default,
+`UserSettings.quickAdd`, fornita alle schermate con `LocalQuickAdd` da `MainActivity`): il tocco sulla casella di
+una moneta aggiunge o toglie la voce più semplice senza aprire il pannello. Sotto l'interruttore una `InfoNote`:
+"Coins with a price, date or extra details still open the form."
+
+**Decisione presa dopo tre giri (da ricordare): UNA collezione sola, due modi di toccarla.** Prima si era
+pensato a due liste separate ("semplice" e "dettagliata", che non si parlano), poi scartato su parere UX: due fonti
+di verità obbligano a migrare i dati quando si cambia modalità, a raddoppiare backup e Reset, e chi ha già una
+collezione la ritroverebbe vuota. Il modello adottato: il possesso è il dato di base, finitura/anno/prezzo/data sono
+dettagli facoltativi sopra; l'on/off è il caso più semplice dello stesso dato. Cambiare impostazione non fa
+comparire né sparire monete; barre, filtri, Home, backup e Reset sono identici in entrambi i modi.
+
+- **Regola del tocco** (`QuickAdd.kt`, `quickTapFor`/`quickTapForRegular`, `QuickAddTest`): nulla in
+  collezione → `ADD` (Standard senza prezzo né data; per le Regular la voce senza anno); solo la voce semplice →
+  `REMOVE`; qualunque altra cosa (BU, Proof, prezzo, data, un anno vero, la varietà EFS) → `OPEN_FORM`, il tocco
+  apre il pannello invece di cancellare in silenzio. Nessun Undo e nessuna conferma: aggiungere e togliere una
+  voce semplice non perde niente. `CoinRepository.quickToggle` / `RegularIssueRepository.quickToggle` applicano la
+  regola; la schermata decide se aprire il pannello. Punti coperti: elenco commemorative (e scheda All) e le tre
+  schermate Regular con la casella (serie del paese, elenco di un taglio, All). **Il dettaglio non cambia**: la card
+  COLLECTION e i suoi pulsanti aprono sempre il pannello completo (è lì che si aggiungono i dettagli a una voce
+  semplice).
+- **"Anno non indicato" per le Regular** (`NO_YEAR = 0` in `RegularCollectionItem.anno`; il tocco semplice non può
+  inventare un anno). Una voce senza anno appartiene alla riga GUARDATA, non alla serie di origine: un taglio
+  rimasto invariato è la stessa moneta in più serie (il 5 cent francese è della serie 1 e compare nelle righe delle
+  serie 2 e 3) e senza anno non si sa in quale finestra cada. Quindi `SeriesDenomination.viewed` (la serie in cui
+  compare la riga) e la voce senza anno si salva con la chiave della serie GUARDATA (`RegularIssueRepository.
+  saveCollection`: due scritture se la serie guardata ≠ quella di origine). **Una sola funzione dice quali voci
+  sono di una riga**: `SeriesDenomination.rowItems`/`rowItemsFrom` (annate vere nella finestra, più le voci senza
+  anno della serie guardata); la usano `regularProgress`, `denominationRows` e i ViewModel delle schermate Regular.
+  `SeriesDenomination.contains(NO_YEAR)` è sempre falso.
+- **Testo e pannello**: la riga dice "Owned" se ha solo la voce senza anno (non "0 years owned"), "N years owned" con
+  anni veri. Nel pannello, `YearOption(NO_YEAR)` ha etichetta "No year" ed è il PRIMO chip, ma solo se la riga ha
+  già quella voce (`regularYearOptions` la include tra le voci già possedute): non è un'opzione per chi non usa Quick
+  add. Il pannello si apre su di essa. Card COLLECTION del dettaglio: "Standard · No year" (`chipLabel`). Il testo di
+  conferma di "Remove" non nomina l'anno quando la voce è solo quella.
+- **Backup versione 4** (`BackupFile.SCHEMA_VERSION`): le voci Regular possono avere `anno` 0. Un file v4 non si
+  apre con un'app più vecchia (rifiutato come "più nuovo"). Nessun cambio al database (nessuna migrazione: `anno`
+  è già un intero nella chiave).
+- **Non verificato sul telefono** (staccato durante il lavoro): solo test JVM (`QuickAddTest`, `BackupFileTest`) e
+  compilazione. Da provare: tocco su commemorativa, su riga Regular ereditata (Francia 5 cent serie 2), moneta con
+  dettagli che apre il pannello, chip "No year", barre della Home.
+- **Non fatto**: pulsante "Remove" o conferma per le voci semplici, feedback aptico (valutato e lasciato fuori), un
+  modo di convertire le voci senza anno in un anno vero in blocco.
+
 ### Impostazioni
 
 Schermata unica (`SettingsScreen`), sezioni: Account and backup (con la card Go Pro
-sotto, senza titolo proprio; § Pro e pubblicità), Commemorative, Regular Issues, Appearance, Danger zone.
+sotto, senza titolo proprio; § Pro e pubblicità), **Collection** (Quick add, § omonima sotto), Commemorative, Regular Issues, Appearance, Danger zone.
 Ordine interno delle card, uguale in ogni sezione: prima gli interruttori (`SwitchRow`), poi i selettori a segmenti (`SegmentedChoice`), separati da un filetto. Titoli con "and", non "&" (coerenza con "Account and backup").
 
 **Palette: tre livelli visibili** — neutro (sfondi, testi, titoli), lilla (selezioni) e
@@ -580,7 +626,7 @@ collezione su Drive.
   acquisto) senza rompere i backup vecchi. **Versione 3** (ottobre 2026): aggiunge `purchasedOn`
   (facoltativo, default vuoto) a entrambi i tipi di voce; i file v1 e v2 si leggono ancora, con le voci
   senza data, e un file v3 non si apre con un'app più vecchia (rifiutato come "più nuovo", meglio che
-  perdere le date in silenzio). **Versione 2** (ottobre 2026): aggiunge
+  perdere le date in silenzio). **Versione 4** (2026-10-10): le voci Regular possono avere `anno` 0 ("anno non indicato", § Quick add). **Versione 2** (ottobre 2026): aggiunge
   `regularItems` (`RegularBackupItem`: `seriesKey`, taglio, anno, qualità, varietà, prezzo,
   paese, `addedAt`), cioè `regular_collection_items`; prima Regular Issues non era nel backup e
   perdere il telefono voleva dire perdere tutte le righe. **Un file v1 si legge ancora ma NON
@@ -1748,7 +1794,7 @@ lingua da servire.
 Unit test JVM in `app/src/test` (`./gradlew.bat --offline :app:testDebugUnitTest`).
 `ProStateTest` (proprietà del Pro, una verifica fallita non lo toglie, pagamento in sospeso) e
 `InterstitialPolicyTest` (6 monete E 30 secondi, né una né l'altra da sole, più l'orologio portato indietro) coprono la logica pura di Pro e
-annuncio a tutto schermo; il billing e gli annunci veri non sono testabili in JVM. Oggi 176 test, nessuno saltato.
+annuncio a tutto schermo; il billing e gli annunci veri non sono testabili in JVM. Oggi 227 test, nessuno saltato.
 `UnsharpMaskTest` copre `unsharpMask()` (immagine uniforme invariata, intensità 0 = identità, bordo
 netto accentuato dai due lati e invariato lontano, valori nel campo 0-255, alfa intatta); il
 rendering con `Bitmap` di `ThumbnailSharpen` non è testabile in JVM.

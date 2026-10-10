@@ -206,6 +206,11 @@ class RegularIssuesViewModel(
         it.copy(allOrder = RegularAllOrder(), allOwnership = OwnershipFilter.ALL, allQualities = emptySet())
     }
 
+    /** Tocco con Quick add sulla casella di una riga di All: aggiunge la voce senza anno o la toglie. */
+    fun onQuickToggle(row: DenominationRow) {
+        viewModelScope.launch { repository.quickToggle(row.denomination, row.items) }
+    }
+
     /** Salva dal pannello di una riga di All: stessa chiave (serie di origine) e finestra dell'elenco di un taglio. */
     fun onSaveCollection(row: DenominationRow, entries: List<RegularCollectionEntry>) {
         val series = row.denomination.series

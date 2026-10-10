@@ -1,5 +1,8 @@
 package com.michele.eurocoins.ui.list
 
+import com.michele.eurocoins.data.QuickTap
+import com.michele.eurocoins.data.quickTapFor
+import com.michele.eurocoins.ui.components.LocalQuickAdd
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -148,6 +151,7 @@ fun CoinListContent(
     headerNote: String? = null,
 ) {
     val state by viewModel.uiState.collectAsState()
+    val quickAdd = LocalQuickAdd.current
     var editing by remember { mutableStateOf<Coin?>(null) }
 
     editing?.let { coin ->
@@ -221,7 +225,10 @@ fun CoinListContent(
                 owned = coin.stableKey in state.collection,
                 highlighted = highlight.key == coin.id,
                 onClick = { onCoinClick(coin.id) },
-                onEditCollection = { editing = coin },
+                onEditCollection = {
+                    val items = state.collection[coin.stableKey].orEmpty()
+                    if (quickAdd && quickTapFor(items) != QuickTap.OPEN_FORM) viewModel.onQuickToggle(coin, items) else editing = coin
+                },
             )
         }
     }

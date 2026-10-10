@@ -17,7 +17,7 @@ data class DenominationRow(
     val items: List<RegularCollectionItem>,
 ) {
     /** Annate distinte possedute dentro la finestra (come "N years owned" nella schermata del paese). */
-    val ownedYears: Int get() = items.map { it.anno }.distinct().size
+    val ownedYears: Int get() = ownedYearsOf(items)
     val owned: Boolean get() = items.isNotEmpty()
 
     /** "Series 2 · 2008 – 2013", o solo "Series 2" se il periodo non è noto. */
@@ -50,7 +50,7 @@ fun denominationRows(
                         seriesNumber = index + 1,
                         period = period,
                         denomination = d,
-                        items = byKey[d.series.stableKey to d.image.taglio].orEmpty().filter { d.contains(it.anno) },
+                        items = d.rowItemsFrom(byKey),
                     )
                 }
             }

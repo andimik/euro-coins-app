@@ -6,6 +6,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import com.michele.eurocoins.data.CoinQuality
+import com.michele.eurocoins.data.NO_YEAR
 import com.michele.eurocoins.data.YearOption
 
 /**
@@ -60,7 +61,10 @@ internal fun commemorativeRemovalMessage(title: String, qualities: Collection<Co
  * Una sola annata si nomina; da due in su si conta e si elencano le prime [MAX_LISTED_YEARS].
  */
 internal fun regularRemovalMessage(denomination: String, where: String, years: List<YearOption>): String {
-    val labels = years.distinct().sortedWith(compareBy({ it.year }, { it.variety })).map { if (it.variety.isEmpty()) "${it.year}" else "${it.year} ${it.variety}" }
+    // La sola voce senza anno (Quick add) non ha annate da elencare: "This removes 2 euro for …".
+    val labels = years.distinct().takeUnless { list -> list.all { it.year == NO_YEAR } }.orEmpty()
+        .sortedWith(compareBy({ it.year }, { it.variety }))
+        .map { if (it.year == NO_YEAR) "no year" else if (it.variety.isEmpty()) "${it.year}" else "${it.year} ${it.variety}" }
     return when {
         labels.isEmpty() -> "This removes $denomination for $where."
         labels.size == 1 -> "This removes ${labels[0]} of $denomination for $where."
