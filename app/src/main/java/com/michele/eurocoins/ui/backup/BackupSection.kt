@@ -62,7 +62,6 @@ import com.michele.eurocoins.ui.settings.SwitchRow
 fun BackupSection(viewModel: BackupViewModel) {
     val state by viewModel.state.collectAsState()
     val activity = LocalContext.current as Activity
-    var confirmRestore by remember { mutableStateOf(false) }
     // Restore serve solo se esiste un backup: disabilitato quando Drive è stato interrogato e non ne ha.
     // Se non è ancora stato interrogato (consenso Drive mancante, es. telefono nuovo) resta attivo:
     // la data null non significa "nessun backup".
@@ -103,7 +102,7 @@ fun BackupSection(viewModel: BackupViewModel) {
                         modifier = Modifier.weight(2f),
                     ) { Text("Back up now") }
                     OutlinedButton(
-                        onClick = { confirmRestore = true },
+                        onClick = { viewModel.requestRestore(activity) },
                         enabled = !state.busy && hasBackup,
                         colors = ButtonDefaults.outlinedButtonColors(
                             disabledContentColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
@@ -151,36 +150,12 @@ fun BackupSection(viewModel: BackupViewModel) {
         )
     }
 
-    if (confirmRestore) {
-        AlertDialog(
-            containerColor = MaterialTheme.colorScheme.surface,
-            onDismissRequest = { confirmRestore = false },
-            title = { DialogTitle("Replace your collection?") },
-            text = {
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text(
-                        "Your current collection on this phone will be replaced by the backup saved on Google Drive" +
-                            (state.lastBackup?.let { " ($it)" } ?: "") + ". Anything added since will be lost.",
-                    )
-                    // La rete di sicurezza: la copia di almeno un giorno prima, per un backup sovrascritto da una collezione sbagliata.
-                    state.previousBackup?.let { previous ->
-                        TextButton(
-                            onClick = {
-                                confirmRestore = false
-                                viewModel.restorePrevious(activity)
-                            },
-                            contentPadding = PaddingValues(horizontal = 0.dp),
-                        ) { Text("Restore the previous version ($previous) instead") }
-                    }
-                }
-            },
-            confirmButton = {
-                TextButton(onClick = {
-                    confirmRestore = false
-                    viewModel.restore(activity)
-                }) { Text("Replace", color = MaterialTheme.colorScheme.error) }
-            },
-            dismissButton = { TextButton(onClick = { confirmRestore = false }) { Text("Cancel") } },
+    state.restorePrompt?.let { prompt ->
+        RestoreDialog(
+            prompt = prompt,
+            onReplace = { viewModel.restore(activity) },
+            onUsePrevious = { viewModel.restorePrevious(activity) },
+            onDismiss = viewModel::dismissRestore,
         )
     }
 }

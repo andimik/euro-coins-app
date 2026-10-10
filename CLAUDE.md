@@ -548,9 +548,22 @@ collezione su Drive.
   l'attuale diventa "precedente" SOLO se ha almeno 24 ore (`shouldRotatePrevious`) o se la
   precedente non esiste: così salvataggi ravvicinati, anche automatici, non cancellano subito la
   copia buona (un reset seguito da pochi acquisti non porta via la collezione di prima: chi se ne
-  accorge ha un giorno). Il dialog di "Restore" offre "Restore the previous version (data)
-  instead" se esiste. Limite: dopo 24 ore la precedente è quella dell'ultimo salvataggio di più di
+  accorge ha un giorno). Limite: dopo 24 ore la precedente è quella dell'ultimo salvataggio di più di
   un giorno fa, non una cronologia.
+- **Dialog di "Restore"** (`RestoreDialog.kt`, 2026-10-10, mockup approvato): dice COSA si ripristina. Al tocco su
+  "Restore" l'app scarica i due file di Drive (pochi KB, `BackupService.restorePreview`, pulsante occupato per
+  ~1 s; non si scarica nulla aprendo le Impostazioni) e conta le monete distinte come il Reset
+  (`BackupFile.contents()`: una commemorativa con più finiture conta 1, un taglio Regular con più annate o la
+  varietà EFS conta 1). Riquadro "THE BACKUP CONTAINS": Commemorative, Regular Issues e Total. **"Anything added since
+  will be lost." è in rosso con icona** (scelta dell'utente: è un avviso di perdita dati, il rosso è già il colore
+  del distruttivo). Un backup della versione 1 non porta le Regular Issues e il ripristino non le tocca: lo dice
+  una riga ("Regular Issues aren't in this backup: yours stay as they are") invece di mostrare "0". **La versione
+  precedente è una sezione separata da un filetto**, "OLDER COPY ON DRIVE", con data, contenuto e
+  "Restore this one instead": prima era un link senza spiegazione e l'utente non capiva che su Drive ci sono due copie
+  (l'ultimo backup e quella di almeno un giorno prima). Non è un `TextButton`: la forma a pillola ritagliava i bordi
+  del testo a capo; è un `Text` cliccabile. Se la precedente non si legge (assente, rete, file rovinato) la sezione non
+  compare ma l'ultimo backup deve leggersi. Il dialog sta nell'area del testo (sopra Cancel/Replace: AlertDialog non
+  ammette una sezione sotto i pulsanti) e scorre con il font ingrandito.
 - **Pro e pubblicità**: card Go Pro sotto quella del backup, banner nella Home e annuncio a tutto
   schermo — vedi § Pro e pubblicità.
 - **Sovrascrittura del backup**: "Back up now" controlla prima se su Drive

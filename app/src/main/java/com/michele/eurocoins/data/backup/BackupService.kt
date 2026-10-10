@@ -12,8 +12,8 @@ import kotlinx.coroutines.sync.withLock
 /** Messaggio quando non c'è niente da salvare: la collezione locale è vuota. */
 const val EMPTY_COLLECTION_MESSAGE = "Your collection is empty, so there's nothing to back up."
 
-/** Date (ISO-8601) del backup attuale e della versione precedente su Drive; null = non esiste. */
-data class BackupInfo(val latest: String?, val previous: String?)
+/** Data (ISO-8601) del backup attuale su Drive; null = non esiste. */
+data class BackupInfo(val latest: String?)
 
 /**
  * Orchestra backup e ripristino della collezione dell'utente su Drive: commemorative e Regular
@@ -112,11 +112,28 @@ class BackupService(
     /** Si dimentica l'ultimo backup noto (cambio di account): lo stato torna "non verificabile". */
     fun forgetSnapshot() = snapshots.clear()
 
-    /** Date del backup attuale e della versione precedente su Drive. */
-    suspend fun backupInfo(token: String): BackupInfo = BackupInfo(
-        latest = drive.find(token)?.modifiedTime,
-        previous = drive.findPrevious(token)?.modifiedTime,
-    )
+    /** Data del backup attuale su Drive. */
+    suspend fun backupInfo(token: String): BackupInfo = BackupInfo(latest = drive.find(token)?.modifiedTime)
+
+    /**
+     * Cosa ripristinerebbero l'ultimo backup e la versione precedente: scarica i due file (pochi KB) e conta le monete,
+     * per dirlo nel dialog di conferma prima di sostituire la collezione. La versione precedente è solo un aiuto: se
+     * non si legge (assente, rete, file rovinato) il dialog non la offre, ma l'ultimo backup deve leggersi.
+     */
+    suspend fun restorePreview(token: String): RestorePreview {
+        val latestInfo = drive.find(token) ?: throw BackupException("No backup found on this Google account.")
+        val latest = RestoreCopy(latestInfo.modifiedTime, BackupFile.decode(drive.download(token, latestInfo.id)).contents())
+        val previous = try {
+            drive.findPrevious(token)?.let { info ->
+                RestoreCopy(info.modifiedTime, BackupFile.decode(drive.download(token, info.id)).contents())
+            }
+        } catch (e: BackupException) {
+            null
+        } catch (e: java.io.IOException) {
+            null
+        }
+        return RestorePreview(latest, previous)
+    }
 
     /** Data dell'ultimo backup (ISO-8601), null se non ne esiste uno. */
     suspend fun lastBackupTime(token: String): String? = drive.find(token)?.modifiedTime
