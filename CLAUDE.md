@@ -487,11 +487,19 @@ regge un pulsante pieno):
   `HomeShowcaseTest` (solo `pickShowcase`, invariato dal refactoring — nessun test aggiunto per
   `pickRegularIssueShowcaseUrls`, anche dopo questo allineamento).
 - **Reset collection**: la riga nella Danger zone dice solo il totale ("Removes 6 coins from this device", una riga sola: con il dettaglio per sezione andava su tre righe); il dialog di conferma con il numero di monete, diviso per sezione (un ELENCO: "This removes the following coins:" e una voce per sezione, "• 85
-  Commemorative", "• 4 Regular Issues", `OwnedCounts.lines()`, `OwnedCountsTest`: i nomi dei cataloghi come nel resto dell'app, senza "coins" in coda (lo dice l'intestazione: niente plurale da accordare, scelta dell'utente), la sezione vuota saltata. La frase andava a capo male ("85 coins from Commemorative and 4 coins from Regular Issues", 71 caratteri: a capo dopo "from", visto sul telefono; la versione accorciata "85 Commemorative and 4 Regular Issues coins" non è stata verificata a schermo prima di passare all'elenco); le righe dell'elenco sono corte e non si spezzano. Con una sezione sola resta un elenco di una voce, stessa forma sempre); svuota
+  Commemorative", "• 4 Regular Issues", `OwnedCounts.rows()`, `OwnedCountsTest`: i nomi dei cataloghi come nel resto dell'app, senza "coins" in coda (lo dice l'intestazione: niente plurale da accordare, scelta dell'utente), la sezione vuota saltata. La frase andava a capo male ("85 coins from Commemorative and 4 coins from Regular Issues", 71 caratteri: a capo dopo "from", visto sul telefono; la versione accorciata "85 Commemorative and 4 Regular Issues coins" non è stata verificata a schermo prima di passare all'elenco); le righe dell'elenco sono corte e non si spezzano. Con una sezione sola resta un elenco di una voce, stessa forma sempre); svuota
   `collection_items` **e** `regular_collection_items` (`CoinRepository.resetCollection` +
   `RegularIssueRepository.resetCollection`). Prima toglieva solo le commemorative e lasciava
   le righe Regular senza dirlo. I tagli Regular si contano distinti per (serie, taglio), non per
   annata. Il backup su Drive non viene toccato: un nuovo backup dopo il reset lo sovrascrive.
+  **Aspetto del dialog (2026-10-10, mockup approvato, scelta dell'utente: "adatterei il Reset al Replace e non il
+  viceversa")**: stessa grammatica del dialog di ripristino ("Replace your collection?", § Backup). Frase "This removes
+  your collection from this phone.", riquadro "THIS REMOVES" con una riga per catalogo e il Total
+  (`CountsBox`/`coinsText`, `ui/components/DialogParts.kt`, condivisi con il ripristino: non possono divergere), poi la
+  nota sul backup (`resetBackupNote`). **La nota è rossa con icona (`DialogWarning`) solo se qualcosa andrebbe perso**
+  (non collegato, modifiche non salvate, nessun backup: `resetBackupNoteIsWarning`), testo normale se il backup è
+  aggiornato (una rassicurazione non è un avviso). Sostituisce l'elenco puntato "This removes the following coins:"
+  descritto sopra; il testo scorre con il font ingrandito.
 
 ### Backup su Google Drive
 

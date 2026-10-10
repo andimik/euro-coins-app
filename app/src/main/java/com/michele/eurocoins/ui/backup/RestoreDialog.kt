@@ -1,23 +1,16 @@
 package com.michele.eurocoins.ui.backup
 
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.Warning
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -29,7 +22,10 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.michele.eurocoins.data.backup.BackupContents
+import com.michele.eurocoins.ui.components.CountsBox
 import com.michele.eurocoins.ui.components.DialogTitle
+import com.michele.eurocoins.ui.components.DialogWarning
+import com.michele.eurocoins.ui.components.coinsText
 
 /**
  * Conferma del ripristino (tocco su "Restore"): dice COSA si ripristina, non solo da quando. Il riquadro "The backup
@@ -62,16 +58,17 @@ fun RestoreDialog(
                     "Your collection on this phone will be replaced by the backup saved on Google Drive" +
                         (prompt.latestDate?.let { " ($it)" } ?: "") + ".",
                 )
-                ContentsBox(prompt.latest)
-                Row(verticalAlignment = Alignment.Top) {
-                    Icon(Icons.Outlined.Warning, contentDescription = null, tint = error, modifier = Modifier.padding(top = 2.dp).size(16.dp))
-                    Text(
-                        text = "Anything added since will be lost.",
-                        style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium),
-                        color = error,
-                        modifier = Modifier.padding(start = 8.dp),
-                    )
-                }
+                CountsBox(
+                    heading = "THE BACKUP CONTAINS",
+                    rows = listOfNotNull(
+                        "Commemorative" to prompt.latest.commemorative.toString(),
+                        prompt.latest.regular?.let { "Regular Issues" to it.toString() },
+                    ),
+                    total = coinsText(prompt.latest.total),
+                    // Un backup precedente a Regular Issues non le porta: il ripristino non le tocca, e "0" farebbe credere il contrario.
+                    footnote = if (prompt.latest.regular == null) "Regular Issues aren't in this backup: yours stay as they are." else null,
+                )
+                DialogWarning("Anything added since will be lost.")
                 prompt.previous?.let { previous ->
                     HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f))
                     OlderCopy(date = prompt.previousDate, contents = previous, onUse = onUsePrevious)
@@ -81,50 +78,6 @@ fun RestoreDialog(
         confirmButton = { TextButton(onClick = onReplace) { Text("Replace", color = error) } },
         dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } },
     )
-}
-
-/** Riquadro "The backup contains": una riga per catalogo e il totale sotto un filetto. */
-@Composable
-private fun ContentsBox(contents: BackupContents) {
-    val shape = RoundedCornerShape(12.dp)
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .border(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.6f), shape)
-            .padding(horizontal = 12.dp, vertical = 10.dp),
-        verticalArrangement = Arrangement.spacedBy(4.dp),
-    ) {
-        Text(
-            text = "THE BACKUP CONTAINS",
-            style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 0.6.sp),
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-        CountRow("Commemorative", contents.commemorative.toString())
-        if (contents.regular != null) {
-            CountRow("Regular Issues", contents.regular.toString())
-        } else {
-            // Un backup precedente a Regular Issues non le porta: il ripristino non le tocca, e "0" farebbe credere il contrario.
-            Text(
-                text = "Regular Issues aren't in this backup: yours stay as they are.",
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-        }
-        HorizontalDivider(
-            modifier = Modifier.padding(vertical = 4.dp),
-            color = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f),
-        )
-        CountRow("Total", "${contents.total} ${if (contents.total == 1) "coin" else "coins"}", bold = true)
-    }
-}
-
-@Composable
-private fun CountRow(label: String, value: String, bold: Boolean = false) {
-    val style = MaterialTheme.typography.bodyMedium.copy(fontWeight = if (bold) FontWeight.Medium else FontWeight.Normal)
-    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-        Text(label, style = style)
-        Text(value, style = style)
-    }
 }
 
 /**

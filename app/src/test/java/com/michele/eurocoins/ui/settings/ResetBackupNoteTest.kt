@@ -50,4 +50,23 @@ class ResetBackupNoteTest {
         val note = resetBackupNote(BackupUiState(configured = true, account = account))
         assertEquals("There's no backup on Google Drive, so this can't be undone.", note)
     }
+
+    @Test
+    fun theNoteIsAWarningOnlyWhenSomethingWouldBeLost() {
+        // Backup aggiornato: rassicurazione, testo normale.
+        assertEquals(
+            false,
+            resetBackupNoteIsWarning(BackupUiState(configured = true, account = account, localStatus = BackupStatus.UpToDate)),
+        )
+        // Non collegato, modifiche non salvate, nessun backup: avviso rosso con icona.
+        assertEquals(true, resetBackupNoteIsWarning(BackupUiState(configured = true)))
+        assertEquals(
+            true,
+            resetBackupNoteIsWarning(BackupUiState(configured = true, account = account, localStatus = BackupStatus.Pending(3), lastBackup = "6 Oct 2026, 07:44")),
+        )
+        assertEquals(
+            true,
+            resetBackupNoteIsWarning(BackupUiState(configured = true, account = account, localStatus = BackupStatus.Unknown)),
+        )
+    }
 }
