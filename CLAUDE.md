@@ -487,11 +487,19 @@ regge un pulsante pieno):
   `HomeShowcaseTest` (solo `pickShowcase`, invariato dal refactoring — nessun test aggiunto per
   `pickRegularIssueShowcaseUrls`, anche dopo questo allineamento).
 - **Reset collection**: la riga nella Danger zone dice solo il totale ("Removes 6 coins from this device", una riga sola: con il dettaglio per sezione andava su tre righe); il dialog di conferma con il numero di monete, diviso per sezione (un ELENCO: "This removes the following coins:" e una voce per sezione, "• 85
-  Commemorative", "• 4 Regular Issues", `OwnedCounts.lines()`, `OwnedCountsTest`: i nomi dei cataloghi come nel resto dell'app, senza "coins" in coda (lo dice l'intestazione: niente plurale da accordare, scelta dell'utente), la sezione vuota saltata. La frase andava a capo male ("85 coins from Commemorative and 4 coins from Regular Issues", 71 caratteri: a capo dopo "from", visto sul telefono; la versione accorciata "85 Commemorative and 4 Regular Issues coins" non è stata verificata a schermo prima di passare all'elenco); le righe dell'elenco sono corte e non si spezzano. Con una sezione sola resta un elenco di una voce, stessa forma sempre); svuota
+  Commemorative", "• 4 Regular Issues", `OwnedCounts.rows()`, `OwnedCountsTest`: i nomi dei cataloghi come nel resto dell'app, senza "coins" in coda (lo dice l'intestazione: niente plurale da accordare, scelta dell'utente), la sezione vuota saltata. La frase andava a capo male ("85 coins from Commemorative and 4 coins from Regular Issues", 71 caratteri: a capo dopo "from", visto sul telefono; la versione accorciata "85 Commemorative and 4 Regular Issues coins" non è stata verificata a schermo prima di passare all'elenco); le righe dell'elenco sono corte e non si spezzano. Con una sezione sola resta un elenco di una voce, stessa forma sempre); svuota
   `collection_items` **e** `regular_collection_items` (`CoinRepository.resetCollection` +
   `RegularIssueRepository.resetCollection`). Prima toglieva solo le commemorative e lasciava
   le righe Regular senza dirlo. I tagli Regular si contano distinti per (serie, taglio), non per
   annata. Il backup su Drive non viene toccato: un nuovo backup dopo il reset lo sovrascrive.
+  **Aspetto del dialog (2026-10-10, mockup approvato, scelta dell'utente: "adatterei il Reset al Replace e non il
+  viceversa")**: stessa grammatica del dialog di ripristino ("Replace your collection?", § Backup). Frase "This removes
+  your collection from this phone.", riquadro "THIS REMOVES" con una riga per catalogo e il Total
+  (`CountsBox`/`coinsText`, `ui/components/DialogParts.kt`, condivisi con il ripristino: non possono divergere), poi la
+  nota sul backup (`resetBackupNote`). **La nota è rossa con icona (`DialogWarning`) solo se qualcosa andrebbe perso**
+  (non collegato, modifiche non salvate, nessun backup: `resetBackupNoteIsWarning`), testo normale se il backup è
+  aggiornato (una rassicurazione non è un avviso). Sostituisce l'elenco puntato "This removes the following coins:"
+  descritto sopra; il testo scorre con il font ingrandito.
 
 ### Backup su Google Drive
 
@@ -548,9 +556,30 @@ collezione su Drive.
   l'attuale diventa "precedente" SOLO se ha almeno 24 ore (`shouldRotatePrevious`) o se la
   precedente non esiste: così salvataggi ravvicinati, anche automatici, non cancellano subito la
   copia buona (un reset seguito da pochi acquisti non porta via la collezione di prima: chi se ne
-  accorge ha un giorno). Il dialog di "Restore" offre "Restore the previous version (data)
-  instead" se esiste. Limite: dopo 24 ore la precedente è quella dell'ultimo salvataggio di più di
+  accorge ha un giorno). Limite: dopo 24 ore la precedente è quella dell'ultimo salvataggio di più di
   un giorno fa, non una cronologia.
+- **Dialog di "Restore"** (`RestoreDialog.kt`, 2026-10-10, mockup approvato): dice COSA si ripristina. Al tocco su
+  "Restore" l'app scarica i due file di Drive (pochi KB, `BackupService.restorePreview`, pulsante occupato per
+  ~1 s; non si scarica nulla aprendo le Impostazioni) e conta le monete distinte come il Reset
+  (`BackupFile.contents()`: una commemorativa con più finiture conta 1, un taglio Regular con più annate o la
+  varietà EFS conta 1). Riquadro "THE BACKUP CONTAINS": Commemorative, Regular Issues e Total. **"Anything added since
+  will be lost." è in rosso con icona** (scelta dell'utente: è un avviso di perdita dati, il rosso è già il colore
+  del distruttivo). Un backup della versione 1 non porta le Regular Issues e il ripristino non le tocca: lo dice
+  una riga ("Regular Issues aren't in this backup: yours stay as they are") invece di mostrare "0". **La versione
+  precedente è una sezione separata da un filetto**, "OLDER COPY ON DRIVE", con data, contenuto e
+  "Restore this one instead": prima era un link senza spiegazione e l'utente non capiva che su Drive ci sono due copie
+  (l'ultimo backup e quella di almeno un giorno prima). Non è un `TextButton`: la forma a pillola ritagliava i bordi
+  del testo a capo; è un `Text` cliccabile. Se la precedente non si legge (assente, rete, file rovinato) la sezione non
+  compare ma l'ultimo backup deve leggersi. Il dialog sta nell'area del testo (sopra Cancel/Replace: AlertDialog non
+  ammette una sezione sotto i pulsanti) e scorre con il font ingrandito.
+  **La nota sulla perdita dipende dallo stato del backup** (`restoreNote`, `RestoreNoteTest`; stesso criterio del
+  Reset: il rosso solo dove qualcosa va perso davvero): collezione aggiornata → testo normale "Your collection is
+  already up to date with this backup."; modifiche non salvate → rosso "N changes not backed up will be lost." (le
+  parole della card di stato); stato non verificabile → il generico "Anything added since will be lost.". Prima era
+  sempre rossa, anche quando telefono e backup coincidevano e non c'era niente da perdere. Rifiniture: il link
+  "Restore this one instead" alto 44 dp (era 48, lasciava troppo vuoto sopra i pulsanti); nella nota del Reset la data
+  senza parentesi con "from"/"on" davanti ("…backup from 9 Oct 2026, 07:52 has them…"), perché la data tra parentesi,
+  tenuta intera da spazi non separabili, andava a capo lasciando una prima riga corta.
 - **Pro e pubblicità**: card Go Pro sotto quella del backup, banner nella Home e annuncio a tutto
   schermo — vedi § Pro e pubblicità.
 - **Sovrascrittura del backup**: "Back up now" controlla prima se su Drive

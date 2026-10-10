@@ -45,7 +45,10 @@ import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.ui.unit.sp
+import com.michele.eurocoins.ui.components.CountsBox
 import com.michele.eurocoins.ui.components.DialogTitle
+import com.michele.eurocoins.ui.components.DialogWarning
+import com.michele.eurocoins.ui.components.coinsText
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -198,10 +201,17 @@ fun SettingsScreen(
             onDismissRequest = { confirmReset = false },
             title = { DialogTitle("Reset collection?") },
             text = {
-                Text(
-                    "This removes the following coins:\n" + owned.lines().joinToString("\n") { "• $it" } +
-                        "\n\n" + resetBackupNote(backupState, owned.total),
-                )
+                // Stessa grammatica del dialog di ripristino: riquadro con cosa si toglie e il totale, poi la nota sul
+                // backup. Rossa con icona solo se qualcosa andrebbe perso davvero, normale se il backup ce l'ha.
+                Column(
+                    modifier = Modifier.verticalScroll(rememberScrollState()),
+                    verticalArrangement = Arrangement.spacedBy(12.dp),
+                ) {
+                    Text("This removes your collection from this phone.")
+                    CountsBox(heading = "THIS REMOVES", rows = owned.rows(), total = coinsText(owned.total))
+                    val note = resetBackupNote(backupState, owned.total)
+                    if (resetBackupNoteIsWarning(backupState)) DialogWarning(note) else Text(note)
+                }
             },
             confirmButton = {
                 TextButton(onClick = {
@@ -568,12 +578,22 @@ internal fun SwitchRow(title: String, subtitle: String, checked: Boolean, onChec
 internal fun resetBackupNote(state: BackupUiState, coins: Int = 2): String {
     if (state.account == null) return "You're not signed in, so there's no backup to restore from."
     val last = state.lastBackup ?: state.lastBackupLocal
-    // Spazi non separabili dentro la data: a capo non deve restare "07:44)" da solo.
-    val dated = last?.let { " (${it.replace(' ', ' ')})" } ?: ""
+    // Spazi non separabili dentro la data (U+00A0): a capo non deve restare "07:44" da solo. Senza parentesi e con
+    // "from"/"on" davanti: la data tra parentesi, tenuta intera, saltava a capo lasciando una prima riga corta.
+    val stamp = last?.replace(' ', ' ')
     val pronoun = if (coins == 1) "it" else "them"
     return when {
-        state.localStatus == BackupStatus.UpToDate -> "Your Google Drive backup$dated has $pronoun, so you can restore $pronoun."
-        last != null -> "Anything added since your last backup$dated can't be restored."
+        state.localStatus == BackupStatus.UpToDate ->
+            "Your Google Drive backup${stamp?.let { " from $it" } ?: ""} has $pronoun, so you can restore $pronoun."
+        last != null -> "Anything added since your last backup on $stamp can't be restored."
         else -> "There's no backup on Google Drive, so this can't be undone."
     }
 }
+
+/**
+ * La nota di [resetBackupNote] è un AVVISO (rosso con icona, come "Anything added since will be lost" del ripristino)
+ * quando qualcosa non si potrà ripristinare (non collegato, modifiche non salvate, nessun backup) e una rassicurazione
+ * (testo normale) quando il backup è aggiornato.
+ */
+internal fun resetBackupNoteIsWarning(state: BackupUiState): Boolean =
+    state.account == null || state.localStatus != BackupStatus.UpToDate

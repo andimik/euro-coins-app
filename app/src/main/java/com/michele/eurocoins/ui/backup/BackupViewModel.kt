@@ -6,6 +6,7 @@ import android.content.IntentSender
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.michele.eurocoins.data.backup.AutoBackup
+import com.michele.eurocoins.data.backup.BackupContents
 import com.michele.eurocoins.data.backup.BackupException
 import com.michele.eurocoins.data.backup.EMPTY_COLLECTION_MESSAGE
 import com.michele.eurocoins.data.backup.BackupService
@@ -24,10 +25,22 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
-enum class BackupAction { BACKUP, RESTORE, RESTORE_PREVIOUS, INFO }
+enum class BackupAction { BACKUP, RESTORE_PREVIEW, RESTORE, RESTORE_PREVIOUS, INFO }
 
 /** Richiesta di conferma prima di sovrascrivere un backup già presente: sua data (se leggibile) e monete locali che lo sostituirebbero. */
 data class OverwritePrompt(val date: String?, val coins: Int)
+
+/**
+ * Dialog di conferma del ripristino: l'ultimo backup su Drive (data e contenuto) e, se esiste, la versione precedente
+ * (la copia di almeno un giorno prima, rete di sicurezza contro un backup sovrascritto da una collezione sbagliata).
+ * Date già formattate per la UI.
+ */
+data class RestorePrompt(
+    val latestDate: String?,
+    val latest: BackupContents,
+    val previousDate: String?,
+    val previous: BackupContents?,
+)
 
 data class BackupUiState(
     val configured: Boolean,
@@ -36,8 +49,6 @@ data class BackupUiState(
     /** Ultimo esito da mostrare all'utente (successo o errore). */
     val message: String? = null,
     val lastBackup: String? = null,
-    /** Data della versione precedente su Drive (la copia di almeno un giorno prima), se esiste. */
-    val previousBackup: String? = null,
     /** Collezione locale rispetto all'ultimo backup di questo telefono, calcolata in locale (vedi [BackupStatus]). */
     val localStatus: BackupStatus = BackupStatus.Unknown,
     /** true se non c'è nessuna moneta in collezione: non c'è niente da salvare e la card lo dice invece di invitare al backup. */
@@ -54,6 +65,8 @@ data class BackupUiState(
     val backupChecked: Boolean = false,
     /** Non null = la UI deve chiedere conferma prima di sovrascrivere il backup esistente. */
     val overwritePrompt: OverwritePrompt? = null,
+    /** Non null = la UI deve chiedere conferma prima di sostituire la collezione locale, dicendo cosa si ripristina. */
+    val restorePrompt: RestorePrompt? = null,
     /** Schermata di consenso Drive da lanciare (one-shot: la UI la consuma con [BackupViewModel.consentLaunched]). */
     val consent: IntentSender? = null,
 )
@@ -106,7 +119,7 @@ class BackupViewModel(
         accounts.signOut(activity)
         // L'ultimo backup noto era di quell'account: con un altro non direbbe niente di vero.
         service.forgetSnapshot()
-        _state.update { it.copy(account = null, lastBackup = null, previousBackup = null, backupChecked = false, message = "Signed out. Your local collection is untouched.") }
+        _state.update { it.copy(account = null, lastBackup = null, backupChecked = false, message = "Signed out. Your local collection is untouched.") }
     }
 
     /** Silenziosa per INFO: se il consenso Drive non è ancora stato dato non lo chiede solo per mostrare una data. */
@@ -116,10 +129,22 @@ class BackupViewModel(
 
     fun backup(activity: Activity) = launchBusy { runAction(BackupAction.BACKUP, activity) }
 
-    fun restore(activity: Activity) = launchBusy { runAction(BackupAction.RESTORE, activity) }
+    /** Tocco su "Restore": scarica i due backup per contarne il contenuto e apre il dialog di conferma. */
+    fun requestRestore(activity: Activity) = launchBusy { runAction(BackupAction.RESTORE_PREVIEW, activity) }
 
-    /** Ripristina la versione precedente del backup (la copia di almeno un giorno prima). */
-    fun restorePrevious(activity: Activity) = launchBusy { runAction(BackupAction.RESTORE_PREVIOUS, activity) }
+    fun dismissRestore() = _state.update { it.copy(restorePrompt = null) }
+
+    /** Confermato il dialog: sostituisce la collezione con l'ultimo backup. */
+    fun restore(activity: Activity) = launchBusy {
+        _state.update { it.copy(restorePrompt = null) }
+        runAction(BackupAction.RESTORE, activity)
+    }
+
+    /** Confermato il dialog: ripristina la versione precedente del backup (la copia di almeno un giorno prima). */
+    fun restorePrevious(activity: Activity) = launchBusy {
+        _state.update { it.copy(restorePrompt = null) }
+        runAction(BackupAction.RESTORE_PREVIOUS, activity)
+    }
 
     /** L'utente ha confermato il dialog di sovrascrittura: rifà il backup saltando il controllo. */
     fun confirmOverwrite(activity: Activity) = launchBusy {
@@ -179,6 +204,21 @@ class BackupViewModel(
                     it.copy(message = "Backed up $count ${entries(count)} to Google Drive.", lastBackup = formatTime(service.lastBackupTime(token)), backupChecked = true)
                 }
             }
+            BackupAction.RESTORE_PREVIEW -> {
+                val preview = service.restorePreview(token)
+                _state.update {
+                    it.copy(
+                        lastBackup = formatTime(preview.latest.modifiedTime),
+                        backupChecked = true,
+                        restorePrompt = RestorePrompt(
+                            latestDate = formatTime(preview.latest.modifiedTime),
+                            latest = preview.latest.contents,
+                            previousDate = formatTime(preview.previous?.modifiedTime),
+                            previous = preview.previous?.contents,
+                        ),
+                    )
+                }
+            }
             BackupAction.RESTORE -> {
                 val count = service.restore(token)
                 _state.update { it.copy(message = "Restored $count ${entries(count)} from Google Drive.") }
@@ -189,7 +229,7 @@ class BackupViewModel(
             }
             BackupAction.INFO -> {
                 val info = service.backupInfo(token)
-                _state.update { it.copy(lastBackup = formatTime(info.latest), previousBackup = formatTime(info.previous), backupChecked = true) }
+                _state.update { it.copy(lastBackup = formatTime(info.latest), backupChecked = true) }
             }
         }
     }

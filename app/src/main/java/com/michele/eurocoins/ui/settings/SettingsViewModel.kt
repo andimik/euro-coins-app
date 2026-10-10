@@ -57,13 +57,13 @@ data class OwnedCounts(val commemorative: Int, val regular: Int) {
     val total: Int get() = commemorative + regular
 
     /**
-     * Una voce per sezione non vuota, per l'elenco del dialog di Reset sotto "This removes the following coins:":
-     * "85 Commemorative", "4 Regular Issues" (i nomi dei cataloghi come nel resto dell'app, senza "coins" in coda:
-     * lo dice l'intestazione, e così non c'è nemmeno un plurale da accordare). Era una frase che andava a capo a
-     * metà nome ("2 coins from Commemorative and 4 coins from Regular Issues"); con un elenco ogni riga è corta.
+     * Una riga per sezione non vuota (nome del catalogo, numero), per il riquadro "THIS REMOVES" del dialog di Reset:
+     * ("Commemorative", "85"), ("Regular Issues", "4"), i nomi dei cataloghi come nel resto dell'app. Prima era un
+     * elenco puntato sotto "This removes the following coins:"; dal 2026-10-10 il Reset ha lo stesso riquadro del
+     * ripristino ([com.michele.eurocoins.ui.components.CountsBox]), con il totale.
      */
-    fun lines(): List<String> = listOfNotNull(
-        commemorative.takeIf { it > 0 }?.let { "$it Commemorative" },
-        regular.takeIf { it > 0 }?.let { "$it Regular Issues" },
+    fun rows(): List<Pair<String, String>> = listOfNotNull(
+        commemorative.takeIf { it > 0 }?.let { "Commemorative" to it.toString() },
+        regular.takeIf { it > 0 }?.let { "Regular Issues" to it.toString() },
     )
 }
