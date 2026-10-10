@@ -9,7 +9,11 @@ package com.michele.eurocoins.data
  */
 data class YearOption(val year: Int, val variety: String = "") {
     val label: String
-        get() = if (variety.isEmpty()) year.toString() else "$year · ${varietyName(variety)}"
+        get() = when {
+            year == NO_YEAR -> "No year"
+            variety.isEmpty() -> year.toString()
+            else -> "$year · ${varietyName(variety)}"
+        }
 }
 
 private fun varietyName(code: String): String = if (code == VARIETY_EFS) "EFS variety" else code
@@ -53,3 +57,10 @@ fun defaultYearOption(options: List<YearOption>, owned: Collection<YearOption>):
     options.firstOrNull { it in owned }
         ?: options.firstOrNull { it.variety.isEmpty() && it.year >= FIRST_CIRCULATION_YEAR }
         ?: options.first()
+
+/** Testo breve di un anno nei chip e nelle etichette: "2008", "2002 EFS" per la varietà, "No year" per la voce senza anno. */
+fun YearOption.chipLabel(): String = when {
+    year == NO_YEAR -> "No year"
+    variety.isEmpty() -> "$year"
+    else -> "$year $variety"
+}

@@ -79,27 +79,75 @@ class RegularIssueRepository(
         entries: List<RegularCollectionEntry>,
         window: SeriesDenomination? = null,
     ) {
+        // Le voci SENZA ANNO ([NO_YEAR]) appartengono alla serie GUARDATA, non a quella di origine: per un
+        // taglio ereditato stanno sotto un'altra chiave e si salvano a parte. Senza finestra (sostituisce
+        // tutto) la riga guardata è quella di origine.
+        val viewedKey = window?.viewed?.stableKey ?: seriesKey
+        val sameKey = viewedKey == seriesKey
+        val noYear = entries.filter { it.anno == NO_YEAR }
+        val withYear = entries.filter { it.anno != NO_YEAR }
         val all = collectionDao.itemsFor(seriesKey, taglio)
-        val kept = if (window == null) emptyList() else all.filterNot { window.contains(it.anno) }
-        val existing = all.associateBy { Triple(it.anno, it.quality, it.variety) }
+        val kept = if (window == null) {
+            emptyList()
+        } else {
+            // Restano le voci fuori finestra; quelle senza anno si sostituiscono solo se sono della riga guardata.
+            all.filterNot { if (it.anno == NO_YEAR) sameKey else window.contains(it.anno) }
+        }
         val now = System.currentTimeMillis()
         collectionDao.replaceForDenomination(
             seriesKey,
             taglio,
-            kept + entries.map { entry ->
-                RegularCollectionItem(
-                    seriesKey = seriesKey,
-                    taglio = taglio,
-                    anno = entry.anno,
-                    quality = entry.quality,
-                    variety = entry.variety,
-                    priceCents = entry.priceCents,
-                    purchasedOn = entry.purchasedOn,
-                    paese = paese,
-                    addedAt = existing[Triple(entry.anno, entry.quality, entry.variety)]?.addedAt ?: now,
-                )
-            },
+            kept + toItems(seriesKey, taglio, paese, if (sameKey) withYear + noYear else withYear, all, now),
         )
+        if (!sameKey) {
+            val atViewed = collectionDao.itemsFor(viewedKey, taglio)
+            if (noYear.isNotEmpty() || atViewed.any { it.anno == NO_YEAR }) {
+                collectionDao.replaceForDenomination(
+                    viewedKey,
+                    taglio,
+                    atViewed.filter { it.anno != NO_YEAR } + toItems(viewedKey, taglio, paese, noYear, atViewed, now),
+                )
+            }
+        }
+    }
+
+    /** Le voci da scrivere per [entries], con la data di aggiunta di quelle già in [existing] (stessa anno, qualità, varietà). */
+    private fun toItems(
+        seriesKey: String,
+        taglio: String,
+        paese: String,
+        entries: List<RegularCollectionEntry>,
+        existing: List<RegularCollectionItem>,
+        now: Long,
+    ): List<RegularCollectionItem> {
+        val before = existing.associateBy { Triple(it.anno, it.quality, it.variety) }
+        return entries.map { entry ->
+            RegularCollectionItem(
+                seriesKey = seriesKey,
+                taglio = taglio,
+                anno = entry.anno,
+                quality = entry.quality,
+                variety = entry.variety,
+                priceCents = entry.priceCents,
+                purchasedOn = entry.purchasedOn,
+                paese = paese,
+                addedAt = before[Triple(entry.anno, entry.quality, entry.variety)]?.addedAt ?: now,
+            )
+        }
+    }
+
+    /**
+     * Tocco con Quick add su una riga ([QuickTap], deciso da [quickTapForRegular] su [items], le voci della riga):
+     * aggiunge la voce senza anno o la toglie. [QuickTap.CONFIRM_REMOVE] non fa niente: lo gestisce la schermata
+     * mostrando la conferma di rimozione.
+     */
+    suspend fun quickToggle(window: SeriesDenomination, items: List<RegularCollectionItem>) {
+        val entries = when (quickTapForRegular(items)) {
+            QuickTap.ADD -> listOf(RegularCollectionEntry(anno = NO_YEAR, quality = CoinQuality.STANDARD, priceCents = null))
+            QuickTap.REMOVE -> emptyList()
+            QuickTap.CONFIRM_REMOVE -> return
+        }
+        saveCollection(window.series.stableKey, window.image.taglio, window.series.paese, entries, window)
     }
 
     private val seedMutex = Mutex()

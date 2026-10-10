@@ -7,7 +7,9 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import com.michele.eurocoins.data.NO_YEAR
 import com.michele.eurocoins.data.YearOption
+import com.michele.eurocoins.data.chipLabel
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.AssistChip
 import androidx.compose.foundation.layout.FlowRow
@@ -800,9 +802,6 @@ private fun RegularCollectionCard(items: List<RegularCollectionItem>, onEdit: (Y
 
 /** Chip degli anni mostrati prima del "+N": circa due righe su un telefono da 375 dp. */
 private const val YearChipsCollapsed = 8
-
-/** "2008", o "2002 EFS" per la varietà: il testo del chip e dell'etichetta di un anno solo. */
-private fun YearOption.chipLabel(): String = if (variety.isEmpty()) "$year" else "$year $variety"
 
 /**
  * Crediti nel formato comune ([SourceCredits]). Testo del taglio e immagine possono avere fonti

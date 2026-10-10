@@ -39,9 +39,17 @@ class BackupFileTest {
     fun regularItemsSurviveARoundTripWithVarietyAndPrice() {
         val file = BackupFile(exportedAt = 5L, items = listOf(commemorative), regularItems = listOf(regular.toBackupItem()))
         val back = BackupFile.decode(BackupFile.encode(file))
-        assertEquals(3, back.schemaVersion)
+        assertEquals(4, back.schemaVersion)
         assertEquals(listOf(regular), back.regularItems.map { it.toCollectionItem() })
         assertEquals(listOf(commemorative), back.items)
+    }
+
+    @Test
+    fun theNoYearEntryOfQuickAddSurvivesARoundTrip() {
+        val noYear = regular.copy(anno = NO_YEAR, quality = CoinQuality.STANDARD, variety = "", priceCents = null)
+        val back = BackupFile.decode(BackupFile.encode(BackupFile(exportedAt = 5L, items = emptyList(), regularItems = listOf(noYear.toBackupItem()))))
+        assertEquals(listOf(noYear), back.regularItems.map { it.toCollectionItem() })
+        assertEquals(NO_YEAR, back.regularItems.single().anno)
     }
 
     @Test

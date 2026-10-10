@@ -109,6 +109,11 @@ class RegularDenominationListViewModel(
     fun onOwnershipChange(value: OwnershipFilter) = ownership.update { value }
     fun resetFilters() = ownership.update { OwnershipFilter.ALL }
 
+    /** Tocco con Quick add sulla casella di una riga: aggiunge la voce senza anno o la toglie. */
+    fun onQuickToggle(row: DenominationRow) {
+        viewModelScope.launch { repository.quickToggle(row.denomination, row.items) }
+    }
+
     fun onSaveCollection(row: DenominationRow, entries: List<RegularCollectionEntry>) {
         val series = row.denomination.series
         viewModelScope.launch {

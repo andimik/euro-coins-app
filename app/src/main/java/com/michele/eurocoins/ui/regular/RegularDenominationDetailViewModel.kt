@@ -10,6 +10,7 @@ import com.michele.eurocoins.data.RegularIssueSeries
 import com.michele.eurocoins.data.SeriesDenomination
 import com.michele.eurocoins.data.denominationsOf
 import com.michele.eurocoins.data.displayCountry
+import com.michele.eurocoins.data.rowItems
 import com.michele.eurocoins.data.stableKey
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -68,12 +69,7 @@ class RegularDenominationDetailViewModel(
         // Il taglio come lo vede la serie guardata: se è rimasto invariato, `series` è quella di
         // origine (chiave della collezione) e `image` è già ritagliata agli anni della serie guardata.
         val denomination = viewed?.let { denominationsOf(forCountry, it) }?.firstOrNull { it.image.taglio == taglio }
-        val items = if (denomination != null) {
-            val key = denomination.series.stableKey
-            collection.filter { it.seriesKey == key && it.taglio == taglio && denomination.contains(it.anno) }
-        } else {
-            emptyList()
-        }
+        val items = denomination?.rowItems(collection).orEmpty()
         return RegularDenominationDetailUiState(
             countryName = forCountry.firstOrNull()?.displayCountry() ?: paese,
             series = denomination?.series,

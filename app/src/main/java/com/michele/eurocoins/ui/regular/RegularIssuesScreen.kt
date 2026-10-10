@@ -1,5 +1,11 @@
 package com.michele.eurocoins.ui.regular
 
+import com.michele.eurocoins.data.YearOption
+import com.michele.eurocoins.ui.components.regularRemovalMessage
+import com.michele.eurocoins.ui.components.RemoveConfirmDialog
+import com.michele.eurocoins.data.QuickTap
+import com.michele.eurocoins.data.quickTapForRegular
+import com.michele.eurocoins.ui.components.LocalQuickAdd
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -81,7 +87,10 @@ fun RegularIssuesScreen(
     val state by viewModel.uiState.collectAsState()
     val hazeState = remember { HazeState() }
     var showFilters by remember { mutableStateOf(false) }
+    val quickAdd = LocalQuickAdd.current
     var editing by remember { mutableStateOf<DenominationRow?>(null) }
+    // Quick add su una riga con dettagli (anni, finiture, prezzo, data): conferma di rimozione, mai il pannello.
+    var removing by remember { mutableStateOf<DenominationRow?>(null) }
 
     Scaffold(
         topBar = {
@@ -211,7 +220,13 @@ fun RegularIssuesScreen(
                                         onClick = { onRowClick(row.viewedSeries, row.denomination.image.taglio) },
                                         highlighted = highlight.key ==
                                             RegularPageKey(row.paese, row.viewedSeries.ordineCronologico, row.denomination.image.taglio),
-                                        onEditCollection = { editing = row },
+                                        onEditCollection = {
+                                            when {
+                                                !quickAdd -> editing = row
+                                                quickTapForRegular(row.items) == QuickTap.CONFIRM_REMOVE -> removing = row
+                                                else -> viewModel.onQuickToggle(row)
+                                            }
+                                        },
                                     )
                                 }
                             }
@@ -363,6 +378,21 @@ fun RegularIssuesScreen(
                 editing = null
             },
             onDismiss = { editing = null },
+        )
+    }
+
+    removing?.let { target ->
+        RemoveConfirmDialog(
+            message = regularRemovalMessage(
+                denomination = target.denomination.image.taglio,
+                where = "${target.countryName} · ${seriesTitle(target.seriesNumber)}",
+                years = target.items.map { YearOption(it.anno, it.variety) },
+            ),
+            onConfirm = {
+                viewModel.onSaveCollection(target, emptyList())
+                removing = null
+            },
+            onDismiss = { removing = null },
         )
     }
 }

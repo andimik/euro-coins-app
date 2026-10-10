@@ -49,6 +49,7 @@ import com.michele.eurocoins.ui.components.CountsBox
 import com.michele.eurocoins.ui.components.DialogTitle
 import com.michele.eurocoins.ui.components.DialogWarning
 import com.michele.eurocoins.ui.components.coinsText
+import com.michele.eurocoins.ui.components.InfoNote
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -65,7 +66,10 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.unit.dp
 import com.michele.eurocoins.BuildConfig
@@ -99,6 +103,7 @@ fun SettingsScreen(
     val defaultTab by settingsViewModel.defaultTab.collectAsState()
     val defaultRegularTab by settingsViewModel.defaultRegularTab.collectAsState()
     val rotateHomeCoins by settingsViewModel.rotateHomeCoins.collectAsState()
+    val quickAdd by settingsViewModel.quickAdd.collectAsState()
     val themeMode by settingsViewModel.themeMode.collectAsState()
     val owned by settingsViewModel.ownedCounts.collectAsState()
     val backupState by backupViewModel.state.collectAsState()
@@ -127,6 +132,29 @@ fun SettingsScreen(
 
             Spacer(Modifier.height(12.dp))
             ProSection(monetization)
+
+            SectionHeader("Collection")
+            SettingsCard {
+                SwitchRow(
+                    title = "Quick add",
+                    subtitle = "Tap the box to add or remove a coin",
+                    checked = quickAdd,
+                    onCheckedChange = settingsViewModel::setQuickAdd,
+                )
+                HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f))
+                // Cosa succede con una moneta che ha dettagli: nominati uno per uno ("details" da solo non lo dice) e
+                // dentro la card, perché spiega l'interruttore. "Its details" e non "the form": il pannello si chiama My collection.
+                InfoNote(
+                    text = buildAnnotatedString {
+                        append("A coin with ")
+                        withStyle(SpanStyle(fontWeight = FontWeight.Medium, color = MaterialTheme.colorScheme.onSurface)) {
+                            append("BU or Proof, a year, a price or a date")
+                        }
+                        append(" asks you to confirm before it's removed.")
+                    },
+                    verticalAlignment = Alignment.Top,
+                )
+            }
 
             // Una sezione per catalogo, ciascuna con le sue due impostazioni (interruttore, poi selettore):
             // i microstati si nascondono in modo indipendente e la scheda iniziale è quella del catalogo.

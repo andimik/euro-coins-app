@@ -27,6 +27,7 @@ class SettingsViewModel(
     val defaultTab: StateFlow<BrowseMode> = settings.defaultTab
     val defaultRegularTab: StateFlow<RegularBrowseMode> = settings.defaultRegularTab
     val rotateHomeCoins: StateFlow<Boolean> = settings.rotateHomeCoins
+    val quickAdd: StateFlow<Boolean> = settings.quickAdd
     val themeMode: StateFlow<ThemeMode> = themePreference.mode
 
     /**
@@ -41,6 +42,7 @@ class SettingsViewModel(
     fun setDefaultTab(mode: BrowseMode) = settings.setDefaultTab(mode)
     fun setDefaultRegularTab(mode: RegularBrowseMode) = settings.setDefaultRegularTab(mode)
     fun setRotateHomeCoins(value: Boolean) = settings.setRotateHomeCoins(value)
+    fun setQuickAdd(value: Boolean) = settings.setQuickAdd(value)
     fun setThemeMode(mode: ThemeMode) = themePreference.set(mode)
 
     /** Svuota entrambe le collezioni: commemorative e Regular Issues (il backup su Drive resta com'è). */

@@ -34,7 +34,8 @@ data class BackupFile(
     val includesRegularIssues: Boolean get() = schemaVersion >= 2
 
     companion object {
-        const val SCHEMA_VERSION = 3
+        /** 4 = le voci Regular possono avere `anno` 0 ("anno non indicato", Quick add: vedi `NO_YEAR`); un'app più vecchia non le saprebbe mostrare. */
+        const val SCHEMA_VERSION = 4
 
         private val json = Json {
             ignoreUnknownKeys = true
