@@ -34,3 +34,31 @@ fun RegularIssueSeries.varietyFor(taglio: String, year: Int): RegularVariety? {
     val letter = GREEK_EFS_LETTER[taglio] ?: return null
     return RegularVariety(VARIETY_EFS, "EFS variety", "letter $letter in the star")
 }
+
+/** Zecca estera che ha coniato i pezzi con una certa lettera, come la si nomina nella spiegazione. */
+private val GREEK_EFS_MINT = mapOf("F" to "Paris", "E" to "Madrid", "S" to "Finland")
+
+/**
+ * I tagli che portano la stessa lettera dell'EFS: "1, 2, 5, 10, 50 cent" → F, Parigi. Raggruppati perché cinque tagli
+ * su otto hanno la stessa lettera e una riga per taglio ripeterebbe la F cinque volte. Derivati da [GREEK_EFS_LETTER],
+ * la stessa tabella che offre la varietà nel pannello, così la spiegazione non può divergere.
+ */
+data class EfsLetterGroup(val taglios: List<String>, val letter: String, val mint: String) {
+    /** "1, 2, 5, 10, 50 cent", "20 cent", "1 and 2 euro". */
+    val label: String
+        get() {
+            val unit = taglios.first().substringAfter(' ')
+            val numbers = taglios.map { it.substringBefore(' ') }
+            val list = if (numbers.size == 2) "${numbers[0]} and ${numbers[1]}" else numbers.joinToString(", ")
+            return "$list $unit"
+        }
+}
+
+/** Le tre righe di "dove cercare" (F, E, S), nell'ordine in cui compaiono tra i tagli. */
+fun greekEfsLetterGroups(): List<EfsLetterGroup> =
+    GREEK_EFS_LETTER.entries.groupBy({ it.value }, { it.key }).map { (letter, taglios) ->
+        EfsLetterGroup(taglios, letter, GREEK_EFS_MINT.getValue(letter))
+    }
+
+/** Il gruppo di [taglio] (la lettera da cercare sulla sua moneta), o null se non è un taglio dell'EFS. */
+fun greekEfsLetterFor(taglio: String): EfsLetterGroup? = greekEfsLetterGroups().firstOrNull { taglio in it.taglios }

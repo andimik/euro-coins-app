@@ -1,5 +1,6 @@
 package com.michele.eurocoins.ui.components
 
+import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -121,6 +122,8 @@ fun RegularCollectionSheet(
     val options = remember(stateKey) { regularYearOptions(series, denomination, owned, currentYear) }
     val initial = remember(stateKey) { initialYear?.takeIf { it in options } ?: defaultYearOption(options, owned) }
     var selected by remember(stateKey) { mutableStateOf(initial) }
+    // La riga di aiuto sotto i chip (solo con la varietà EFS scelta) apre la spiegazione di cosa significa.
+    var showVarietyInfo by remember(stateKey) { mutableStateOf(false) }
     val checked = remember(stateKey) {
         mutableStateMapOf<DraftKey, Boolean>().apply {
             // Nessuna spunta preselezionata: l'anno di partenza è solo un'ipotesi (il primo della serie) e una spunta
@@ -153,6 +156,8 @@ fun RegularCollectionSheet(
             onDismiss = { confirmRemove = false },
         )
     }
+
+    if (showVarietyInfo) EfsInfoDialog(taglio = denomination.taglio, onDismiss = { showVarietyInfo = false })
 
     ModalBottomSheet(
         onDismissRequest = onDismiss,
@@ -191,6 +196,14 @@ fun RegularCollectionSheet(
                 varietyDetail = { series.varietyFor(denomination.taglio, it.year)?.detail },
                 onSelect = { selected = it },
             )
+
+            // Solo con la varietà EFS scelta: la lettera da cercare su questo taglio, senza aprire niente. L'altezza
+            // si anima, così passare da "2002" a "2002 EFS" non fa saltare le card sotto.
+            Box(Modifier.fillMaxWidth().animateContentSize()) {
+                if (selected.variety.isNotEmpty()) {
+                    EfsHint(taglio = denomination.taglio, onClick = { showVarietyInfo = true })
+                }
+            }
 
             Spacer(Modifier.height(8.dp))
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {

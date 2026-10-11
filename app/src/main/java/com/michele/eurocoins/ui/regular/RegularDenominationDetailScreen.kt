@@ -7,6 +7,8 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import com.michele.eurocoins.ui.components.EfsHint
+import com.michele.eurocoins.ui.components.EfsInfoDialog
 import com.michele.eurocoins.data.NO_YEAR
 import com.michele.eurocoins.data.YearOption
 import com.michele.eurocoins.data.chipLabel
@@ -712,6 +714,10 @@ private fun RegularCollectionCard(items: List<RegularCollectionItem>, onEdit: (Y
             SectionLabel("COLLECTION", modifier = Modifier.weight(1f))
             OwnedBadge(dark)
         }
+        // La riga di aiuto dell'EFS compare solo con la varietà scelta (anche se è l'unico anno, senza chip): la stessa
+        // riga e la stessa spiegazione del pannello di collezione.
+        var showVarietyInfo by remember { mutableStateOf(false) }
+        if (showVarietyInfo) EfsInfoDialog(taglio = items.first().taglio, onDismiss = { showVarietyInfo = false })
         if (showYears) {
             // Con tanti anni i primi [YearChipsCollapsed] e un chip "+N" per mostrarli tutti ("Less" per
             // richiuderli). Numero fisso e non calcolato dal layout: `FlowRowOverflow` legge `shownItemCount`
@@ -747,6 +753,13 @@ private fun RegularCollectionCard(items: List<RegularCollectionItem>, onEdit: (Y
                     )
                 }
             }
+        }
+        if (current.variety.isNotEmpty()) {
+            EfsHint(
+                taglio = items.first().taglio,
+                onClick = { showVarietyInfo = true },
+                modifier = Modifier.padding(top = 4.dp),
+            )
         }
         Column(
             modifier = Modifier.padding(top = 12.dp).animateContentSize(),
