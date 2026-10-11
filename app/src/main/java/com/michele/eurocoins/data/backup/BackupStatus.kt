@@ -31,13 +31,17 @@ fun backupStatus(
 ): BackupStatus {
     snapshot ?: return BackupStatus.Unknown
     val commemorative = countChanges(
-        old = snapshot.items.associateBy { it.coinKey to it.quality },
-        new = items.map { it.toBackupItem() }.associateBy { it.coinKey to it.quality },
+        // La zecca è nella chiave: le istantanee di prima l'hanno vuota, quindi dopo l'aggiornamento non risulta
+        // nessuna modifica che non ci sia.
+        old = snapshot.items.associateBy { Triple(it.coinKey, it.quality, it.mint) },
+        new = items.map { it.toBackupItem() }.associateBy { Triple(it.coinKey, it.quality, it.mint) },
     )
     val regular = if (snapshot.includesRegularIssues) {
         countChanges(
-            old = snapshot.regularItems.associateBy { listOf(it.seriesKey, it.taglio, it.anno, it.quality, it.variety) },
-            new = regularItems.map { it.toBackupItem() }.associateBy { listOf(it.seriesKey, it.taglio, it.anno, it.quality, it.variety) },
+            old = snapshot.regularItems.associateBy { listOf(it.seriesKey, it.taglio, it.anno, it.quality, it.variety, it.mint) },
+            new = regularItems.map { it.toBackupItem() }.associateBy {
+                listOf(it.seriesKey, it.taglio, it.anno, it.quality, it.variety, it.mint)
+            },
         )
     } else {
         regularItems.size

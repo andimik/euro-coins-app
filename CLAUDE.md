@@ -345,7 +345,8 @@ nella card COLLECTION), così c'è un solo modo di registrare.
   resterebbero orfane; per questo ogni voce conserva anche anno/paese/tema di
   quando è stata salvata. Soluzione definitiva: un id stabile emesso dalla
   pipeline dati.
-- **Migrazioni Room esplicite** (DB versione 10, `CoinDatabase.kt`), mai
+- **Migrazioni Room esplicite** (DB versione 11 sul ramo `german-mints-phase3`: `MIGRATION_10_11` mette la zecca
+  nella chiave, § Zecche tedesche; su `main` ancora 10), `CoinDatabase.kt`), mai
   `fallbackToDestructiveMigration`: distruggerebbe anche la collezione
   dell'utente. `MIGRATION_1_2` (tabella `collection_items`), `MIGRATION_2_3`
   (`coins.emissioneComune`), `MIGRATION_3_4` (`coins.tiraturaNumista{Standard,Bu,Proof}`,
@@ -1406,8 +1407,21 @@ pubblicazione). Codice in `data/pro/`, solo librerie Google (Billing 9.1, Mobile
   - **Bug trovato e corretto di passaggio** in `export-regular-issues.ps1`: Germania 20 cent 2007 Standard
     mostrava 200.000 invece di 108.900.000 ("Doppione… tenuta la prima": due type Numista per lo stesso anno,
     lato comune vecchio e nuovo). Ora le righe con lo stesso (anno, qualità) si SOMMANO. Era l'unico caso.
-  - **FASE 3 — registrare la lettera in collezione: PIANO del 2026-10-11, NON implementata** (ramo
-    `german-mints-phase3`). **Decisioni** (mockup approvato dal proprietario): nei pannelli di collezione una riga
+  - **FASE 3 — registrare la lettera in collezione: piano del 2026-10-11; PASSO 1 FATTO (database, repository,
+    backup, test), i passi 2-6 NO** (ramo `german-mints-phase3`). **Passo 1 (2026-10-11)**: `mint` nelle due
+    entity e nella chiave (`NO_MINT = ""`, `MintFinish`), `MIGRATION_10_11` (SQL in `CollectionMigration.kt`),
+    pianificatori puri `planCommemorativeSave`/`planRegularSave` (`CollectionSave.kt`, con `editableMints`: le zecche
+    che il pannello può cambiare; i ViewModel passano `{NO_MINT}`, quindi i pannelli di oggi non toccano le voci con
+    zecca), `mintLettersFor(paese)`, Quick add (la zecca è un dettaglio), backup v5 scritta SOLO con almeno una zecca
+    (`BackupFile.versionFor`), chiavi di `BackupStatus` con la zecca. **Verificato**: `CollectionMigrationTest`
+    confronta lo SQL con quello generato da Room; sul telefono, installando sopra la v10 popolata: `user_version`
+    11, `integrity_check` ok, 93 + 204 voci, tutte con `mint = ''`, Home 93/613 e 194/328 invariate; la copia di
+    `purchasedOn`/prezzi/`addedAt` provata anche su una copia del database con date e prezzi messi a mano (sulle
+    voci vere sono tutte vuote) con `sqlite-jdbc` dalla cache Gradle. **Lacune volute del passo 1**: i pannelli
+    non hanno ancora la riga Mint; "Remove" e la conferma del Quick add passano da `onSaveCollection(…, vuoto)` con
+    scope `{NO_MINT}`, quindi con voci con zecca NON le toglierebbero (da rivedere al passo 4); le card COLLECTION dei
+    dettagli mostrano la prima voce per qualità. Nessuna voce con zecca esiste finché non c'è la UI.
+    **Decisioni** (mockup approvato dal proprietario): nei pannelli di collezione una riga
     "Mint" con i chip **"No mint"** (sempre presente, PRIMO e predefinito, nome parallelo a "No year"; "None" scartato:
     ambiguo in una riga di lettere) e A D F G J; puntino verde sulle lettere con qualcosa in bozza. Nelle Regular la
     riga sta SOTTO la striscia degli anni ed è sempre visibile (l'anno è preselezionato dall'apertura: farla comparire
@@ -1972,7 +1986,7 @@ lingua da servire.
 Unit test JVM in `app/src/test` (`./gradlew.bat --offline :app:testDebugUnitTest`).
 `ProStateTest` (proprietà del Pro, una verifica fallita non lo toglie, pagamento in sospeso) e
 `InterstitialPolicyTest` (6 monete E 30 secondi, né una né l'altra da sole, più l'orologio portato indietro) coprono la logica pura di Pro e
-annuncio a tutto schermo; il billing e gli annunci veri non sono testabili in JVM. Oggi 257 test, nessuno saltato (`MintLettersAssetTest` incrocia `mint_letters.json` con gli altri due asset, `MintLetterTableTest` la tabella e i numeri compatti).
+annuncio a tutto schermo; il billing e gli annunci veri non sono testabili in JVM. Oggi 279 test, nessuno saltato (`CollectionMintsTest`: salvataggio per zecca, Quick add, backup v5; `CollectionMigrationTest`: SQL della migrazione 10-11 contro lo schema di Room) (`MintLettersAssetTest` incrocia `mint_letters.json` con gli altri due asset, `MintLetterTableTest` la tabella e i numeri compatti).
 `UnsharpMaskTest` copre `unsharpMask()` (immagine uniforme invariata, intensità 0 = identità, bordo
 netto accentuato dai due lati e invariato lontano, valori nel campo 0-255, alfa intatta); il
 rendering con `Bitmap` di `ThumbnailSharpen` non è testabile in JVM.

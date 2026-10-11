@@ -2,6 +2,7 @@ package com.michele.eurocoins.data.backup
 
 import com.michele.eurocoins.data.CollectionDao
 import com.michele.eurocoins.data.CollectionItem
+import com.michele.eurocoins.data.NO_MINT
 import com.michele.eurocoins.data.RegularCollectionDao
 import com.michele.eurocoins.data.RegularCollectionItem
 import kotlinx.coroutines.flow.Flow
@@ -40,6 +41,11 @@ class BackupService(
         // Un backup vuoto non serve a niente e sovrascriverebbe quello buono: vale per il manuale come per l'automatico.
         if (items.isEmpty() && regularItems.isEmpty()) throw BackupException(EMPTY_COLLECTION_MESSAGE)
         val file = BackupFile(
+            // La versione 5 solo se una voce ha una zecca: chi non usa le lettere continua a scrivere la 4 e
+            // un altro telefono non ancora aggiornato può ripristinare lo stesso file.
+            schemaVersion = BackupFile.versionFor(
+                hasMints = items.any { it.mint != NO_MINT } || regularItems.any { it.mint != NO_MINT },
+            ),
             exportedAt = System.currentTimeMillis(),
             items = items.map { it.toBackupItem() },
             regularItems = regularItems.map { it.toBackupItem() },

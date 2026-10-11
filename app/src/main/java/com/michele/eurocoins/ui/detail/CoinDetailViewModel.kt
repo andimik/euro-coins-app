@@ -7,6 +7,8 @@ import com.michele.eurocoins.data.CoinQuality
 import com.michele.eurocoins.data.CoinRepository
 import com.michele.eurocoins.data.CollectionItem
 import com.michele.eurocoins.data.FinishEntry
+import com.michele.eurocoins.data.MintFinish
+import com.michele.eurocoins.data.NO_MINT
 import com.michele.eurocoins.data.stableKey
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -44,7 +46,7 @@ class CoinDetailViewModel(
 
     fun onSaveCollection(entries: Map<CoinQuality, FinishEntry>) {
         val coin = _coin.value ?: return
-        viewModelScope.launch { repository.saveCollection(coin, entries) }
+        viewModelScope.launch { repository.saveCollection(coin, entries.mapKeys { MintFinish(NO_MINT, it.key) }, editableMints = setOf(NO_MINT)) }
     }
 }
 

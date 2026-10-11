@@ -7,6 +7,8 @@ import com.michele.eurocoins.data.CoinQuality
 import com.michele.eurocoins.data.CoinRepository
 import com.michele.eurocoins.data.CollectionItem
 import com.michele.eurocoins.data.FinishEntry
+import com.michele.eurocoins.data.MintFinish
+import com.michele.eurocoins.data.NO_MINT
 import com.michele.eurocoins.data.displayCountry
 import com.michele.eurocoins.data.stableKey
 import kotlinx.coroutines.Dispatchers
@@ -158,7 +160,7 @@ class CoinListViewModel(
     }
 
     fun onSaveCollection(coin: Coin, entries: Map<CoinQuality, FinishEntry>) {
-        viewModelScope.launch { repository.saveCollection(coin, entries) }
+        viewModelScope.launch { repository.saveCollection(coin, entries.mapKeys { MintFinish(NO_MINT, it.key) }, editableMints = setOf(NO_MINT)) }
     }
 }
 

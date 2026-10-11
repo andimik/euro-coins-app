@@ -2,6 +2,7 @@ package com.michele.eurocoins.ui.regular
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.michele.eurocoins.data.NO_MINT
 import com.michele.eurocoins.data.RegularCollectionEntry
 import com.michele.eurocoins.data.RegularCollectionItem
 import com.michele.eurocoins.data.RegularIssueImage
@@ -119,7 +120,7 @@ class RegularIssueCountryViewModel(
     fun onSaveCollection(denomination: SeriesDenomination, entries: List<RegularCollectionEntry>) {
         val series = denomination.series
         viewModelScope.launch {
-            repository.saveCollection(series.stableKey, denomination.image.taglio, series.paese, entries, window = denomination)
+            repository.saveCollection(series.stableKey, denomination.image.taglio, series.paese, entries, window = denomination, editableMints = setOf(NO_MINT))
         }
     }
 }

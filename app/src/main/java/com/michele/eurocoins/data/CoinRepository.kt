@@ -64,28 +64,28 @@ class CoinRepository(
     suspend fun resetCollection() = collectionDao.deleteAll()
 
     /**
-     * Salva in blocco le qualità possedute di una moneta ([entries]: qualità
-     * -> prezzo e data di acquisto di QUELLA finitura, ciascuno facoltativo); le qualità non presenti
-     * vengono rimosse. Conserva la data di aggiunta delle voci già esistenti.
+     * Salva in blocco le finiture possedute di una moneta ([entries]: (zecca, qualità) -> prezzo e data di
+     * acquisto di QUELLA finitura di QUELLA zecca, ciascuno facoltativo); quelle non presenti vengono rimosse.
+     * Conserva la data di aggiunta delle voci già esistenti.
+     *
+     * [editableMints]: le zecche che il pannello può cambiare (`null` = tutte); le voci delle altre restano
+     * com'erano. Vedi [planCommemorativeSave] per il perché: un pannello che vede solo "No mint" non deve
+     * cancellare le voci con zecca.
      */
-    suspend fun saveCollection(coin: Coin, entries: Map<CoinQuality, FinishEntry>) {
+    suspend fun saveCollection(coin: Coin, entries: Map<MintFinish, FinishEntry>, editableMints: Set<String>? = null) {
         val key = coin.stableKey
-        val existing = collectionDao.itemsFor(key).associateBy { it.quality }
-        val now = System.currentTimeMillis()
         collectionDao.replaceForCoin(
             key,
-            entries.map { (quality, entry) ->
-                CollectionItem(
-                    coinKey = key,
-                    quality = quality,
-                    priceCents = entry.priceCents,
-                    purchasedOn = entry.purchasedOn,
-                    anno = coin.anno,
-                    paese = coin.paese,
-                    tema = coin.tema,
-                    addedAt = existing[quality]?.addedAt ?: now,
-                )
-            },
+            planCommemorativeSave(
+                existing = collectionDao.itemsFor(key),
+                entries = entries,
+                editableMints = editableMints,
+                coinKey = key,
+                anno = coin.anno,
+                paese = coin.paese,
+                tema = coin.tema,
+                now = System.currentTimeMillis(),
+            ),
         )
     }
 
@@ -96,7 +96,10 @@ class CoinRepository(
      */
     suspend fun quickToggle(coin: Coin, items: List<CollectionItem>) {
         when (quickTapFor(items)) {
-            QuickTap.ADD -> saveCollection(coin, mapOf(CoinQuality.STANDARD to FinishEntry(priceCents = null, purchasedOn = null)))
+            QuickTap.ADD -> saveCollection(
+                coin,
+                mapOf(MintFinish(NO_MINT, CoinQuality.STANDARD) to FinishEntry(priceCents = null, purchasedOn = null)),
+            )
             QuickTap.REMOVE -> saveCollection(coin, emptyMap())
             QuickTap.CONFIRM_REMOVE -> Unit
         }

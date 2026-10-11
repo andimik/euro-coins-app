@@ -60,6 +60,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import com.michele.eurocoins.data.NO_MINT
 import com.michele.eurocoins.data.formatPurchaseDate
 import com.michele.eurocoins.data.Coin
 import com.michele.eurocoins.data.displayTema
@@ -111,6 +112,10 @@ fun CollectionSheet(
     onSave: (Map<CoinQuality, FinishEntry>) -> Unit,
     onDismiss: () -> Unit,
 ) {
+    // Il pannello conosce solo la voce "No mint" (la riga delle zecche arriva nei passi successivi): le voci
+    // con zecca non entrano nella bozza e il salvataggio le lascia intatte (`editableMints` dei ViewModel).
+    @Suppress("NAME_SHADOWING")
+    val currentItems = currentItems.filter { it.mint == NO_MINT }
     val checked = remember(coin.stableKey) {
         mutableStateMapOf<CoinQuality, Boolean>().apply {
             CoinQuality.entries.forEach { quality ->

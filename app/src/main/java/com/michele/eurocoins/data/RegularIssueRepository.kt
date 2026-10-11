@@ -64,13 +64,16 @@ class RegularIssueRepository(
     /**
      * Salva in blocco le annate/qualità possedute di un taglio ([entries]): quelle non presenti
      * vengono rimosse. Conserva la data di aggiunta delle voci già esistenti (stessa (anno,
-     * qualità, varietà)). Stesso pattern di `CoinRepository.saveCollection`, ma qui la chiave include
+     * qualità, varietà, zecca)). Stesso pattern di `CoinRepository.saveCollection`, ma qui la chiave include
      * anche l'anno perché più annate dello stesso taglio possono coesistere.
      *
      * [window]: la serie guardata mostra (e quindi può cambiare) solo gli anni della sua finestra di
      * tempo (vedi [denominationsOf]); un taglio rimasto invariato è la stessa moneta in più serie, e
      * salvare dalla serie 2 non deve cancellare le annate della serie 1. Le voci FUORI finestra
      * restano com'erano; senza finestra si sostituisce tutto, come prima.
+     *
+     * [editableMints]: le zecche che il pannello può cambiare (`null` = tutte), vedi [planRegularSave]. La
+     * chiave di una voce è (anno, qualità, varietà, zecca).
      */
     suspend fun saveCollection(
         seriesKey: String,
@@ -78,62 +81,25 @@ class RegularIssueRepository(
         paese: String,
         entries: List<RegularCollectionEntry>,
         window: SeriesDenomination? = null,
+        editableMints: Set<String>? = null,
     ) {
-        // Le voci SENZA ANNO ([NO_YEAR]) appartengono alla serie GUARDATA, non a quella di origine: per un
-        // taglio ereditato stanno sotto un'altra chiave e si salvano a parte. Senza finestra (sostituisce
-        // tutto) la riga guardata è quella di origine.
+        // La logica (finestra, voci senza anno, zecche modificabili) sta in [planRegularSave], pura e provata;
+        // qui solo la lettura delle voci esistenti e le scritture.
         val viewedKey = window?.viewed?.stableKey ?: seriesKey
         val sameKey = viewedKey == seriesKey
-        val noYear = entries.filter { it.anno == NO_YEAR }
-        val withYear = entries.filter { it.anno != NO_YEAR }
-        val all = collectionDao.itemsFor(seriesKey, taglio)
-        val kept = if (window == null) {
-            emptyList()
-        } else {
-            // Restano le voci fuori finestra; quelle senza anno si sostituiscono solo se sono della riga guardata.
-            all.filterNot { if (it.anno == NO_YEAR) sameKey else window.contains(it.anno) }
-        }
-        val now = System.currentTimeMillis()
-        collectionDao.replaceForDenomination(
-            seriesKey,
-            taglio,
-            kept + toItems(seriesKey, taglio, paese, if (sameKey) withYear + noYear else withYear, all, now),
+        val writes = planRegularSave(
+            seriesKey = seriesKey,
+            viewedKey = viewedKey,
+            taglio = taglio,
+            paese = paese,
+            entries = entries,
+            atOrigin = collectionDao.itemsFor(seriesKey, taglio),
+            atViewed = if (sameKey) emptyList() else collectionDao.itemsFor(viewedKey, taglio),
+            inWindow = window?.let { w -> { year: Int -> w.contains(year) } },
+            editableMints = editableMints,
+            now = System.currentTimeMillis(),
         )
-        if (!sameKey) {
-            val atViewed = collectionDao.itemsFor(viewedKey, taglio)
-            if (noYear.isNotEmpty() || atViewed.any { it.anno == NO_YEAR }) {
-                collectionDao.replaceForDenomination(
-                    viewedKey,
-                    taglio,
-                    atViewed.filter { it.anno != NO_YEAR } + toItems(viewedKey, taglio, paese, noYear, atViewed, now),
-                )
-            }
-        }
-    }
-
-    /** Le voci da scrivere per [entries], con la data di aggiunta di quelle già in [existing] (stessa anno, qualità, varietà). */
-    private fun toItems(
-        seriesKey: String,
-        taglio: String,
-        paese: String,
-        entries: List<RegularCollectionEntry>,
-        existing: List<RegularCollectionItem>,
-        now: Long,
-    ): List<RegularCollectionItem> {
-        val before = existing.associateBy { Triple(it.anno, it.quality, it.variety) }
-        return entries.map { entry ->
-            RegularCollectionItem(
-                seriesKey = seriesKey,
-                taglio = taglio,
-                anno = entry.anno,
-                quality = entry.quality,
-                variety = entry.variety,
-                priceCents = entry.priceCents,
-                purchasedOn = entry.purchasedOn,
-                paese = paese,
-                addedAt = before[Triple(entry.anno, entry.quality, entry.variety)]?.addedAt ?: now,
-            )
-        }
+        writes.forEach { collectionDao.replaceForDenomination(it.seriesKey, taglio, it.items) }
     }
 
     /**

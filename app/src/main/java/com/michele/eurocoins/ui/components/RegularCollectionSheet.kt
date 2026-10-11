@@ -62,6 +62,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import com.michele.eurocoins.data.NO_MINT
 import com.michele.eurocoins.data.CoinQuality
 import com.michele.eurocoins.data.RegularCollectionEntry
 import com.michele.eurocoins.data.RegularCollectionItem
@@ -115,6 +116,10 @@ fun RegularCollectionSheet(
     /** Anno su cui aprire il pannello (es. quello scelto nella card COLLECTION del dettaglio); null = il predefinito. */
     initialYear: YearOption? = null,
 ) {
+    // Il pannello conosce solo la voce "No mint" (la riga delle zecche arriva nei passi successivi): le voci
+    // con zecca non entrano nella bozza e il salvataggio le lascia intatte (`editableMints` dei ViewModel).
+    @Suppress("NAME_SHADOWING")
+    val currentItems = currentItems.filter { it.mint == NO_MINT }
     val stateKey = "${series.stableKey}|${denomination.taglio}"
     var confirmRemove by remember(stateKey) { mutableStateOf(false) }
     val currentYear = remember { Year.now().value }

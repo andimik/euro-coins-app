@@ -2,6 +2,7 @@ package com.michele.eurocoins.ui.regular
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.michele.eurocoins.data.NO_MINT
 import com.michele.eurocoins.data.DenominationRow
 import com.michele.eurocoins.data.RegularCollectionEntry
 import com.michele.eurocoins.data.RegularCollectionItem
@@ -117,7 +118,7 @@ class RegularDenominationListViewModel(
     fun onSaveCollection(row: DenominationRow, entries: List<RegularCollectionEntry>) {
         val series = row.denomination.series
         viewModelScope.launch {
-            repository.saveCollection(series.stableKey, taglio, series.paese, entries, window = row.denomination)
+            repository.saveCollection(series.stableKey, taglio, series.paese, entries, window = row.denomination, editableMints = setOf(NO_MINT))
         }
     }
 }
