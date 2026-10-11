@@ -4,7 +4,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
 import androidx.compose.ui.input.nestedscroll.NestedScrollSource
+import androidx.compose.foundation.gestures.detectVerticalDragGestures
 import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.unit.Velocity
 
 /**
@@ -25,4 +27,17 @@ private object ConsumeLeftoverScroll : NestedScrollConnection {
     override fun onPostScroll(consumed: Offset, available: Offset, source: NestedScrollSource): Offset = available
 
     override suspend fun onPostFling(consumed: Velocity, available: Velocity): Velocity = available
+}
+
+/**
+ * Impedisce che un trascinamento verticale su QUESTA zona trascini il `ModalBottomSheet` che la contiene.
+ *
+ * Senza, ogni punto del pannello che non è una lista che scorre è una maniglia: nel pannello delle tirature per
+ * anno la riga delle intestazioni ("Year", "A D F G J") e il selettore delle qualità chiudevano tutto con un
+ * dito appoggiato male (2026-10-11). Messo su un contenitore dal titolo in giù, lascia come zona da cui si chiude
+ * trascinando solo la maniglia con titolo e sottotitolo; "Close" e il tocco fuori restano. I tocchi (selettore,
+ * pulsanti) e le liste che scorrono dentro non cambiano: la lista usa il trascinamento per prima.
+ */
+fun Modifier.protectFromSheetDrag(): Modifier = pointerInput(Unit) {
+    detectVerticalDragGestures(onVerticalDrag = { change, _ -> change.consume() })
 }

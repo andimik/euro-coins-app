@@ -95,6 +95,7 @@ import com.michele.eurocoins.data.mintLetterCity
 import com.michele.eurocoins.data.mintLetterTable
 import com.michele.eurocoins.ui.components.LocalMintLetters
 import com.michele.eurocoins.ui.components.keepScrollInside
+import com.michele.eurocoins.ui.components.protectFromSheetDrag
 import com.michele.eurocoins.ui.components.LocalProAccess
 import com.michele.eurocoins.ui.components.MintLettersProPrompt
 import com.michele.eurocoins.ui.components.ProLockedRow
@@ -505,70 +506,74 @@ private fun RegularMintageHistorySheet(
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.padding(top = 4.dp, bottom = 12.dp),
             )
-            if (letterTable != null && !access.isPro) {
-                ProLockedRow(
-                    text = "Split by mint (${letterTable.letters.joinToString(", ")}) is part of Pro",
-                    onClick = { showProPrompt = true },
-                    modifier = Modifier.padding(bottom = 12.dp),
-                )
-            }
-            if (matrix == null) {
-                Row(modifier = Modifier.fillMaxWidth().padding(bottom = 6.dp)) {
-                    MintageHeaderCell("Year", modifier = Modifier.weight(0.6f), center = false)
-                    CoinQuality.entries.forEach { MintageHeaderCell(it.label, modifier = Modifier.weight(it.columnWeight()), center = true) }
+            // Dal titolo in giù il pannello non si trascina: la zona da cui si chiude trascinando e' solo la
+            // maniglia con titolo e sottotitolo (prima partiva dalla riga "Year", dove il dito arrivava facilmente).
+            Column(modifier = Modifier.protectFromSheetDrag()) {
+                if (letterTable != null && !access.isPro) {
+                    ProLockedRow(
+                        text = "Split by mint (${letterTable.letters.joinToString(", ")}) is part of Pro",
+                        onClick = { showProPrompt = true },
+                        modifier = Modifier.padding(bottom = 12.dp),
+                    )
                 }
-                HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.4f))
-                LazyColumn(modifier = Modifier.keepScrollInside().heightIn(max = 360.dp)) {
-                    items(entries, key = { it.key }) { entry ->
-                        when (entry) {
-                            is YearTableEntry.Mint -> MintPeriodLabel(entry.label)
-                            is YearTableEntry.Row -> {
-                                MintageValuesRow(
-                                    label = entry.year.toString(),
-                                    values = entry.values,
-                                    numberFormat = numberFormat,
-                                    modifier = Modifier.padding(vertical = 8.dp),
-                                )
-                                HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.2f))
-                            }
-                            // parte di un anno diviso: più piccola e spenta, su fondo leggermente
-                            // diverso, così si legge come dettaglio del totale della riga sopra
-                            is YearTableEntry.Part -> {
-                                MintageValuesRow(
-                                    label = entry.part.country,
-                                    values = entry.part.values,
-                                    numberFormat = numberFormat,
-                                    small = true,
-                                    modifier = Modifier
-                                        .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.5f))
-                                        .padding(vertical = 5.dp),
-                                )
-                                HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.2f))
+                if (matrix == null) {
+                    Row(modifier = Modifier.fillMaxWidth().padding(bottom = 6.dp)) {
+                        MintageHeaderCell("Year", modifier = Modifier.weight(0.6f), center = false)
+                        CoinQuality.entries.forEach { MintageHeaderCell(it.label, modifier = Modifier.weight(it.columnWeight()), center = true) }
+                    }
+                    HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.4f))
+                    LazyColumn(modifier = Modifier.keepScrollInside().heightIn(max = 360.dp)) {
+                        items(entries, key = { it.key }) { entry ->
+                            when (entry) {
+                                is YearTableEntry.Mint -> MintPeriodLabel(entry.label)
+                                is YearTableEntry.Row -> {
+                                    MintageValuesRow(
+                                        label = entry.year.toString(),
+                                        values = entry.values,
+                                        numberFormat = numberFormat,
+                                        modifier = Modifier.padding(vertical = 8.dp),
+                                    )
+                                    HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.2f))
+                                }
+                                // parte di un anno diviso: più piccola e spenta, su fondo leggermente
+                                // diverso, così si legge come dettaglio del totale della riga sopra
+                                is YearTableEntry.Part -> {
+                                    MintageValuesRow(
+                                        label = entry.part.country,
+                                        values = entry.part.values,
+                                        numberFormat = numberFormat,
+                                        small = true,
+                                        modifier = Modifier
+                                            .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.5f))
+                                            .padding(vertical = 5.dp),
+                                    )
+                                    HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.2f))
+                                }
                             }
                         }
                     }
+                    if (parts.isNotEmpty()) {
+                        Text(
+                            text = "Split by mint where the source reports it. BU pieces made for sets may be counted with the national mint.",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.padding(top = 8.dp),
+                        )
+                    }
+                    if (hasProbable) {
+                        Text(
+                            text = "? Probable: from Wikipedia or inferred from official data, not confirmed.",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.padding(top = 8.dp),
+                        )
+                    }
+                } else {
+                    MintLetterMatrix(table = matrix, paese = paese, quality = letterQuality, onQuality = { letterQuality = it })
                 }
-                if (parts.isNotEmpty()) {
-                    Text(
-                        text = "Split by mint where the source reports it. BU pieces made for sets may be counted with the national mint.",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.padding(top = 8.dp),
-                    )
+                TextButton(onClick = onDismiss, modifier = Modifier.align(Alignment.End).padding(top = 8.dp)) {
+                    Text("Close")
                 }
-                if (hasProbable) {
-                    Text(
-                        text = "? Probable: from Wikipedia or inferred from official data, not confirmed.",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.padding(top = 8.dp),
-                    )
-                }
-            } else {
-                MintLetterMatrix(table = matrix, paese = paese, quality = letterQuality, onQuality = { letterQuality = it })
-            }
-            TextButton(onClick = onDismiss, modifier = Modifier.align(Alignment.End).padding(top = 8.dp)) {
-                Text("Close")
             }
         }
     }
