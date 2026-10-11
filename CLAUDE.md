@@ -1372,6 +1372,13 @@ pubblicazione). Codice in `data/pro/`, solo librerie Google (Billing 9.1, Mobile
     "· 2 of 5 mints"), scartata dopo averla vista sul telefono ("stona": un elemento diverso dalla griglia);
     scelta l'ultima colonna sul mockup a 375 dp, scartata "subito dopo l'anno" (sembrava una lettera in più). È la
     somma delle zecche con il dato: i "—" accanto dicono quali mancano, per questo non c'è "N of 5".
+    **Separazione tra le colonne** (variante C del mockup, dopo "ancora poco netta"): filetto verticale tra le
+    zecche e tra queste e il totale (`MatrixLine`), colonna Total su un velo chiaro (`surface` al 50%, la tinta
+    delle righe "parte" della Grecia); nessun filetto tra anno e prima zecca. Numeri a **11 sp** e anno a 38 dp:
+    a 12 sp "800.0 M" toccava i filetti sul telefono (375 dp). Scartate: fondo alternato per colonna (affollato
+    con i filetti orizzontali). **Il pannello si chiude trascinando solo da maniglia, titolo e sottotitolo**
+    (`protectFromSheetDrag`, `keepScrollInside` in `ui/components/KeepScrollInside.kt`): prima ogni punto fuori
+    dalla lista era una maniglia e la riga "Year" chiudeva tutto; provato con `adb` prima e dopo.
     **Nessuna evidenziazione della zecca più bassa**: il bronzo fu proposto nel mockup e scartato dal proprietario
     (colore nuovo per i dati). **Nessun segmento "Sets"** (i pezzi "In Sets" di Numista, bucket `altro`, 122 anni su
     191 per la Germania, proposto e scartato dal proprietario il 2026-10-11): la tabella resta Standard/BU/Proof.

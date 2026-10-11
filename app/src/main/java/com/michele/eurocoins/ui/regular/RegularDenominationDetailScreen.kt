@@ -23,6 +23,8 @@ import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.IntrinsicSize
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.navigationBars
@@ -81,7 +83,9 @@ import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import coil3.compose.AsyncImagePainter
 import coil3.compose.SubcomposeAsyncImage
 import coil3.compose.SubcomposeAsyncImageContent
@@ -609,51 +613,31 @@ private fun MintLetterMatrix(
             )
         }
     }
-    val ruleColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f)
-    Row(modifier = Modifier.fillMaxWidth().padding(bottom = 6.dp)) {
-        MintageHeaderCell("Year", modifier = Modifier.width(MATRIX_YEAR_WIDTH), center = false)
-        table.letters.forEach { MintageHeaderCell(it, modifier = Modifier.weight(1f), center = true) }
-        // Stesso spazio del filetto delle righe, per allineare le colonne.
-        Spacer(Modifier.width(MATRIX_RULE_WIDTH))
-        MintageHeaderCell("Total", modifier = Modifier.weight(1f), center = true)
-    }
+    MatrixLine(
+        modifier = Modifier.padding(bottom = 2.dp),
+        verticalPadding = 4.dp,
+        year = { MintageHeaderCell("Year", modifier = Modifier, center = false) },
+        cells = table.letters.map { letter -> { MintageHeaderCell(letter, modifier = Modifier, center = true) } },
+        total = { MintageHeaderCell("Total", modifier = Modifier, center = true) },
+    )
     HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.4f))
     LazyColumn(modifier = Modifier.keepScrollInside().heightIn(max = 360.dp)) {
         items(table.rows, key = { it.anno }) { row ->
-            Row(
-                modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Text(
-                    text = row.anno.toString(),
-                    style = MaterialTheme.typography.bodyMedium,
-                    fontWeight = FontWeight.SemiBold,
-                    modifier = Modifier.width(MATRIX_YEAR_WIDTH),
-                )
-                row.values.forEach { value ->
+            MatrixLine(
+                verticalPadding = 8.dp,
+                year = {
                     Text(
-                        text = value?.let(::formatCompactMintage) ?: NO_VALUE,
-                        style = MaterialTheme.typography.bodySmall.copy(fontFeatureSettings = "tnum"),
-                        textAlign = TextAlign.Center,
-                        maxLines = 1,
-                        softWrap = false,
-                        modifier = Modifier.weight(1f),
+                        text = row.anno.toString(),
+                        style = MaterialTheme.typography.bodyMedium,
+                        fontWeight = FontWeight.SemiBold,
                     )
-                }
-                // Il totale dell'anno è l'ultima colonna, separata da un filetto (mockup del 2026-10-11): sotto
-                // l'anno "stonava" come elemento diverso dal resto della griglia. È la somma delle zecche che
-                // hanno il dato (i "—" accanto dicono quali): per questo non serve dire "N di 5".
-                VerticalDivider(modifier = Modifier.height(18.dp), thickness = MATRIX_RULE_WIDTH, color = ruleColor)
-                Text(
-                    text = row.total?.let(::formatCompactMintage) ?: NO_VALUE,
-                    style = MaterialTheme.typography.bodySmall.copy(fontFeatureSettings = "tnum"),
-                    fontWeight = FontWeight.Medium,
-                    textAlign = TextAlign.Center,
-                    maxLines = 1,
-                    softWrap = false,
-                    modifier = Modifier.weight(1f),
-                )
-            }
+                },
+                cells = row.values.map { value -> { MatrixNumber(value, FontWeight.Normal) } },
+                // Il totale dell'anno è l'ultima colonna, su un velo chiaro (mockup del 2026-10-11, variante C):
+                // sotto l'anno "stonava" come elemento diverso dalla griglia. È la somma delle zecche che hanno
+                // il dato (i "—" accanto dicono quali): per questo non serve dire "N di 5".
+                total = { MatrixNumber(row.total, FontWeight.Medium) },
+            )
             HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.2f))
         }
     }
@@ -677,7 +661,9 @@ private fun MintLetterMatrix(
     }
 }
 
-private val MATRIX_YEAR_WIDTH = 40.dp
+// 11 sp e anno a 38 dp: a 12 sp "800.0 M" riempiva la colonna e toccava i filetti (visto sul telefono, 375 dp).
+private val MATRIX_NUMBER_SIZE = 11.sp
+private val MATRIX_YEAR_WIDTH = 38.dp
 private val MATRIX_RULE_WIDTH = 0.5.dp
 
 /** Righe della tabella "by year": una per anno, più l'etichetta di zecca dove cambia. */
@@ -1000,3 +986,52 @@ private fun DenominationCreditFooter(image: RegularIssueImage) {
  * restano sotto il milione. Con tre colonne uguali la cifra andava a capo a metà.
  */
 private fun CoinQuality.columnWeight(): Float = if (this == CoinQuality.STANDARD) 1.5f else 1f
+
+/**
+ * Una riga della tabella a zecche affiancate (anche l'intestazione): anno, una cella per lettera e il totale, con
+ * un filetto verticale tra le colonne delle zecche e tra queste e il totale, che sta su un velo chiaro (la stessa
+ * tinta delle righe "parte" della Grecia). Variante C del mockup del 2026-10-11, scelta dal proprietario perché la
+ * separazione tra le colonne "era ancora poco netta". Tra anno e prima zecca non c'è filetto: l'anno è l'etichetta
+ * della riga, non una colonna di dati.
+ */
+@Composable
+private fun MatrixLine(
+    verticalPadding: Dp,
+    year: @Composable () -> Unit,
+    cells: List<@Composable () -> Unit>,
+    total: @Composable () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val rule = MaterialTheme.colorScheme.outline.copy(alpha = 0.6f)
+    val tint = MaterialTheme.colorScheme.surface.copy(alpha = 0.5f)
+    Row(modifier = modifier.fillMaxWidth().height(IntrinsicSize.Min)) {
+        Box(
+            modifier = Modifier.width(MATRIX_YEAR_WIDTH).fillMaxHeight().padding(vertical = verticalPadding),
+            contentAlignment = Alignment.CenterStart,
+        ) { year() }
+        cells.forEachIndexed { index, cell ->
+            if (index > 0) VerticalDivider(thickness = MATRIX_RULE_WIDTH, color = rule)
+            Box(
+                modifier = Modifier.weight(1f).fillMaxHeight().padding(vertical = verticalPadding),
+                contentAlignment = Alignment.Center,
+            ) { cell() }
+        }
+        VerticalDivider(thickness = MATRIX_RULE_WIDTH, color = rule)
+        Box(
+            modifier = Modifier.weight(1f).fillMaxHeight().background(tint).padding(vertical = verticalPadding),
+            contentAlignment = Alignment.Center,
+        ) { total() }
+    }
+}
+
+@Composable
+private fun MatrixNumber(value: Long?, weight: FontWeight) {
+    Text(
+        text = value?.let(::formatCompactMintage) ?: NO_VALUE,
+        style = MaterialTheme.typography.bodySmall.copy(fontFeatureSettings = "tnum", fontSize = MATRIX_NUMBER_SIZE),
+        fontWeight = weight,
+        textAlign = TextAlign.Center,
+        maxLines = 1,
+        softWrap = false,
+    )
+}
