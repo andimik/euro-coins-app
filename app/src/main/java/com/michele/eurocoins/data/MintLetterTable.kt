@@ -11,9 +11,6 @@ data class MintLetterYearRow(
 ) {
     /** Somma delle lettere che hanno il dato; `null` se nessuna (mai 0: "non c'è il dato" non è "zero pezzi"). */
     val total: Long? get() = values.filterNotNull().takeIf { it.isNotEmpty() }?.sum()
-
-    /** Quante lettere hanno il dato: se meno di tutte, il totale è quello di quelle sole. */
-    val known: Int get() = values.count { it != null }
 }
 
 /** Le zecche di un taglio affiancate, una colonna per lettera, per UNA qualità (variante C del mockup, 2026-10-11). */
@@ -47,17 +44,24 @@ fun mintLetterTable(
 }
 
 /**
- * Tiratura compatta per una colonna stretta: "960 M", "119.4 M", "4 B", "85 k". Fino a due decimali, senza zeri
- * in coda. Perde le ultime cifre (è fatta per confrontare le zecche tra loro, non per leggere il numero esatto:
- * quello sta nella card e nella tabella dei totali). Niente "≈" davanti, a differenza di [formatApproxTotal]:
- * ripetuto in ogni cella sarebbe rumore.
+ * Tiratura compatta per una colonna stretta, SEMPRE con una cifra decimale: "960.0 M", "119.4 M", "4.0 B", "85.0 k"
+ * (scelta del proprietario, 2026-10-11: coerenza tra le colonne e più spazio). Perde le ultime cifre ("125.37 M"
+ * diventa "125.4 M"): è fatta per confrontare le zecche tra loro, il numero esatto sta nella card e nella tabella
+ * dei totali. Sotto 1.000 è il numero intero. Niente "≈" davanti, a differenza di [formatApproxTotal]: ripetuto in
+ * ogni cella sarebbe rumore.
  */
-fun formatCompactMintage(value: Long): String = when {
-    value >= 1_000_000_000L -> scaled(value, 9) + " B"
-    value >= 1_000_000L -> scaled(value, 6) + " M"
-    value >= 10_000L -> scaled(value, 3, decimals = 1) + " k"
-    else -> "%,d".format(java.util.Locale.ENGLISH, value)
+fun formatCompactMintage(value: Long): String {
+    if (value < 1_000L) return value.toString()
+    val units = listOf("k" to 3, "M" to 6, "B" to 9)
+    var index = units.indexOfLast { value >= BigDecimal.TEN.pow(it.second).toLong() }
+    var scaled = scaled(value, units[index].second)
+    // 999.950 arrotonda a "1000.0 k": in realtà è "1.0 M".
+    if (scaled >= BigDecimal(1000) && index < units.lastIndex) {
+        index++
+        scaled = scaled(value, units[index].second)
+    }
+    return scaled.toPlainString() + " " + units[index].first
 }
 
-private fun scaled(value: Long, exponent: Int, decimals: Int = 2): String =
-    BigDecimal(value).movePointLeft(exponent).setScale(decimals, RoundingMode.HALF_UP).stripTrailingZeros().toPlainString()
+private fun scaled(value: Long, exponent: Int): BigDecimal =
+    BigDecimal(value).movePointLeft(exponent).setScale(1, RoundingMode.HALF_UP)

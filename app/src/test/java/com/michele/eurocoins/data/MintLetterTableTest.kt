@@ -35,13 +35,10 @@ class MintLetterTableTest {
     fun totalIsTheSumOfTheKnownLettersAndNeverZero() {
         val table = mintLetterTable(letters, "Germania", "1 cent", listOf(2004, 2005, 2006), CoinQuality.BU)!!
         assertEquals(270_000L, table.rows[0].total)
-        assertEquals(2, table.rows[0].known)
         // 2005 non ha lettere: nessun totale (null, non 0).
         assertNull(table.rows[1].total)
-        assertEquals(0, table.rows[1].known)
         // 2006: solo la D ha il BU, il totale e' di quella lettera sola.
         assertEquals(85_000L, table.rows[2].total)
-        assertEquals(1, table.rows[2].known)
     }
 
     @Test
@@ -59,17 +56,25 @@ class MintLetterTableTest {
     }
 
     @Test
-    fun compactFormatKeepsUpToTwoDecimalsWithoutTrailingZeros() {
-        assertEquals("960 M", formatCompactMintage(960_000_000))
+    fun compactFormatIsAlwaysOneDecimal() {
+        assertEquals("960.0 M", formatCompactMintage(960_000_000))
         assertEquals("119.4 M", formatCompactMintage(119_400_000))
-        assertEquals("125.37 M", formatCompactMintage(125_370_000))
-        assertEquals("83.58 M", formatCompactMintage(83_580_000))
-        assertEquals("4.26 M", formatCompactMintage(4_260_000))
-        assertEquals("4 B", formatCompactMintage(4_000_000_000))
+        assertEquals("125.4 M", formatCompactMintage(125_370_000))
+        assertEquals("83.6 M", formatCompactMintage(83_580_000))
+        assertEquals("4.3 M", formatCompactMintage(4_260_000))
+        assertEquals("4.0 B", formatCompactMintage(4_000_000_000))
         assertEquals("1.4 B", formatCompactMintage(1_400_000_000))
-        assertEquals("85 k", formatCompactMintage(85_000))
+        assertEquals("85.0 k", formatCompactMintage(85_000))
         assertEquals("12.5 k", formatCompactMintage(12_500))
-        assertEquals("9,000", formatCompactMintage(9_000))
+        assertEquals("9.0 k", formatCompactMintage(9_000))
+        assertEquals("999", formatCompactMintage(999))
         assertEquals("0", formatCompactMintage(0))
+    }
+
+    @Test
+    fun roundingNeverProducesAThousandOfTheSmallerUnit() {
+        assertEquals("999.9 k", formatCompactMintage(999_940))
+        assertEquals("1.0 M", formatCompactMintage(999_950))
+        assertEquals("1.0 B", formatCompactMintage(999_950_000))
     }
 }

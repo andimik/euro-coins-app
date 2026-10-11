@@ -36,6 +36,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.VerticalDivider
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.OpenInNew
@@ -575,7 +576,8 @@ private fun RegularMintageHistorySheet(
 /**
  * Le zecche di un taglio affiancate (Pro): una riga per anno, una colonna per lettera (A D F G J), i valori di UNA
  * qualità scelta con il selettore in cima. Pensata per rispondere a "quale delle cinque è la più rara quest'anno?":
- * i numeri sono compatti ("119.4 M") perché si confrontano tra loro; il totale dell'anno, intero, sta sotto l'anno.
+ * i numeri sono compatti e sempre a UNA cifra decimale ("119.4 M", "960.0 M", "85.0 k": coerenza e più spazio tra
+ * le colonne, scelta del proprietario) perché si confrontano tra loro; il totale dell'anno è l'ultima colonna.
  * Nessuna evidenziazione della più bassa: provata in bronzo nel mockup e scartata (colore nuovo che nell'app non
  * esiste per i dati). Nessun segmento "Sets" (i pezzi venduti solo in set, bucket `altro`): proposto e scartato dal
  * proprietario il 2026-10-11, la tabella resta Standard / BU / Proof come il resto dell'app.
@@ -589,7 +591,6 @@ private fun MintLetterMatrix(
     onQuality: (CoinQuality) -> Unit,
 ) {
     val qualities = CoinQuality.entries
-    val numberFormat = remember { NumberFormat.getIntegerInstance(Locale.ENGLISH) }
     SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth().padding(bottom = 10.dp)) {
         qualities.forEachIndexed { index, option ->
             SegmentedButton(
@@ -602,46 +603,50 @@ private fun MintLetterMatrix(
             )
         }
     }
+    val ruleColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f)
     Row(modifier = Modifier.fillMaxWidth().padding(bottom = 6.dp)) {
         MintageHeaderCell("Year", modifier = Modifier.width(MATRIX_YEAR_WIDTH), center = false)
         table.letters.forEach { MintageHeaderCell(it, modifier = Modifier.weight(1f), center = true) }
+        // Stesso spazio del filetto delle righe, per allineare le colonne.
+        Spacer(Modifier.width(MATRIX_RULE_WIDTH))
+        MintageHeaderCell("Total", modifier = Modifier.weight(1f), center = true)
     }
     HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.4f))
     LazyColumn(modifier = Modifier.heightIn(max = 360.dp)) {
         items(table.rows, key = { it.anno }) { row ->
-            Column(modifier = Modifier.fillMaxWidth().padding(vertical = 7.dp)) {
-                Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(
+                    text = row.anno.toString(),
+                    style = MaterialTheme.typography.bodyMedium,
+                    fontWeight = FontWeight.SemiBold,
+                    modifier = Modifier.width(MATRIX_YEAR_WIDTH),
+                )
+                row.values.forEach { value ->
                     Text(
-                        text = row.anno.toString(),
-                        style = MaterialTheme.typography.bodyMedium,
-                        fontWeight = FontWeight.SemiBold,
-                        modifier = Modifier.width(MATRIX_YEAR_WIDTH),
-                    )
-                    row.values.forEach { value ->
-                        Text(
-                            text = value?.let(::formatCompactMintage) ?: NO_VALUE,
-                            style = MaterialTheme.typography.bodySmall.copy(fontFeatureSettings = "tnum"),
-                            textAlign = TextAlign.Center,
-                            maxLines = 1,
-                            softWrap = false,
-                            modifier = Modifier.weight(1f),
-                        )
-                    }
-                }
-                // Il totale dell'anno, intero, sotto l'anno (variante A del mockup del 2026-10-11): nelle colonne
-                // non entrava senza troncare "125.37 M". Con meno lettere del totale il numero è la somma di quelle
-                // sole: lo dice, perché altrimenti si leggerebbe come l'anno intero.
-                row.total?.let { total ->
-                    Text(
-                        text = buildString {
-                            append("Total ").append(numberFormat.format(total))
-                            if (row.known < table.letters.size) append(" · ${row.known} of ${table.letters.size} mints")
-                        },
-                        style = MaterialTheme.typography.labelSmall.copy(fontFeatureSettings = "tnum"),
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.padding(top = 2.dp),
+                        text = value?.let(::formatCompactMintage) ?: NO_VALUE,
+                        style = MaterialTheme.typography.bodySmall.copy(fontFeatureSettings = "tnum"),
+                        textAlign = TextAlign.Center,
+                        maxLines = 1,
+                        softWrap = false,
+                        modifier = Modifier.weight(1f),
                     )
                 }
+                // Il totale dell'anno è l'ultima colonna, separata da un filetto (mockup del 2026-10-11): sotto
+                // l'anno "stonava" come elemento diverso dal resto della griglia. È la somma delle zecche che
+                // hanno il dato (i "—" accanto dicono quali): per questo non serve dire "N di 5".
+                VerticalDivider(modifier = Modifier.height(18.dp), thickness = MATRIX_RULE_WIDTH, color = ruleColor)
+                Text(
+                    text = row.total?.let(::formatCompactMintage) ?: NO_VALUE,
+                    style = MaterialTheme.typography.bodySmall.copy(fontFeatureSettings = "tnum"),
+                    fontWeight = FontWeight.Medium,
+                    textAlign = TextAlign.Center,
+                    maxLines = 1,
+                    softWrap = false,
+                    modifier = Modifier.weight(1f),
+                )
             }
             HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.2f))
         }
@@ -666,7 +671,8 @@ private fun MintLetterMatrix(
     }
 }
 
-private val MATRIX_YEAR_WIDTH = 46.dp
+private val MATRIX_YEAR_WIDTH = 40.dp
+private val MATRIX_RULE_WIDTH = 0.5.dp
 
 /** Righe della tabella "by year": una per anno, più l'etichetta di zecca dove cambia. */
 private sealed interface YearTableEntry {

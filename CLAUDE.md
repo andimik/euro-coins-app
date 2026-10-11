@@ -1364,10 +1364,14 @@ pubblicazione). Codice in `data/pro/`, solo librerie Google (Billing 9.1, Mobile
     (20 cent 2019, 78.400 pezzi, ignorata, bucket `altro` non mostrato).
   - **Visualizzazione** (mockup approvato, variante C): nel pannello "by year" di un taglio con lettere, in Pro, una
     riga per anno e UNA COLONNA PER LETTERA con selettore Standard/BU/Proof in cima (`MintLetterMatrix`,
-    `mintLetterTable()`, numeri compatti "119.4 M" con `formatCompactMintage`, legenda "A Berlin · D Munich …").
-    **Il totale dell'anno sta sotto l'anno, intero** ("Total 600,000,000", variante A del mockup del 2026-10-11:
-    la prima versione non lo aveva e il proprietario lo ha notato; come sesta colonna non entrava senza troncare
-    "125.37 M"); con meno lettere del totale dice "· 2 of 5 mints" (la somma di quelle sole).
+    `mintLetterTable()`, legenda "A Berlin · D Munich …"). **Numeri sempre a UNA cifra decimale** con
+    `formatCompactMintage` ("960.0 M", "119.4 M", "85.0 k", "4.0 B"; scelta del proprietario: coerenza e più spazio
+    tra le colonne; "125.37 M" diventa "125.4 M", il numero esatto sta nella card e nella tabella dei totali).
+    **Il totale dell'anno è l'ULTIMA COLONNA**, in Medium, separata da un filetto verticale. Storia: la prima
+    versione non lo aveva (il proprietario lo ha notato); poi una seconda riga sotto l'anno ("Total 600,000,000",
+    "· 2 of 5 mints"), scartata dopo averla vista sul telefono ("stona": un elemento diverso dalla griglia);
+    scelta l'ultima colonna sul mockup a 375 dp, scartata "subito dopo l'anno" (sembrava una lettera in più). È la
+    somma delle zecche con il dato: i "—" accanto dicono quali mancano, per questo non c'è "N of 5".
     **Nessuna evidenziazione della zecca più bassa**: il bronzo fu proposto nel mockup e scartato dal proprietario
     (colore nuovo per i dati). **Nessun segmento "Sets"** (i pezzi "In Sets" di Numista, bucket `altro`, 122 anni su
     191 per la Germania, proposto e scartato dal proprietario il 2026-10-11): la tabella resta Standard/BU/Proof.
@@ -1916,7 +1920,7 @@ lingua da servire.
 Unit test JVM in `app/src/test` (`./gradlew.bat --offline :app:testDebugUnitTest`).
 `ProStateTest` (proprietà del Pro, una verifica fallita non lo toglie, pagamento in sospeso) e
 `InterstitialPolicyTest` (6 monete E 30 secondi, né una né l'altra da sole, più l'orologio portato indietro) coprono la logica pura di Pro e
-annuncio a tutto schermo; il billing e gli annunci veri non sono testabili in JVM. Oggi 256 test, nessuno saltato (`MintLettersAssetTest` incrocia `mint_letters.json` con gli altri due asset, `MintLetterTableTest` la tabella e i numeri compatti).
+annuncio a tutto schermo; il billing e gli annunci veri non sono testabili in JVM. Oggi 257 test, nessuno saltato (`MintLettersAssetTest` incrocia `mint_letters.json` con gli altri due asset, `MintLetterTableTest` la tabella e i numeri compatti).
 `UnsharpMaskTest` copre `unsharpMask()` (immagine uniforme invariata, intensità 0 = identità, bordo
 netto accentuato dai due lati e invariato lontano, valori nel campo 0-255, alfa intatta); il
 rendering con `Bitmap` di `ThumbnailSharpen` non è testabile in JVM.
