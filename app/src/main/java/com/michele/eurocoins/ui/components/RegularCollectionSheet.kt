@@ -1,5 +1,6 @@
 package com.michele.eurocoins.ui.components
 
+import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -121,7 +122,7 @@ fun RegularCollectionSheet(
     val options = remember(stateKey) { regularYearOptions(series, denomination, owned, currentYear) }
     val initial = remember(stateKey) { initialYear?.takeIf { it in options } ?: defaultYearOption(options, owned) }
     var selected by remember(stateKey) { mutableStateOf(initial) }
-    // La "i" accanto a "Year" (solo con la varietà EFS) apre la spiegazione di cosa significa e quale lettera cercare.
+    // La riga di aiuto sotto i chip (solo con la varietà EFS scelta) apre la spiegazione di cosa significa.
     var showVarietyInfo by remember(stateKey) { mutableStateOf(false) }
     val checked = remember(stateKey) {
         mutableStateMapOf<DraftKey, Boolean>().apply {
@@ -193,9 +194,16 @@ fun RegularCollectionSheet(
                 selected = selected,
                 withData = withData,
                 varietyDetail = { series.varietyFor(denomination.taglio, it.year)?.detail },
-                onVarietyInfo = if (options.any { it.variety.isNotEmpty() }) ({ showVarietyInfo = true }) else null,
                 onSelect = { selected = it },
             )
+
+            // Solo con la varietà EFS scelta: la lettera da cercare su questo taglio, senza aprire niente. L'altezza
+            // si anima, così passare da "2002" a "2002 EFS" non fa saltare le card sotto.
+            Box(Modifier.fillMaxWidth().animateContentSize()) {
+                if (selected.variety.isNotEmpty()) {
+                    EfsHint(taglio = denomination.taglio, onClick = { showVarietyInfo = true })
+                }
+            }
 
             Spacer(Modifier.height(8.dp))
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -260,8 +268,6 @@ private fun YearStrip(
     selected: YearOption,
     withData: Set<YearOption>,
     varietyDetail: (YearOption) -> String?,
-    /** Non null se tra gli anni c'è una varietà (EFS): mostra la "i" accanto a "Year" che ne spiega il significato. */
-    onVarietyInfo: (() -> Unit)?,
     onSelect: (YearOption) -> Unit,
 ) {
     val colors = MaterialTheme.colorScheme
@@ -277,10 +283,7 @@ private fun YearStrip(
             ?: with(density) { 72.dp.roundToPx() }
         listState.animateScrollToItem(selectedIndex, scrollOffset = -(viewport / 2 - itemWidth / 2))
     }
-    Row(verticalAlignment = Alignment.CenterVertically) {
-        Text(text = "Year", style = MaterialTheme.typography.bodyMedium, color = colors.onSurfaceVariant)
-        if (onVarietyInfo != null) VarietyInfoButton(onClick = onVarietyInfo)
-    }
+    Text(text = "Year", style = MaterialTheme.typography.bodyMedium, color = colors.onSurfaceVariant)
     LazyRow(
         state = listState,
         contentPadding = PaddingValues(horizontal = StripEdge),

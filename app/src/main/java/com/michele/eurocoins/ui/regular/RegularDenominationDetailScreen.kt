@@ -7,7 +7,7 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import com.michele.eurocoins.ui.components.VarietyInfoButton
+import com.michele.eurocoins.ui.components.EfsHint
 import com.michele.eurocoins.ui.components.EfsInfoDialog
 import com.michele.eurocoins.data.NO_YEAR
 import com.michele.eurocoins.data.YearOption
@@ -714,14 +714,16 @@ private fun RegularCollectionCard(items: List<RegularCollectionItem>, onEdit: (Y
             SectionLabel("COLLECTION", modifier = Modifier.weight(1f))
             OwnedBadge(dark)
         }
+        // La riga di aiuto dell'EFS compare solo con la varietà scelta (anche se è l'unico anno, senza chip): la stessa
+        // riga e la stessa spiegazione del pannello di collezione.
+        var showVarietyInfo by remember { mutableStateOf(false) }
+        if (showVarietyInfo) EfsInfoDialog(taglio = items.first().taglio, onDismiss = { showVarietyInfo = false })
         if (showYears) {
             // Con tanti anni i primi [YearChipsCollapsed] e un chip "+N" per mostrarli tutti ("Less" per
             // richiuderli). Numero fisso e non calcolato dal layout: `FlowRowOverflow` legge `shownItemCount`
             // fuori dalla fase di disegno e fa crashare l'app. Un anno scelto oltre i primi è sempre visibile.
             // Stesso stile dei chip del selettore dell'anno e del pannello FILTER: rettangoli con angoli
             // morbidi, scelto in lilla.
-            var showVarietyInfo by remember { mutableStateOf(false) }
-            if (showVarietyInfo) EfsInfoDialog(taglio = items.first().taglio, onDismiss = { showVarietyInfo = false })
             var expanded by remember { mutableStateOf(false) }
             val collapsible = years.size > YearChipsCollapsed + 1
             val showAll = !collapsible || expanded || years.indexOf(current) >= YearChipsCollapsed
@@ -737,10 +739,6 @@ private fun RegularCollectionCard(items: List<RegularCollectionItem>, onEdit: (Y
                         label = { Text(year.chipLabel()) },
                     )
                 }
-                // La "i" della varietà (EFS): stessa spiegazione e stessa icona del pannello di collezione.
-                if (years.any { it.variety.isNotEmpty() }) {
-                    VarietyInfoButton(onClick = { showVarietyInfo = true }, modifier = Modifier.align(Alignment.CenterVertically))
-                }
                 if (collapsible) {
                     AssistChip(
                         onClick = {
@@ -755,6 +753,13 @@ private fun RegularCollectionCard(items: List<RegularCollectionItem>, onEdit: (Y
                     )
                 }
             }
+        }
+        if (current.variety.isNotEmpty()) {
+            EfsHint(
+                taglio = items.first().taglio,
+                onClick = { showVarietyInfo = true },
+                modifier = Modifier.padding(top = 4.dp),
+            )
         }
         Column(
             modifier = Modifier.padding(top = 12.dp).animateContentSize(),
