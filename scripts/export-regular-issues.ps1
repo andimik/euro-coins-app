@@ -212,8 +212,16 @@ foreach ($s in $series) {
                 foreach ($q in $qualityOrder) {
                     if ($null -eq $values[$q]) { continue }
                     $k = "$($row.anno)|$q"
-                    if ($seen.ContainsKey($k)) { Write-Warning "Doppione $key $k (N#$($m.Type.numista_id)): tenuta la prima"; continue }
-                    $seen[$k] = $true
+                    if ($seen.ContainsKey($k)) {
+                        # Lo stesso (anno, qualità) in due type: non è un doppione ma due monete diverse
+                        # dello stesso anno (Germania 20 cent 2007: type 2002-2007 con la sola F, 200.000, e
+                        # type 2007+ con le cinque zecche, 108,9 milioni). Si SOMMA: tenere la prima mostrava
+                        # 200.000 per un anno da 109 milioni.
+                        $tirature[$seen[$k]].tiratura += [long]$values[$q]
+                        Write-Warning "Stesso anno e qualità in due type, sommati: $key $k (N#$($m.Type.numista_id))"
+                        continue
+                    }
+                    $seen[$k] = $tirature.Count
                     $tirature += [pscustomobject][ordered]@{ anno = [int]$row.anno; quality = $q; tiratura = [long]$values[$q] }
                 }
             }
