@@ -96,6 +96,7 @@ fun SettingsScreen(
     settingsViewModel: SettingsViewModel,
     backupViewModel: BackupViewModel,
     monetization: Monetization,
+    onCatalogsClick: () -> Unit,
     onBack: () -> Unit,
 ) {
     val hideCommemorativeMicrostates by settingsViewModel.hideCommemorativeMicrostates.collectAsState()
@@ -156,40 +157,12 @@ fun SettingsScreen(
                 )
             }
 
-            // Una sezione per catalogo, ciascuna con le sue due impostazioni (interruttore, poi selettore):
-            // i microstati si nascondono in modo indipendente e la scheda iniziale è quella del catalogo.
-            SectionHeader("Commemorative")
-            CatalogCard(
-                catalogName = "Commemorative",
-                hideMicrostates = hideCommemorativeMicrostates,
-                onHideMicrostatesChange = settingsViewModel::setHideCommemorativeMicrostates,
-                options = BrowseMode.entries,
-                selected = defaultTab,
-                label = {
-                    when (it) {
-                        BrowseMode.YEARS -> "Years"
-                        BrowseMode.COUNTRIES -> "Countries"
-                        BrowseMode.ALL -> "All"
-                    }
-                },
-                onSelect = settingsViewModel::setDefaultTab,
-            )
-
-            SectionHeader("Regular Issues")
-            CatalogCard(
-                catalogName = "Regular Issues",
-                hideMicrostates = hideRegularMicrostates,
-                onHideMicrostatesChange = settingsViewModel::setHideRegularMicrostates,
-                options = RegularBrowseMode.entries,
-                selected = defaultRegularTab,
-                label = {
-                    when (it) {
-                        RegularBrowseMode.COUNTRIES -> "Countries"
-                        RegularBrowseMode.DENOMINATIONS -> "Values"
-                        RegularBrowseMode.ALL -> "All"
-                    }
-                },
-                onSelect = settingsViewModel::setDefaultRegularTab,
+            // Microstati nascosti e scheda iniziale di ciascun catalogo stanno in una sottopagina (sono cinque controlli
+            // che si toccano una volta sola): qui una riga con il riepilogo di come sono impostati.
+            SectionHeader("Catalogs")
+            CatalogsRow(
+                summary = catalogsSummary(hideCommemorativeMicrostates, hideRegularMicrostates, defaultTab, defaultRegularTab),
+                onClick = onCatalogsClick,
             )
 
             SectionHeader("Appearance")
@@ -254,7 +227,7 @@ fun SettingsScreen(
 }
 
 @Composable
-private fun SectionHeader(
+internal fun SectionHeader(
     title: String,
     first: Boolean = false,
 ) {
@@ -272,7 +245,7 @@ private fun SectionHeader(
  * apre per prima. Le due card sono identiche nella forma, cambiano solo le opzioni del selettore.
  */
 @Composable
-private fun <T> CatalogCard(
+internal fun <T> CatalogCard(
     catalogName: String,
     hideMicrostates: Boolean,
     onHideMicrostatesChange: (Boolean) -> Unit,
@@ -625,3 +598,30 @@ internal fun resetBackupNote(state: BackupUiState, coins: Int = 2): String {
  */
 internal fun resetBackupNoteIsWarning(state: BackupUiState): Boolean =
     state.account == null || state.localStatus != BackupStatus.UpToDate
+
+/** Riga che apre la sottopagina dei cataloghi: titolo, riepilogo dei valori correnti e freccia. */
+@Composable
+private fun CatalogsRow(summary: String, onClick: () -> Unit) {
+    val shape = RoundedCornerShape(14.dp)
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(shape)
+            .background(MaterialTheme.colorScheme.surface)
+            .border(1.dp, MaterialTheme.colorScheme.outline, shape)
+            .clickable(onClick = onClick)
+            .padding(14.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        Column(modifier = Modifier.weight(1f)) {
+            Text("Catalog options", style = MaterialTheme.typography.titleMedium)
+            Text(
+                text = summary,
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+        Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
+    }
+}
