@@ -34,9 +34,12 @@ import com.michele.eurocoins.data.greekEfsLetterGroups
 
 /**
  * La riga di aiuto che compare SOLO con la varietà EFS scelta (Grecia 2002), sotto i chip dell'anno: dice già la
- * lettera da cercare su QUESTO taglio ("Minted abroad: look for the letter S in a star") e al tocco apre
+ * lettera da cercare su QUESTO taglio ("Look for the letter S in a star · What's EFS?") e al tocco apre
  * [EfsInfoDialog]. Prima era una "i" accanto a "Year", visibile su ogni anno (2026-10-11, su segnalazione
- * dell'utente: serve solo dove c'entra l'EFS). L'icona è decorativa, il tocco è su tutta la riga (alta almeno 40 dp).
+ * dell'utente: serve solo dove c'entra l'EFS). **"What's EFS?" nel colore dei link** (variante C dopo mockup, scartati
+ * "Learn more" in fondo, che mandava la riga a capo, e una pillola con freccia, che sul fondo dei chip sembra una
+ * scelta d'anno): è la domanda a far capire che si tocca. L'icona è decorativa, il tocco è su tutta la riga (alta
+ * almeno 40 dp).
  */
 @Composable
 fun EfsHint(taglio: String?, onClick: () -> Unit, modifier: Modifier = Modifier) {
@@ -58,11 +61,17 @@ fun EfsHint(taglio: String?, onClick: () -> Unit, modifier: Modifier = Modifier)
         Text(
             text = buildAnnotatedString {
                 if (letter != null) {
-                    append("Minted abroad: look for the letter ")
+                    append("Look for the letter ")
                     withStyle(SpanStyle(fontWeight = FontWeight.Bold)) { append(letter) }
                     append(" in a star")
                 } else {
-                    append("Minted abroad: look for a letter in a star")
+                    append("Look for a letter in a star")
+                }
+                // Il segnale che si tocca: la domanda nel colore dei link dell'app (verdigris), come "Edit collection" e
+                // "Show more". Dice da sola che c'è una risposta, e "Minted abroad" sta nel dialog.
+                append(" · ")
+                withStyle(SpanStyle(color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Medium)) {
+                    append("What's EFS?")
                 }
             },
             style = MaterialTheme.typography.bodyMedium,

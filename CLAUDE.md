@@ -1292,9 +1292,11 @@ e un utente può avere più annate dello stesso taglio (es. Belgio serie 2, 1 eu
     pannello resta tre card per finitura anche lì.
   - **Il suggerimento sull'EFS** (2026-10-11, mockup approvato, `VarietyInfo.kt`): chi non conosce il collezionismo
     greco non sa cosa sia "2002 EFS". **Compare SOLO con la varietà EFS scelta** (`EfsHint`, una riga sotto i chip
-    dell'anno nel pannello e nella card COLLECTION del dettaglio): "Minted abroad: look for the letter **S** in a star",
+    dell'anno nel pannello e nella card COLLECTION del dettaglio): "Look for the letter **S** in a star · **What's EFS?**",
     con la lettera giusta per il taglio che si ha davanti (`greekEfsLetterFor`), senza aprire niente; il tocco sulla riga
-    apre `EfsInfoDialog`. **Prima era una "i" accanto a "Year", visibile su ogni anno e con troppo testo** (paragrafo,
+    apre `EfsInfoDialog`. **"What's EFS?" è nel colore dei link** perché la riga con sola icona e testo grigio non faceva
+    capire che si tocca (domanda dell'utente, 2026-10-11; variante C dopo mockup, scartati "Learn more" che andava a capo
+    e la pillola con freccia, che accanto ai chip sembra una scelta d'anno). **Prima era una "i" accanto a "Year", visibile su ogni anno e con troppo testo** (paragrafo,
     frase personalizzata, tabella, nota: corretto su segnalazione dell'utente). Il dialog ora è una frase con **E**, **F**,
     **S** in grassetto ("Greek 2002 coins minted abroad carry a letter in a star: E Spain, F France, S Suomi (Finland).
     Athens coins have none.") e la tabella raggruppata per lettera (`greekEfsLetterGroups()`, derivata dalla stessa
