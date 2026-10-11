@@ -1406,6 +1406,51 @@ pubblicazione). Codice in `data/pro/`, solo librerie Google (Billing 9.1, Mobile
   - **Bug trovato e corretto di passaggio** in `export-regular-issues.ps1`: Germania 20 cent 2007 Standard
     mostrava 200.000 invece di 108.900.000 ("Doppione… tenuta la prima": due type Numista per lo stesso anno,
     lato comune vecchio e nuovo). Ora le righe con lo stesso (anno, qualità) si SOMMANO. Era l'unico caso.
+  - **FASE 3 — registrare la lettera in collezione: PIANO del 2026-10-11, NON implementata** (ramo
+    `german-mints-phase3`). **Decisioni** (mockup approvato dal proprietario): nei pannelli di collezione una riga
+    "Mint" con i chip **"No mint"** (sempre presente, PRIMO e predefinito, nome parallelo a "No year"; "None" scartato:
+    ambiguo in una riga di lettere) e A D F G J; puntino verde sulle lettere con qualcosa in bozza. Nelle Regular la
+    riga sta SOTTO la striscia degli anni ed è sempre visibile (l'anno è preselezionato dall'apertura: farla comparire
+    solo dopo un tocco sull'anno cambierebbe l'altezza del pannello e nasconderebbe la funzione). **Ogni zecca è una
+    moneta**: prezzo e data per (zecca, finitura). **Il tocco rapido resta "No mint"** (la voce semplice). I totali
+    NON cambiano (una moneta posseduta conta una volta). **Senza Pro** le lettere già registrate restano visibili e
+    nella scheda di dettaglio i cinque cerchi A D F G J (pieni = posseduta, "3 of 5 mints") restano; aggiungere o
+    cambiare una lettera apre l'invito al Pro. La riga Mint compare solo per i paesi con lettere (`mintLettersFor`,
+    oggi la Germania), anche senza dati di tirature.
+  - **Modello e migrazione 10 → 11.** `mint: String = ""` NELLA CHIAVE di entrambe le tabelle (`""` = "No mint", poi
+    "A".."J"): `collection_items` PK (coinKey, quality, mint); `regular_collection_items` PK (seriesKey, taglio, anno,
+    quality, variety, mint). Riuso di `variety` scartato (mescola due concetti, backup ambiguo). Una sola
+    `MIGRATION_10_11` che RICOSTRUISCE le due tabelle come la 8 → 9 (CREATE `_new` con la PK nuova, INSERT … SELECT con
+    `mint = ''`, DROP, RENAME): SQLite non cambia una chiave con ALTER. **Attenzione**: la 8 → 9 non copiava
+    `purchasedOn` (arrivato dopo con la 9 → 10), la 10 → 11 DEVE copiarlo, insieme a `priceCents` e `addedAt`. Il SQL
+    deve coincidere con quello generato da Room (`build/generated/ksp/.../CoinDatabase_Impl.kt`): se differisce l'app
+    non parte per NESSUNO. Verifica come le altre: installare la build sopra la v10 popolata sul telefono (copia del
+    database sul PC prima), controllare i conteggi (stesse righe, tutte con `mint = ''`) e `PRAGMA integrity_check`.
+    **Non si torna indietro**: con il database a v11 una build v10 non parte (Room non scende di versione) senza
+    rimettere il file del database dalla copia.
+  - **Codice da toccare.** `CollectionItem`/`RegularCollectionItem`/`RegularCollectionEntry` (campo `mint`),
+    `CoinRepository.saveCollection` (da `Map<CoinQuality, FinishEntry>` a una mappa su (zecca, finitura), `existing`
+    per (zecca, qualità)) e `RegularIssueRepository.saveCollection` (la chiave diventa anno+varietà+zecca+qualità,
+    `addedAt` conservato per quella chiave), `QuickAdd.kt` (la voce semplice richiede ANCHE `mint == ""`: una voce con
+    zecca è `CONFIRM_REMOVE`, e `commemorativeRemovalMessage`/`regularRemovalMessage` nominano le lettere),
+    `BackupFile`/`BackupStatus` (`mint` nelle chiavi di confronto), `CollectionSheet`/`RegularCollectionSheet` (bozza su
+    (zecca, anno, varietà, finitura) e riga Mint), card COLLECTION dei due dettagli (riga per finitura con zecca,
+    cerchi A D F G J), `joinQualities` (con più zecche le qualità si ripetono: distinte), e i punti che raggruppano per
+    moneta (`regularProgress`, barre, `ownsAnyQuality`): vanno solo VERIFICATI con un test, devono già contare una volta.
+  - **Backup.** `mint` default `""` in `BackupItem` e `RegularBackupItem`; i file v1-v4 si leggono con zecca vuota.
+    **Versione 5 scritta SOLO se almeno una voce ha una zecca**, altrimenti si continua a scrivere la 4: chi non usa le
+    lettere non obbliga un secondo telefono ad aggiornare per ripristinare (un v5 si rifiuta come "più nuovo", come
+    per v3 e v4). `BackupStatus`: le chiavi di confronto includono la zecca (le istantanee vecchie hanno `""`, quindi
+    nessuna modifica spuria dopo l'aggiornamento).
+  - **Free dopo un Pro scaduto: attenzione al salvataggio.** `replaceForCoin`/`replaceForDenomination` SOSTITUISCONO
+    tutte le voci della moneta: se il pannello senza Pro edita solo le voci "No mint" e salva, cancellerebbe le voci con
+    zecca. Quindi: senza Pro la bozza parte con TUTTE le voci (quelle con zecca in sola lettura, intatte) e il
+    salvataggio le riscrive identiche; "Remove" nel pannello toglie solo le voci "No mint". Da coprire con un test.
+  - **Ordine di lavoro**: (1) modello, migrazione, DAO e repository con test sulla logica pura (Quick add, backup
+    v4/v5 e ordine di versione, chiavi di `BackupStatus`, conteggi); (2) pannello commemorative; (3) pannello Regular;
+    (4) card di dettaglio e messaggi; (5) Pro/Free; (6) prova sul telefono sopra la v10 popolata, ripristino di un
+    backup v4 e v5 (il parsing; Drive vero non è provabile qui), reset. Prima di pubblicare: nuovo .aab con
+    `versionCode` più alto e card Pro aggiornata.
 - **`ProBilling`**: Play è l'unica fonte di verità, in locale c'è una copia (SharedPreferences `pro`,
   `is_pro`) perché un utente Pro offline non deve rivedere gli annunci. Riallineamento a ogni ritorno in
   primo piano (`MainActivity`, `repeatOnLifecycle(STARTED)`) e dal pulsante Restore. **Una verifica
