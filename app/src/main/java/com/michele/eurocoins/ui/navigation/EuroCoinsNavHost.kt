@@ -27,6 +27,7 @@ import com.michele.eurocoins.data.backup.AutoBackup
 import com.michele.eurocoins.data.backup.BackupService
 import com.michele.eurocoins.data.backup.GoogleAccountManager
 import com.michele.eurocoins.data.pro.Monetization
+import com.michele.eurocoins.ui.settings.CatalogSettingsScreen
 import com.michele.eurocoins.ui.settings.SettingsScreen
 import com.michele.eurocoins.ui.settings.SettingsViewModel
 import com.michele.eurocoins.ui.settings.UserSettings
@@ -56,6 +57,7 @@ import com.michele.eurocoins.ui.theme.ThemePreference
 private const val ROUTE_HOME = "home"
 private const val ROUTE_BROWSE = "browse"
 private const val ROUTE_SETTINGS = "settings"
+private const val ROUTE_SETTINGS_CATALOGS = "settings/catalogs"
 private const val ROUTE_COINS = "coins/{kind}/{value}"
 private const val ROUTE_DETAIL = "detail/{coinId}"
 private const val ROUTE_REGULAR_ISSUES = "regular-issues"
@@ -152,6 +154,17 @@ fun EuroCoinsNavHost(
                 settingsViewModel = settingsViewModel,
                 backupViewModel = backupViewModel,
                 monetization = monetization,
+                onCatalogsClick = { navController.navigate(ROUTE_SETTINGS_CATALOGS) },
+                onBack = { navController.popBackStack() },
+            )
+        }
+        composable(ROUTE_SETTINGS_CATALOGS) {
+            val settingsViewModel: SettingsViewModel = viewModel(
+                key = "settings-catalogs",
+                factory = viewModelFactory { initializer { SettingsViewModel(repository, regularIssueRepository, userSettings, themePreference) } },
+            )
+            CatalogSettingsScreen(
+                settingsViewModel = settingsViewModel,
                 onBack = { navController.popBackStack() },
             )
         }

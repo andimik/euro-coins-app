@@ -183,7 +183,7 @@ app/src/main/java/com/michele/eurocoins/
     ├── regular/               # Regular Issues: schede Denominations/Countries/All + elenco di un taglio + serie del paese + collezione per taglio
     │                         # + RegularDenominationDetailScreen (dettaglio taglio, building
     │                         # block riusati da ui/detail/)
-    ├── settings/             # SettingsScreen unificata, SettingsViewModel, UserSettings (prefs `settings`)
+    ├── settings/             # SettingsScreen unificata + CatalogSettingsScreen (sottopagina Catalogs), SettingsViewModel, UserSettings (prefs `settings`)
     ├── backup/               # BackupSection (sezione account/backup di Settings), BackupViewModel
     ├── detail/                # dettaglio moneta, licenza/attribuzione immagine — DetailCard/
     │                         # SectionLabel/OwnedBadge/FooterLine/ValueLabel/DetailsSection
@@ -465,8 +465,21 @@ comparire né sparire monete; barre, filtri, Home, backup e Reset sono identici 
 
 ### Impostazioni
 
-Schermata unica (`SettingsScreen`), sezioni: Account and backup (con la card Go Pro
-sotto, senza titolo proprio; § Pro e pubblicità), **Collection** (Quick add, § omonima sotto), Commemorative, Regular Issues, Appearance, Danger zone.
+Schermata principale (`SettingsScreen`), sezioni: Account and backup (con la card Go Pro
+sotto, senza titolo proprio; § Pro e pubblicità), **Collection** (Quick add, § omonima sotto), **Catalogs** (una sola riga
+che apre la sottopagina `CatalogSettingsScreen`, vedi sotto), Appearance, Danger zone.
+
+**Riorganizzazione (2026-10-11, dopo mockup)**: la pagina era arrivata a ~2,6 schermate (le card di backup e Pro
+sono alte e Quick add aveva aggiunto una sezione). I cinque controlli che si toccano una volta sola, microstati nascosti
+e scheda iniziale di ciascun catalogo, stanno ora in una SOTTOPAGINA "Catalogs" (`CatalogSettingsScreen`, route
+`settings/catalogs`, le stesse due `CatalogCard` di prima, una schermata intera), raggiunta da una riga "Catalog options"
+con il RIEPILOGO dei valori correnti (`catalogsSummary`: "Commemorative: Countries / Regular Issues: Countries", una
+riga per catalogo perché in una sola "Regular Issues" andava a capo a metà, e una terza "Microstates hidden in …"
+solo se se ne nascondono, perché cambia ciò che si vede e i totali): di solito non serve aprirla per leggere come sono
+impostati. **Quick add resta IN LINEA sulla principale** (scelta dell'utente, variante "card in linea": è la funzione
+nuova e si accende/spegne per provarla, non va cercata in una sottopagina). Appearance resta in linea: una
+sottopagina per due controlli sarebbe solo attrito. Scartate: sezioni a fisarmonica (nasconde senza accorciare) e una
+sottopagina per sezione (troppo frammentata). Costo: un tocco in più per cambiare uno dei cinque controlli spostati.
 Ordine interno delle card, uguale in ogni sezione: prima gli interruttori (`SwitchRow`), poi i selettori a segmenti (`SegmentedChoice`), separati da un filetto. Titoli con "and", non "&" (coerenza con "Account and backup").
 
 **Palette: tre livelli visibili** — neutro (sfondi, testi, titoli), lilla (selezioni) e
@@ -1836,7 +1849,7 @@ lingua da servire.
 Unit test JVM in `app/src/test` (`./gradlew.bat --offline :app:testDebugUnitTest`).
 `ProStateTest` (proprietà del Pro, una verifica fallita non lo toglie, pagamento in sospeso) e
 `InterstitialPolicyTest` (6 monete E 30 secondi, né una né l'altra da sole, più l'orologio portato indietro) coprono la logica pura di Pro e
-annuncio a tutto schermo; il billing e gli annunci veri non sono testabili in JVM. Oggi 239 test, nessuno saltato.
+annuncio a tutto schermo; il billing e gli annunci veri non sono testabili in JVM. Oggi 242 test, nessuno saltato.
 `UnsharpMaskTest` copre `unsharpMask()` (immagine uniforme invariata, intensità 0 = identità, bordo
 netto accentuato dai due lati e invariato lontano, valori nel campo 0-255, alfa intatta); il
 rendering con `Bitmap` di `ThumbnailSharpen` non è testabile in JVM.
