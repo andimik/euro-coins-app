@@ -457,6 +457,8 @@ private fun MintageCard(coin: Coin) {
         SectionLabel("MINTAGES")
         Spacer(Modifier.height(10.dp))
         MintageSection(coin)
+        // "View by mint" (Pro): solo per le monete di cui c'è il dato per lettera di zecca (oggi la Germania).
+        CoinMintLettersEntry(coin)
         HorizontalDivider(
             modifier = Modifier.padding(vertical = 14.dp),
             color = MaterialTheme.colorScheme.outline.copy(alpha = 0.4f),

@@ -14,6 +14,7 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
@@ -22,9 +23,14 @@ import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import com.michele.eurocoins.ui.home.preloadHomeShowcase
+import androidx.navigation.compose.rememberNavController
+import com.michele.eurocoins.ui.components.LocalMintLetters
+import com.michele.eurocoins.ui.components.LocalProAccess
 import com.michele.eurocoins.ui.components.LocalQuickAdd
+import com.michele.eurocoins.ui.components.ProAccess
 import com.michele.eurocoins.ui.detail.LocalSwipeHint
 import com.michele.eurocoins.ui.navigation.EuroCoinsNavHost
+import com.michele.eurocoins.ui.navigation.openSettings
 import com.michele.eurocoins.ui.theme.EuroCoinsTheme
 import com.michele.eurocoins.ui.theme.ThemeMode
 
@@ -83,8 +89,19 @@ class MainActivity : ComponentActivity() {
             EuroCoinsTheme(darkTheme = darkTheme) {
                 Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
                     val quickAdd by app.userSettings.quickAdd.collectAsState()
-                    CompositionLocalProvider(LocalSwipeHint provides app.swipeHint, LocalQuickAdd provides quickAdd) {
+                    val navController = rememberNavController()
+                    val pro by monetization.billing.state.collectAsState()
+                    val proAccess = remember(pro.isPro, navController) {
+                        ProAccess(isPro = pro.isPro, onGoPro = { navController.openSettings() })
+                    }
+                    CompositionLocalProvider(
+                        LocalSwipeHint provides app.swipeHint,
+                        LocalQuickAdd provides quickAdd,
+                        LocalProAccess provides proAccess,
+                        LocalMintLetters provides app.mintLetters,
+                    ) {
                         EuroCoinsNavHost(
+                            navController = navController,
                             repository = app.repository,
                             regularIssueRepository = app.regularIssueRepository,
                             backupService = app.backupService,
