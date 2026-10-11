@@ -88,6 +88,17 @@ import coil3.request.ImageRequest
 import coil3.request.transformations
 import com.michele.eurocoins.ui.components.DetailSharpen
 import com.michele.eurocoins.data.CoinQuality
+import com.michele.eurocoins.data.MintLetterTable
+import com.michele.eurocoins.data.formatCompactMintage
+import com.michele.eurocoins.data.mintLetterCity
+import com.michele.eurocoins.data.mintLetterTable
+import com.michele.eurocoins.ui.components.LocalMintLetters
+import com.michele.eurocoins.ui.components.LocalProAccess
+import com.michele.eurocoins.ui.components.MintLettersProPrompt
+import com.michele.eurocoins.ui.components.ProLockedRow
+import androidx.compose.material3.SegmentedButton
+import androidx.compose.material3.SegmentedButtonDefaults
+import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import com.michele.eurocoins.data.MintLevel
 import com.michele.eurocoins.data.RegularCollectionItem
 import com.michele.eurocoins.data.anyPurchaseDate
@@ -253,6 +264,7 @@ private fun RegularDenominationDetailPage(viewModel: RegularDenominationDetailVi
     if (showMintageHistory) {
         RegularMintageHistorySheet(
             countryName = state.countryName,
+            paese = series.paese,
             seriesNumber = state.seriesNumber,
             denomination = image,
             onDismiss = { showMintageHistory = false },
@@ -417,6 +429,7 @@ private fun RegularMintageCard(image: RegularIssueImage, onViewByYear: () -> Uni
 @Composable
 private fun RegularMintageHistorySheet(
     countryName: String,
+    paese: String,
     seriesNumber: Int,
     denomination: RegularIssueImage,
     onDismiss: () -> Unit,
@@ -447,6 +460,21 @@ private fun RegularMintageHistorySheet(
     val hasProbable = mintLabels.values.any { it.level == MintLevel.PROBABLE }
     val numberFormat = remember { NumberFormat.getIntegerInstance(Locale.ENGLISH) }
 
+    // Zecche affiancate (Pro, oggi solo la Germania: variante C del mockup del 2026-10-11): una colonna per
+    // lettera, una qualità alla volta. Dove il taglio non ha lettere `letterTable` è nulla e vale la tabella dei
+    // totali di sempre; senza Pro la tabella dei totali resta e sopra c'è la riga che invita al Pro.
+    val access = LocalProAccess.current
+    val mintLetters = LocalMintLetters.current
+    var letterQuality by remember { mutableStateOf(CoinQuality.STANDARD) }
+    var showProPrompt by remember { mutableStateOf(false) }
+    val letterTable = remember(mintLetters, denomination, rows, letterQuality) {
+        mintLetterTable(mintLetters, paese, denomination.taglio, rows.map { it.first }, letterQuality)
+    }
+    val matrix = if (access.isPro) letterTable else null
+    if (showProPrompt) {
+        MintLettersProPrompt(onDismiss = { showProPrompt = false }, onGoPro = access.onGoPro)
+    }
+
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
@@ -475,56 +503,67 @@ private fun RegularMintageHistorySheet(
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.padding(top = 4.dp, bottom = 12.dp),
             )
-            Row(modifier = Modifier.fillMaxWidth().padding(bottom = 6.dp)) {
-                MintageHeaderCell("Year", modifier = Modifier.weight(0.6f), center = false)
-                CoinQuality.entries.forEach { MintageHeaderCell(it.label, modifier = Modifier.weight(it.columnWeight()), center = true) }
+            if (letterTable != null && !access.isPro) {
+                ProLockedRow(
+                    text = "Split by mint (${letterTable.letters.joinToString(", ")}) is part of Pro",
+                    onClick = { showProPrompt = true },
+                    modifier = Modifier.padding(bottom = 12.dp),
+                )
             }
-            HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.4f))
-            LazyColumn(modifier = Modifier.heightIn(max = 360.dp)) {
-                items(entries, key = { it.key }) { entry ->
-                    when (entry) {
-                        is YearTableEntry.Mint -> MintPeriodLabel(entry.label)
-                        is YearTableEntry.Row -> {
-                            MintageValuesRow(
-                                label = entry.year.toString(),
-                                values = entry.values,
-                                numberFormat = numberFormat,
-                                modifier = Modifier.padding(vertical = 8.dp),
-                            )
-                            HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.2f))
-                        }
-                        // parte di un anno diviso: più piccola e spenta, su fondo leggermente
-                        // diverso, così si legge come dettaglio del totale della riga sopra
-                        is YearTableEntry.Part -> {
-                            MintageValuesRow(
-                                label = entry.part.country,
-                                values = entry.part.values,
-                                numberFormat = numberFormat,
-                                small = true,
-                                modifier = Modifier
-                                    .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.5f))
-                                    .padding(vertical = 5.dp),
-                            )
-                            HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.2f))
+            if (matrix == null) {
+                Row(modifier = Modifier.fillMaxWidth().padding(bottom = 6.dp)) {
+                    MintageHeaderCell("Year", modifier = Modifier.weight(0.6f), center = false)
+                    CoinQuality.entries.forEach { MintageHeaderCell(it.label, modifier = Modifier.weight(it.columnWeight()), center = true) }
+                }
+                HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.4f))
+                LazyColumn(modifier = Modifier.heightIn(max = 360.dp)) {
+                    items(entries, key = { it.key }) { entry ->
+                        when (entry) {
+                            is YearTableEntry.Mint -> MintPeriodLabel(entry.label)
+                            is YearTableEntry.Row -> {
+                                MintageValuesRow(
+                                    label = entry.year.toString(),
+                                    values = entry.values,
+                                    numberFormat = numberFormat,
+                                    modifier = Modifier.padding(vertical = 8.dp),
+                                )
+                                HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.2f))
+                            }
+                            // parte di un anno diviso: più piccola e spenta, su fondo leggermente
+                            // diverso, così si legge come dettaglio del totale della riga sopra
+                            is YearTableEntry.Part -> {
+                                MintageValuesRow(
+                                    label = entry.part.country,
+                                    values = entry.part.values,
+                                    numberFormat = numberFormat,
+                                    small = true,
+                                    modifier = Modifier
+                                        .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.5f))
+                                        .padding(vertical = 5.dp),
+                                )
+                                HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.2f))
+                            }
                         }
                     }
                 }
-            }
-            if (parts.isNotEmpty()) {
-                Text(
-                    text = "Split by mint where the source reports it. BU pieces made for sets may be counted with the national mint.",
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(top = 8.dp),
-                )
-            }
-            if (hasProbable) {
-                Text(
-                    text = "? Probable: from Wikipedia or inferred from official data, not confirmed.",
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(top = 8.dp),
-                )
+                if (parts.isNotEmpty()) {
+                    Text(
+                        text = "Split by mint where the source reports it. BU pieces made for sets may be counted with the national mint.",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(top = 8.dp),
+                    )
+                }
+                if (hasProbable) {
+                    Text(
+                        text = "? Probable: from Wikipedia or inferred from official data, not confirmed.",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(top = 8.dp),
+                    )
+                }
+            } else {
+                MintLetterMatrix(table = matrix, paese = paese, quality = letterQuality, onQuality = { letterQuality = it })
             }
             TextButton(onClick = onDismiss, modifier = Modifier.align(Alignment.End).padding(top = 8.dp)) {
                 Text("Close")
@@ -532,6 +571,76 @@ private fun RegularMintageHistorySheet(
         }
     }
 }
+
+/**
+ * Le zecche di un taglio affiancate (Pro): una riga per anno, una colonna per lettera (A D F G J), i valori di UNA
+ * qualità scelta con il selettore in cima. Pensata per rispondere a "quale delle cinque è la più rara quest'anno?":
+ * i numeri sono compatti ("119.4 M") perché si confrontano tra loro; il numero esatto e il totale dell'anno stanno
+ * nella tabella dei totali (senza Pro) e nella card MINTAGES. Nessuna evidenziazione della più bassa: provata
+ * in bronzo nel mockup e scartata (colore nuovo che nell'app non esiste per i dati).
+ */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun MintLetterMatrix(
+    table: MintLetterTable,
+    paese: String,
+    quality: CoinQuality,
+    onQuality: (CoinQuality) -> Unit,
+) {
+    val qualities = CoinQuality.entries
+    SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth().padding(bottom = 10.dp)) {
+        qualities.forEachIndexed { index, option ->
+            SegmentedButton(
+                selected = quality == option,
+                onClick = { onQuality(option) },
+                shape = SegmentedButtonDefaults.itemShape(index = index, count = qualities.size),
+                // Nessuna spunta: sposterebbe l'etichetta fuori centro (come negli altri selettori dell'app).
+                icon = {},
+                label = { Text(option.label) },
+            )
+        }
+    }
+    Row(modifier = Modifier.fillMaxWidth().padding(bottom = 6.dp)) {
+        MintageHeaderCell("Year", modifier = Modifier.width(MATRIX_YEAR_WIDTH), center = false)
+        table.letters.forEach { MintageHeaderCell(it, modifier = Modifier.weight(1f), center = true) }
+    }
+    HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.4f))
+    LazyColumn(modifier = Modifier.heightIn(max = 360.dp)) {
+        items(table.rows, key = { it.anno }) { row ->
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(
+                    text = row.anno.toString(),
+                    style = MaterialTheme.typography.bodyMedium,
+                    fontWeight = FontWeight.SemiBold,
+                    modifier = Modifier.width(MATRIX_YEAR_WIDTH),
+                )
+                row.values.forEach { value ->
+                    Text(
+                        text = value?.let(::formatCompactMintage) ?: NO_VALUE,
+                        style = MaterialTheme.typography.bodySmall.copy(fontFeatureSettings = "tnum"),
+                        textAlign = TextAlign.Center,
+                        maxLines = 1,
+                        softWrap = false,
+                        modifier = Modifier.weight(1f),
+                    )
+                }
+            }
+            HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.2f))
+        }
+    }
+    // Legenda: la lettera è sulla moneta, la città no.
+    Text(
+        text = table.letters.joinToString(" · ") { letter -> mintLetterCity(paese, letter)?.let { "$letter $it" } ?: letter },
+        style = MaterialTheme.typography.labelSmall,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        modifier = Modifier.padding(top = 8.dp),
+    )
+}
+
+private val MATRIX_YEAR_WIDTH = 46.dp
 
 /** Righe della tabella "by year": una per anno, più l'etichetta di zecca dove cambia. */
 private sealed interface YearTableEntry {

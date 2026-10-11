@@ -19,7 +19,7 @@ import androidx.lifecycle.viewmodel.viewModelFactory
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
-import androidx.navigation.compose.rememberNavController
+import androidx.navigation.NavHostController
 import androidx.navigation.navArgument
 import com.michele.eurocoins.data.CoinRepository
 import com.michele.eurocoins.data.RegularIssueRepository
@@ -76,8 +76,18 @@ private const val KIND_YEAR = "year"
 private const val KIND_YEAR_COMMON = "year-common"
 private const val KIND_COUNTRY = "country"
 
+/** Porta alle Impostazioni (dove sta la card Pro): l'invito "Go Pro" delle viste riservate al Pro. */
+fun NavController.openSettings() {
+    navigate(ROUTE_SETTINGS) { launchSingleTop = true }
+}
+
+/**
+ * [navController] arriva da `MainActivity`, che lo usa anche per fornire `LocalProAccess` (il Pro e "dove
+ * portare chi non ce l'ha") a tutte le schermate sotto, senza che sappiano di navigazione né di Play Billing.
+ */
 @Composable
 fun EuroCoinsNavHost(
+    navController: NavHostController,
     repository: CoinRepository,
     regularIssueRepository: RegularIssueRepository,
     backupService: BackupService,
@@ -87,7 +97,6 @@ fun EuroCoinsNavHost(
     userSettings: UserSettings,
     monetization: Monetization,
 ) {
-    val navController = rememberNavController()
     // Elenco ordinato della lista da cui si apre un dettaglio (per scorrere tra le monete): vedi CoinPagerSession.
     val pagerSession: CoinPagerSession = viewModel()
     // Lo stesso per Regular Issues: le righe (taglio di una serie) della lista da cui si apre il dettaglio.

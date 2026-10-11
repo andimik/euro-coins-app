@@ -166,6 +166,8 @@ app/src/main/java/com/michele/eurocoins/
 │   ├── RegularDenominationRows.kt # denominationRows(): le righe di un taglio in tutti i paesi (una per serie), per l'elenco di un taglio e le card Denominations
 │   ├── RegularAllRows.kt     # allDenominationRows()/RegularAllSort/matchesAllQuery(): l'elenco di tutte le righe (scheda All), ordine e ricerca, logica pura, testata
 │   ├── RegularIssueText.kt   # displayDescription() (senza la frase sul bordo esterno), seriesTitle()/seriesChipLabel()/seriesPeriod() — titoli e periodo delle serie
+│   ├── MintLetters.kt        # tirature per lettera di zecca (Germania) da assets/mint_letters.json, asset opzionale; mintLetterCity()
+│   ├── MintLetterTable.kt    # mintLetterTable()/formatCompactMintage(): la tabella a zecche affiancate, logica pura, testata
 │   ├── backup/               # BackupFile, GoogleAccountManager, DriveBackupClient, BackupService
 │   └── pro/                  # Pro e pubblicità: ProBilling (Play Billing), AdsConsent (UMP), InterstitialAds, Monetization, ProState (logica pura testata)
 └── ui/
@@ -1337,11 +1339,44 @@ Deciso il 2026-10-06 dal proprietario (la mia raccomandazione era togliere il ba
 e riaggiungerlo quando c'è qualcosa da vendere; scelto invece di costruire tutto prima della
 pubblicazione). Codice in `data/pro/`, solo librerie Google (Billing 9.1, Mobile Ads 25.5, UMP 4.0).
 
-- **Cosa compra il Pro: solo l'assenza di pubblicità.** Prodotto in-app NON consumabile
+- **Cosa compra il Pro: l'assenza di pubblicità e, dal 2026-10-11, le tirature per zecca tedesca** (vedi
+  sotto). Prodotto in-app NON consumabile
   `euro_coins_pro` (`BuildConfig.PRO_PRODUCT_ID`, da creare con lo stesso ID in Play Console: un ID
   eliminato non si riusa). Funzioni Pro future (più esemplari della stessa moneta, quantità, export
-  CSV) non esistono ancora: se arrivano, lo stesso acquisto le sblocca (oggi la card dice solo
-  "Remove all ads").
+  CSV) non esistono ancora: se arrivano, lo stesso acquisto le sblocca (la card dice ancora solo
+  "Remove all ads": **da aggiornare quando le zecche arrivano agli utenti**).
+- **Zecche tedesche A/D/F/G/J (Pro, ramo `german-mints`, 2026-10-11).** Prima funzione Pro oltre ai banner. Tre
+  fasi concordate: (1) dati, (2) visualizzazione, (3) registrazione per lettera. **Fatte la 1 e la 2; la 3 NO**
+  (chiede una migrazione di `collection_items`, backup v5, regole del Quick add; per le Regular basta `variety`,
+  già nella chiave). Principi decisi: **i totali (barre, Home, "N coins") NON cambiano** (la lettera sarà un
+  dettaglio sopra il "posseduto", come qualità/prezzo/data); **mai nascondere o cancellare ciò che l'utente ha
+  registrato se perde il Pro**; solo Germania ma con struttura generica.
+  - **Dato**: `assets/mint_letters.json` (75 KB) da `scripts/export-mint-letters.ps1`, FILE SEPARATO da
+    `coins.json`/`regular_issues.json` perché sono dati Numista (piano B = togliere solo questo file; l'app lo
+    tratta come opzionale, `MintLetters.load` → `EMPTY`). Circolanti da `numista_divisional.jsonl`
+    (`per_zecca`, più il totale dell'anno quando la lettera è una sola) sommando i type che condividono un anno;
+    commemorative dai `data/raw/numista/issues_<N#>.json` (la pipeline li somma in un numero), con i `numista_id`
+    di `coins.json`. Chiave: circolanti `(paese, taglio, anno)`, commemorative `(numistaId, anno)`. Lo script
+    CONTROLLA le somme per lettera contro `coins.json` e `MintLettersAssetTest` contro i totali del catalogo
+    Regular: vanno rilanciati entrambi se cambiano i dataset. Non in Room (statico, nessun dato utente).
+    Buchi noti: 2 € circolante 2007/2009/2012/2013/2015/2018 (nessun dato Numista), 1 €/10 cent/50 cent 2026
+    (lettere senza numeri, non esportati), 2 commemorative 2026 senza N#, una riga "In Sets" senza lettera
+    (20 cent 2019, 78.400 pezzi, ignorata, bucket `altro` non mostrato).
+  - **Visualizzazione** (mockup approvato, variante C): nel pannello "by year" di un taglio con lettere, in Pro, una
+    riga per anno e UNA COLONNA PER LETTERA con selettore Standard/BU/Proof in cima (`MintLetterMatrix`,
+    `mintLetterTable()`, numeri compatti "119.4 M" con `formatCompactMintage`, legenda "A Berlin · D Munich …"). I
+    totali per anno non ci sono in quella vista (stanno nella tabella dei totali, vista dai non-Pro, e nella card).
+    **Nessuna evidenziazione della zecca più bassa**: il bronzo fu proposto nel mockup e scartato dal proprietario
+    (colore nuovo per i dati). Nelle commemorative, "View by mint" sotto i tre numeri di MINTAGES
+    (`CoinMintLettersEntry`) apre un pannello con una riga per lettera e il totale. **Senza Pro**: nella tabella by
+    year una riga lilla "Split by mint (A, D, F, G, J) is part of Pro" (`ProLockedRow`), nelle commemorative il
+    pulsante lilla con lucchetto; il tocco apre `MintLettersProPrompt` ("Not now" / "Go Pro"). **"Go Pro" porta alle
+    Impostazioni** (`ProAccess.onGoPro` → `openSettings()`), non avvia l'acquisto: resta SOLO la pillola col prezzo
+    a farlo. `LocalProAccess` e `LocalMintLetters` sono forniti da `MainActivity` (il `NavController` è stato
+    sollevato lì). **Non verificato sul telefono.**
+  - **Bug trovato e corretto di passaggio** in `export-regular-issues.ps1`: Germania 20 cent 2007 Standard
+    mostrava 200.000 invece di 108.900.000 ("Doppione… tenuta la prima": due type Numista per lo stesso anno,
+    lato comune vecchio e nuovo). Ora le righe con lo stesso (anno, qualità) si SOMMANO. Era l'unico caso.
 - **`ProBilling`**: Play è l'unica fonte di verità, in locale c'è una copia (SharedPreferences `pro`,
   `is_pro`) perché un utente Pro offline non deve rivedere gli annunci. Riallineamento a ogni ritorno in
   primo piano (`MainActivity`, `repeatOnLifecycle(STARTED)`) e dal pulsante Restore. **Una verifica
@@ -1863,7 +1898,7 @@ lingua da servire.
 Unit test JVM in `app/src/test` (`./gradlew.bat --offline :app:testDebugUnitTest`).
 `ProStateTest` (proprietà del Pro, una verifica fallita non lo toglie, pagamento in sospeso) e
 `InterstitialPolicyTest` (6 monete E 30 secondi, né una né l'altra da sole, più l'orologio portato indietro) coprono la logica pura di Pro e
-annuncio a tutto schermo; il billing e gli annunci veri non sono testabili in JVM. Oggi 246 test, nessuno saltato.
+annuncio a tutto schermo; il billing e gli annunci veri non sono testabili in JVM. Oggi 255 test, nessuno saltato (`MintLettersAssetTest` incrocia `mint_letters.json` con gli altri due asset, `MintLetterTableTest` la tabella e i numeri compatti).
 `UnsharpMaskTest` copre `unsharpMask()` (immagine uniforme invariata, intensità 0 = identità, bordo
 netto accentuato dai due lati e invariato lontano, valori nel campo 0-255, alfa intatta); il
 rendering con `Bitmap` di `ThumbnailSharpen` non è testabile in JVM.
