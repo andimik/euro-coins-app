@@ -3,6 +3,7 @@ package com.michele.eurocoins
 import android.app.Application
 import com.michele.eurocoins.data.CoinDatabase
 import com.michele.eurocoins.data.CoinRepository
+import com.michele.eurocoins.data.MintLetters
 import com.michele.eurocoins.data.RegularIssueRepository
 import com.michele.eurocoins.data.backup.AutoBackup
 import com.michele.eurocoins.data.backup.BackupService
@@ -25,6 +26,9 @@ class EuroCoinsApplication : Application() {
         val db = CoinDatabase.getInstance(this)
         RegularIssueRepository(this, db.regularIssueDao(), db.regularCollectionDao(), userSettings.hideRegularMicrostates)
     }
+
+    /** Tirature per lettera di zecca (Germania), asset opzionale: vedi [MintLetters]. */
+    val mintLetters: MintLetters by lazy { MintLetters.load(assets) }
 
     val accountManager: GoogleAccountManager by lazy { GoogleAccountManager(this) }
 
