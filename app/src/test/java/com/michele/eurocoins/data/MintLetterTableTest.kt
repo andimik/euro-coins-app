@@ -32,6 +32,19 @@ class MintLetterTableTest {
     }
 
     @Test
+    fun totalIsTheSumOfTheKnownLettersAndNeverZero() {
+        val table = mintLetterTable(letters, "Germania", "1 cent", listOf(2004, 2005, 2006), CoinQuality.BU)!!
+        assertEquals(270_000L, table.rows[0].total)
+        assertEquals(2, table.rows[0].known)
+        // 2005 non ha lettere: nessun totale (null, non 0).
+        assertNull(table.rows[1].total)
+        assertEquals(0, table.rows[1].known)
+        // 2006: solo la D ha il BU, il totale e' di quella lettera sola.
+        assertEquals(85_000L, table.rows[2].total)
+        assertEquals(1, table.rows[2].known)
+    }
+
+    @Test
     fun theQualityPicksTheValues() {
         val bu = mintLetterTable(letters, "Germania", "1 cent", listOf(2004, 2006), CoinQuality.BU)!!
         assertEquals(listOf<Long?>(135_000L, 135_000L), bu.rows[0].values)

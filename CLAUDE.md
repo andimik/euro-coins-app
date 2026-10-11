@@ -1364,10 +1364,28 @@ pubblicazione). Codice in `data/pro/`, solo librerie Google (Billing 9.1, Mobile
     (20 cent 2019, 78.400 pezzi, ignorata, bucket `altro` non mostrato).
   - **Visualizzazione** (mockup approvato, variante C): nel pannello "by year" di un taglio con lettere, in Pro, una
     riga per anno e UNA COLONNA PER LETTERA con selettore Standard/BU/Proof in cima (`MintLetterMatrix`,
-    `mintLetterTable()`, numeri compatti "119.4 M" con `formatCompactMintage`, legenda "A Berlin · D Munich …"). I
-    totali per anno non ci sono in quella vista (stanno nella tabella dei totali, vista dai non-Pro, e nella card).
+    `mintLetterTable()`, numeri compatti "119.4 M" con `formatCompactMintage`, legenda "A Berlin · D Munich …").
+    **Il totale dell'anno sta sotto l'anno, intero** ("Total 600,000,000", variante A del mockup del 2026-10-11:
+    la prima versione non lo aveva e il proprietario lo ha notato; come sesta colonna non entrava senza troncare
+    "125.37 M"); con meno lettere del totale dice "· 2 of 5 mints" (la somma di quelle sole).
     **Nessuna evidenziazione della zecca più bassa**: il bronzo fu proposto nel mockup e scartato dal proprietario
-    (colore nuovo per i dati). Nelle commemorative, "View by mint" sotto i tre numeri di MINTAGES
+    (colore nuovo per i dati). **Nessun segmento "Sets"** (i pezzi "In Sets" di Numista, bucket `altro`, 122 anni su
+    191 per la Germania, proposto e scartato dal proprietario il 2026-10-11): la tabella resta Standard/BU/Proof.
+  - **Perché tanti "—" (Standard 62 anni su 191, BU 123): non sono dati mancanti.** Controllato il 2026-10-11 con la
+    lista "Vom Bundesministerium der Finanzen erteilte Aufträge zur Prägung von Euro-Umlaufmünzen" della Bundesbank
+    (PDF, aggiornato all'08.12.2025, URL `bundesbank.de/resource/blob/599312/…/praegung-euro-umlaufmuenzen-data.pdf`;
+    anno, lettera e taglio in milioni di pezzi, **ordini di coniazione, non tirature effettive**; testo leggibile
+    inflando gli stream, nessun OCR): tutti i 62 anni senza Standard su Numista NON hanno nessun ordine (10 cent
+    2005-2016, 50 cent 2005-2021, 1 euro dal 2006…: la Germania aveva scorte e coniò solo set da collezione), e i 9
+    anni con meno di 5 lettere hanno ordini solo per quelle (1 euro 2003: solo A e J). Dove i due elenchi si
+    sovrappongono (607 combinazioni anno/lettera/taglio) 483 sono IDENTICI, 74 entro il 5%, 50 differiscono di più
+    (2019 e 2020 soprattutto, NON indagati). Il PDF NON è stato importato: non aggiunge nessun anno a Numista. Sotto
+    Standard la tabella dice "— means none were struck for circulation". Il BU "—" è altro: Numista conta i BU dei
+    set come "In Sets" (bucket `altro`, non mostrato), per questo la maggioranza manca. Lo script di estrazione
+    non è nel repo (era uno strumento di verifica); rifarlo se serve: i filetti spessi a tutta larghezza (x≈77,
+    w≈637) separano gli anni, le lettere A D F G J a x≈207 raggruppano gli ordini, i tagli sono otto colonne a
+    x≈250…670, e un'etichetta ruotata con "(" nel blocco marca la 2 € commemorativa.
+  - Nelle commemorative, "View by mint" sotto i tre numeri di MINTAGES
     (`CoinMintLettersEntry`) apre un pannello con una riga per lettera e il totale. **Senza Pro**: nella tabella by
     year una riga lilla "Split by mint (A, D, F, G, J) is part of Pro" (`ProLockedRow`), nelle commemorative il
     pulsante lilla con lucchetto; il tocco apre `MintLettersProPrompt` ("Not now" / "Go Pro"). **"Go Pro" porta alle
@@ -1898,7 +1916,7 @@ lingua da servire.
 Unit test JVM in `app/src/test` (`./gradlew.bat --offline :app:testDebugUnitTest`).
 `ProStateTest` (proprietà del Pro, una verifica fallita non lo toglie, pagamento in sospeso) e
 `InterstitialPolicyTest` (6 monete E 30 secondi, né una né l'altra da sole, più l'orologio portato indietro) coprono la logica pura di Pro e
-annuncio a tutto schermo; il billing e gli annunci veri non sono testabili in JVM. Oggi 255 test, nessuno saltato (`MintLettersAssetTest` incrocia `mint_letters.json` con gli altri due asset, `MintLetterTableTest` la tabella e i numeri compatti).
+annuncio a tutto schermo; il billing e gli annunci veri non sono testabili in JVM. Oggi 256 test, nessuno saltato (`MintLettersAssetTest` incrocia `mint_letters.json` con gli altri due asset, `MintLetterTableTest` la tabella e i numeri compatti).
 `UnsharpMaskTest` copre `unsharpMask()` (immagine uniforme invariata, intensità 0 = identità, bordo
 netto accentuato dai due lati e invariato lontano, valori nel campo 0-255, alfa intatta); il
 rendering con `Bitmap` di `ThumbnailSharpen` non è testabile in JVM.

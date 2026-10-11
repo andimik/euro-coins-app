@@ -8,7 +8,13 @@ data class MintLetterYearRow(
     val anno: Int,
     /** Nello stesso ordine di [MintLetterTable.letters]; `null` = Numista non ha il dato per quella lettera e qualità. */
     val values: List<Long?>,
-)
+) {
+    /** Somma delle lettere che hanno il dato; `null` se nessuna (mai 0: "non c'è il dato" non è "zero pezzi"). */
+    val total: Long? get() = values.filterNotNull().takeIf { it.isNotEmpty() }?.sum()
+
+    /** Quante lettere hanno il dato: se meno di tutte, il totale è quello di quelle sole. */
+    val known: Int get() = values.count { it != null }
+}
 
 /** Le zecche di un taglio affiancate, una colonna per lettera, per UNA qualità (variante C del mockup, 2026-10-11). */
 data class MintLetterTable(

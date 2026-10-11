@@ -575,9 +575,10 @@ private fun RegularMintageHistorySheet(
 /**
  * Le zecche di un taglio affiancate (Pro): una riga per anno, una colonna per lettera (A D F G J), i valori di UNA
  * qualità scelta con il selettore in cima. Pensata per rispondere a "quale delle cinque è la più rara quest'anno?":
- * i numeri sono compatti ("119.4 M") perché si confrontano tra loro; il numero esatto e il totale dell'anno stanno
- * nella tabella dei totali (senza Pro) e nella card MINTAGES. Nessuna evidenziazione della più bassa: provata
- * in bronzo nel mockup e scartata (colore nuovo che nell'app non esiste per i dati).
+ * i numeri sono compatti ("119.4 M") perché si confrontano tra loro; il totale dell'anno, intero, sta sotto l'anno.
+ * Nessuna evidenziazione della più bassa: provata in bronzo nel mockup e scartata (colore nuovo che nell'app non
+ * esiste per i dati). Nessun segmento "Sets" (i pezzi venduti solo in set, bucket `altro`): proposto e scartato dal
+ * proprietario il 2026-10-11, la tabella resta Standard / BU / Proof come il resto dell'app.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -588,6 +589,7 @@ private fun MintLetterMatrix(
     onQuality: (CoinQuality) -> Unit,
 ) {
     val qualities = CoinQuality.entries
+    val numberFormat = remember { NumberFormat.getIntegerInstance(Locale.ENGLISH) }
     SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth().padding(bottom = 10.dp)) {
         qualities.forEachIndexed { index, option ->
             SegmentedButton(
@@ -607,24 +609,37 @@ private fun MintLetterMatrix(
     HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.4f))
     LazyColumn(modifier = Modifier.heightIn(max = 360.dp)) {
         items(table.rows, key = { it.anno }) { row ->
-            Row(
-                modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Text(
-                    text = row.anno.toString(),
-                    style = MaterialTheme.typography.bodyMedium,
-                    fontWeight = FontWeight.SemiBold,
-                    modifier = Modifier.width(MATRIX_YEAR_WIDTH),
-                )
-                row.values.forEach { value ->
+            Column(modifier = Modifier.fillMaxWidth().padding(vertical = 7.dp)) {
+                Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                     Text(
-                        text = value?.let(::formatCompactMintage) ?: NO_VALUE,
-                        style = MaterialTheme.typography.bodySmall.copy(fontFeatureSettings = "tnum"),
-                        textAlign = TextAlign.Center,
-                        maxLines = 1,
-                        softWrap = false,
-                        modifier = Modifier.weight(1f),
+                        text = row.anno.toString(),
+                        style = MaterialTheme.typography.bodyMedium,
+                        fontWeight = FontWeight.SemiBold,
+                        modifier = Modifier.width(MATRIX_YEAR_WIDTH),
+                    )
+                    row.values.forEach { value ->
+                        Text(
+                            text = value?.let(::formatCompactMintage) ?: NO_VALUE,
+                            style = MaterialTheme.typography.bodySmall.copy(fontFeatureSettings = "tnum"),
+                            textAlign = TextAlign.Center,
+                            maxLines = 1,
+                            softWrap = false,
+                            modifier = Modifier.weight(1f),
+                        )
+                    }
+                }
+                // Il totale dell'anno, intero, sotto l'anno (variante A del mockup del 2026-10-11): nelle colonne
+                // non entrava senza troncare "125.37 M". Con meno lettere del totale il numero è la somma di quelle
+                // sole: lo dice, perché altrimenti si leggerebbe come l'anno intero.
+                row.total?.let { total ->
+                    Text(
+                        text = buildString {
+                            append("Total ").append(numberFormat.format(total))
+                            if (row.known < table.letters.size) append(" · ${row.known} of ${table.letters.size} mints")
+                        },
+                        style = MaterialTheme.typography.labelSmall.copy(fontFeatureSettings = "tnum"),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(top = 2.dp),
                     )
                 }
             }
@@ -638,6 +653,17 @@ private fun MintLetterMatrix(
         color = MaterialTheme.colorScheme.onSurfaceVariant,
         modifier = Modifier.padding(top = 8.dp),
     )
+    // Sotto Standard il "—" non è un dato mancante: la lista degli ordini di conio del Ministero delle finanze
+    // (Bundesbank, 2025) non ha nessun ordine per quei tagli e anni, cioè non furono coniati per la circolazione
+    // (la Germania aveva scorte; in quegli anni solo set da collezione). Verificato su tutti i 62 anni vuoti.
+    if (quality == CoinQuality.STANDARD) {
+        Text(
+            text = "— means none were struck for circulation.",
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.padding(top = 2.dp),
+        )
+    }
 }
 
 private val MATRIX_YEAR_WIDTH = 46.dp
