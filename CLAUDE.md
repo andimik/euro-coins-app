@@ -1290,6 +1290,16 @@ e un utente può avere più annate dello stesso taglio (es. Belgio serie 2, 1 eu
   - **La varietà EFS è una voce a parte dell'elenco**, non un controllo in più: il 2002 greco ha
     due chip, "2002" e "2002 EFS" subito dopo (due monete, l'utente può averle entrambe). Così il
     pannello resta tre card per finitura anche lì.
+  - **La "i" che spiega l'EFS** (2026-10-11, mockup approvato, `VarietyInfo.kt`): chi non conosce il collezionismo
+    greco non sa cosa sia "2002 EFS". Una "i" tonda (`VarietyInfoButton`, tocco da 40 dp) accanto all'etichetta "Year" del
+    pannello, **solo se tra gli anni c'è una varietà** (Grecia 2002), e la stessa accanto ai chip anni della card
+    COLLECTION del dettaglio, apre `EfsInfoDialog`: cosa significa (monete greche del 2002 coniate all'estero, una
+    lettera in una stella sul lato greco: E Spagna, F Francia, S Suomi/Finlandia), **la lettera da cercare sulla moneta
+    che si ha davanti** ("On this 2 euro, look for the letter S (minted in Finland).", richiesta dell'utente: la prima
+    versione spiegava solo in generale) e la tabella "WHERE TO LOOK" raggruppata per lettera (`greekEfsLetterGroups()`,
+    derivata dalla stessa tabella `GREEK_EFS_LETTER` che offre la varietà, così non diverge; la riga del taglio corrente
+    è evidenziata). **Non dice su quale stella cade la lettera**: il dato non c'è e non si inventa (servirebbe una fonte
+    verificata e foto). `EfsLetterGroupsTest`. Scartata l'icona dentro il chip: il suo tocco serve a sceglierlo.
   - **Card spuntata: solo bordo (2.5 dp pieno)**, mai fondo lilla: viene da `FinishCard`, quindi
     non può più restare indietro rispetto alle commemorative come era successo con la card
     duplicata.
@@ -1849,7 +1859,7 @@ lingua da servire.
 Unit test JVM in `app/src/test` (`./gradlew.bat --offline :app:testDebugUnitTest`).
 `ProStateTest` (proprietà del Pro, una verifica fallita non lo toglie, pagamento in sospeso) e
 `InterstitialPolicyTest` (6 monete E 30 secondi, né una né l'altra da sole, più l'orologio portato indietro) coprono la logica pura di Pro e
-annuncio a tutto schermo; il billing e gli annunci veri non sono testabili in JVM. Oggi 242 test, nessuno saltato.
+annuncio a tutto schermo; il billing e gli annunci veri non sono testabili in JVM. Oggi 246 test, nessuno saltato.
 `UnsharpMaskTest` copre `unsharpMask()` (immagine uniforme invariata, intensità 0 = identità, bordo
 netto accentuato dai due lati e invariato lontano, valori nel campo 0-255, alfa intatta); il
 rendering con `Bitmap` di `ThumbnailSharpen` non è testabile in JVM.

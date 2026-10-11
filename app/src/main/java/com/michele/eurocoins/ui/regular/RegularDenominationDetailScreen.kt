@@ -7,6 +7,8 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import com.michele.eurocoins.ui.components.VarietyInfoButton
+import com.michele.eurocoins.ui.components.EfsInfoDialog
 import com.michele.eurocoins.data.NO_YEAR
 import com.michele.eurocoins.data.YearOption
 import com.michele.eurocoins.data.chipLabel
@@ -718,6 +720,8 @@ private fun RegularCollectionCard(items: List<RegularCollectionItem>, onEdit: (Y
             // fuori dalla fase di disegno e fa crashare l'app. Un anno scelto oltre i primi è sempre visibile.
             // Stesso stile dei chip del selettore dell'anno e del pannello FILTER: rettangoli con angoli
             // morbidi, scelto in lilla.
+            var showVarietyInfo by remember { mutableStateOf(false) }
+            if (showVarietyInfo) EfsInfoDialog(taglio = items.first().taglio, onDismiss = { showVarietyInfo = false })
             var expanded by remember { mutableStateOf(false) }
             val collapsible = years.size > YearChipsCollapsed + 1
             val showAll = !collapsible || expanded || years.indexOf(current) >= YearChipsCollapsed
@@ -732,6 +736,10 @@ private fun RegularCollectionCard(items: List<RegularCollectionItem>, onEdit: (Y
                         onClick = { selected = year },
                         label = { Text(year.chipLabel()) },
                     )
+                }
+                // La "i" della varietà (EFS): stessa spiegazione e stessa icona del pannello di collezione.
+                if (years.any { it.variety.isNotEmpty() }) {
+                    VarietyInfoButton(onClick = { showVarietyInfo = true }, modifier = Modifier.align(Alignment.CenterVertically))
                 }
                 if (collapsible) {
                     AssistChip(
