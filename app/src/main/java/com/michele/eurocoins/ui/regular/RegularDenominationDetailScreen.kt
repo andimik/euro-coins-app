@@ -94,6 +94,7 @@ import com.michele.eurocoins.data.formatCompactMintage
 import com.michele.eurocoins.data.mintLetterCity
 import com.michele.eurocoins.data.mintLetterTable
 import com.michele.eurocoins.ui.components.LocalMintLetters
+import com.michele.eurocoins.ui.components.keepScrollInside
 import com.michele.eurocoins.ui.components.LocalProAccess
 import com.michele.eurocoins.ui.components.MintLettersProPrompt
 import com.michele.eurocoins.ui.components.ProLockedRow
@@ -517,7 +518,7 @@ private fun RegularMintageHistorySheet(
                     CoinQuality.entries.forEach { MintageHeaderCell(it.label, modifier = Modifier.weight(it.columnWeight()), center = true) }
                 }
                 HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.4f))
-                LazyColumn(modifier = Modifier.heightIn(max = 360.dp)) {
+                LazyColumn(modifier = Modifier.keepScrollInside().heightIn(max = 360.dp)) {
                     items(entries, key = { it.key }) { entry ->
                         when (entry) {
                             is YearTableEntry.Mint -> MintPeriodLabel(entry.label)
@@ -612,7 +613,7 @@ private fun MintLetterMatrix(
         MintageHeaderCell("Total", modifier = Modifier.weight(1f), center = true)
     }
     HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.4f))
-    LazyColumn(modifier = Modifier.heightIn(max = 360.dp)) {
+    LazyColumn(modifier = Modifier.keepScrollInside().heightIn(max = 360.dp)) {
         items(table.rows, key = { it.anno }) { row ->
             Row(
                 modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
