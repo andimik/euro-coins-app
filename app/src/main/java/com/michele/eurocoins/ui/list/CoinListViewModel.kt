@@ -159,8 +159,14 @@ class CoinListViewModel(
         viewModelScope.launch { repository.quickToggle(coin, items) }
     }
 
-    fun onSaveCollection(coin: Coin, entries: Map<CoinQuality, FinishEntry>) {
-        viewModelScope.launch { repository.saveCollection(coin, entries.mapKeys { MintFinish(NO_MINT, it.key) }, editableMints = setOf(NO_MINT)) }
+    /** [editableMints]: le zecche che il pannello può cambiare (`null` = tutte), vedi `CollectionSheet`. */
+    fun onSaveCollection(coin: Coin, entries: Map<MintFinish, FinishEntry>, editableMints: Set<String>?) {
+        viewModelScope.launch { repository.saveCollection(coin, entries, editableMints) }
+    }
+
+    /** Conferma di rimozione del Quick add: toglie tutte le voci della moneta, anche quelle con zecca. */
+    fun onRemoveAll(coin: Coin) {
+        viewModelScope.launch { repository.saveCollection(coin, emptyMap(), editableMints = null) }
     }
 }
 

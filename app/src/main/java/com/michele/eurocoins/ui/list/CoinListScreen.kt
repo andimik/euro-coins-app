@@ -1,6 +1,6 @@
 package com.michele.eurocoins.ui.list
 
-import com.michele.eurocoins.ui.components.commemorativeRemovalMessage
+import com.michele.eurocoins.ui.components.commemorativeRemovalMessageFor
 import com.michele.eurocoins.ui.components.RemoveConfirmDialog
 import com.michele.eurocoins.data.QuickTap
 import com.michele.eurocoins.data.quickTapFor
@@ -65,6 +65,7 @@ import coil3.compose.AsyncImagePainter
 import coil3.compose.SubcomposeAsyncImage
 import coil3.compose.SubcomposeAsyncImageContent
 import com.michele.eurocoins.data.Coin
+import com.michele.eurocoins.data.MintFinish
 import com.michele.eurocoins.data.displayCountry
 import com.michele.eurocoins.data.displayTema
 import com.michele.eurocoins.data.stableKey
@@ -162,8 +163,8 @@ fun CoinListContent(
         CollectionSheet(
             coin = coin,
             currentItems = state.collection[coin.stableKey].orEmpty(),
-            onSave = { entries ->
-                viewModel.onSaveCollection(coin, entries)
+            onSave = { entries, editableMints ->
+                viewModel.onSaveCollection(coin, entries, editableMints)
                 editing = null
             },
             onDismiss = { editing = null },
@@ -172,9 +173,13 @@ fun CoinListContent(
 
     removing?.let { coin ->
         RemoveConfirmDialog(
-            message = commemorativeRemovalMessage(coin.displayTema(), state.collection[coin.stableKey].orEmpty().map { it.quality }),
+            message = commemorativeRemovalMessageFor(
+                coin.displayTema(),
+                state.collection[coin.stableKey].orEmpty().map { MintFinish(it.mint, it.quality) },
+            ),
             onConfirm = {
-                viewModel.onSaveCollection(coin, emptyMap())
+                // La conferma toglie TUTTO ciò che la riga vede, anche le voci con zecca.
+                viewModel.onRemoveAll(coin)
                 removing = null
             },
             onDismiss = { removing = null },

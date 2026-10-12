@@ -6,6 +6,8 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import com.michele.eurocoins.data.CoinQuality
+import com.michele.eurocoins.data.MintFinish
+import com.michele.eurocoins.data.NO_MINT
 import com.michele.eurocoins.data.NO_YEAR
 import com.michele.eurocoins.data.YearOption
 
@@ -60,12 +62,18 @@ internal fun commemorativeRemovalMessage(title: String, qualities: Collection<Co
  * Testo di conferma di un taglio Regular: quante annate si perdono e quali (la varietà EFS compare come "2002 EFS").
  * Una sola annata si nomina; da due in su si conta e si elencano le prime [MAX_LISTED_YEARS].
  */
-internal fun regularRemovalMessage(denomination: String, where: String, years: List<YearOption>): String {
+internal fun regularRemovalMessage(
+    denomination: String,
+    where: String,
+    years: List<YearOption>,
+    /** Zecche con lettera tra le voci che si perdono (vuota = nessuna): si nominano in una frase a parte. */
+    mints: Collection<String> = emptyList(),
+): String {
     // La sola voce senza anno (Quick add) non ha annate da elencare: "This removes 2 euro for …".
     val labels = years.distinct().takeUnless { list -> list.all { it.year == NO_YEAR } }.orEmpty()
         .sortedWith(compareBy({ it.year }, { it.variety }))
         .map { if (it.year == NO_YEAR) "no year" else if (it.variety.isEmpty()) "${it.year}" else "${it.year} ${it.variety}" }
-    return when {
+    val base = when {
         labels.isEmpty() -> "This removes $denomination for $where."
         labels.size == 1 -> "This removes ${labels[0]} of $denomination for $where."
         labels.size <= MAX_LISTED_YEARS ->
@@ -75,4 +83,28 @@ internal fun regularRemovalMessage(denomination: String, where: String, years: L
             "This removes all ${labels.size} years of $denomination for $where: " +
                 labels.take(MAX_LISTED_YEARS).joinToString(", ") + "…"
     }
+    val letters = mints.filter { it != NO_MINT }.distinct().sorted()
+    return when (letters.size) {
+        0 -> base
+        1 -> "$base Mint ${letters[0]} is included."
+        else -> "$base Mints ${joinLabels(letters)} are included."
+    }
+}
+
+/** "Standard", "Standard and BU", "Standard, Standard (D) and BU (D)": un elenco per il testo di una conferma. */
+private fun joinLabels(labels: List<String>): String = when (labels.size) {
+    0 -> ""
+    1 -> labels[0]
+    else -> labels.dropLast(1).joinToString(", ") + " and " + labels.last()
+}
+
+/**
+ * Come [commemorativeRemovalMessage] per una moneta che può avere più zecche: la voce senza zecca si nomina con
+ * la sola finitura, quelle con zecca con la lettera ("Standard (D)"). Senza zecche il testo è identico.
+ */
+internal fun commemorativeRemovalMessageFor(title: String, finishes: Collection<MintFinish>): String {
+    val labels = finishes.distinct()
+        .sortedWith(compareBy({ it.mint != NO_MINT }, { it.mint }, { it.quality.ordinal }))
+        .map { if (it.mint == NO_MINT) it.quality.label else "${it.quality.label} (${it.mint})" }
+    return "This removes ${joinLabels(labels)} for $title."
 }

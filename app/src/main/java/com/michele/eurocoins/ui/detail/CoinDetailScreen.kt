@@ -195,8 +195,8 @@ private fun CoinDetailPage(viewModel: CoinDetailViewModel) {
         CollectionSheet(
             coin = currentCoin,
             currentItems = items,
-            onSave = { entries ->
-                viewModel.onSaveCollection(entries)
+            onSave = { entries, editableMints ->
+                viewModel.onSaveCollection(entries, editableMints)
                 showSheet = false
             },
             onDismiss = { showSheet = false },

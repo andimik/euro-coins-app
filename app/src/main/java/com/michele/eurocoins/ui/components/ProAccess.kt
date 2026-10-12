@@ -43,16 +43,34 @@ val LocalMintLetters = staticCompositionLocalOf { MintLetters.EMPTY }
  */
 @Composable
 fun MintLettersProPrompt(onDismiss: () -> Unit, onGoPro: () -> Unit) {
+    ProFeaturePrompt(
+        title = "Mintage by mint",
+        text = "See how many coins each German mint struck, for every coin and year. " +
+            "Part of Euro Coins Pro, with no ads.",
+        onDismiss = onDismiss,
+        onGoPro = onGoPro,
+    )
+}
+
+/** Invito al Pro per registrare la zecca (A, D, F, G, J) di una moneta nella collezione. */
+@Composable
+fun MintRecordProPrompt(onDismiss: () -> Unit, onGoPro: () -> Unit) {
+    ProFeaturePrompt(
+        title = "Record the mint",
+        text = "Keep track of which German mint each of your coins comes from, with its own price and date. " +
+            "Part of Euro Coins Pro, with no ads.",
+        onDismiss = onDismiss,
+        onGoPro = onGoPro,
+    )
+}
+
+@Composable
+private fun ProFeaturePrompt(title: String, text: String, onDismiss: () -> Unit, onGoPro: () -> Unit) {
     AlertDialog(
         containerColor = MaterialTheme.colorScheme.surface,
         onDismissRequest = onDismiss,
-        title = { DialogTitle("Mintage by mint") },
-        text = {
-            Text(
-                "See how many coins each German mint struck, for every coin and year. " +
-                    "Part of Euro Coins Pro, with no ads.",
-            )
-        },
+        title = { DialogTitle(title) },
+        text = { Text(text) },
         confirmButton = {
             Button(
                 onClick = {

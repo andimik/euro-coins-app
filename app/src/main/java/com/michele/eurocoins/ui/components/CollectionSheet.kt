@@ -67,6 +67,8 @@ import com.michele.eurocoins.data.displayTema
 import com.michele.eurocoins.data.CoinQuality
 import com.michele.eurocoins.data.CollectionItem
 import com.michele.eurocoins.data.FinishEntry
+import com.michele.eurocoins.data.MintFinish
+import com.michele.eurocoins.data.mintLettersFor
 import com.michele.eurocoins.data.displayCountry
 import com.michele.eurocoins.data.stableKey
 import com.michele.eurocoins.ui.theme.PurpleFieldDark
@@ -109,41 +111,59 @@ private val PriceFieldHeight = 40.dp
 fun CollectionSheet(
     coin: Coin,
     currentItems: List<CollectionItem>,
-    onSave: (Map<CoinQuality, FinishEntry>) -> Unit,
+    /**
+     * Cosa salvare: le finiture spuntate per (zecca, finitura) e le zecche che il pannello può cambiare (`null` =
+     * tutte). Senza Pro il pannello vede e cambia solo "No mint": le voci con zecca non entrano nella bozza e il
+     * salvataggio le lascia intatte (un Pro scaduto non fa perdere ciò che l'utente aveva registrato).
+     */
+    onSave: (Map<MintFinish, FinishEntry>, Set<String>?) -> Unit,
     onDismiss: () -> Unit,
 ) {
-    // Il pannello conosce solo la voce "No mint" (la riga delle zecche arriva nei passi successivi): le voci
-    // con zecca non entrano nella bozza e il salvataggio le lascia intatte (`editableMints` dei ViewModel).
-    @Suppress("NAME_SHADOWING")
-    val currentItems = currentItems.filter { it.mint == NO_MINT }
+    val access = LocalProAccess.current
+    // Le lettere di zecca del paese (oggi la Germania): senza, nessuna riga Mint e il pannello è quello di sempre.
+    val letters = remember(coin.paese) { mintLettersFor(coin.paese) }
+    var showProPrompt by remember { mutableStateOf(false) }
+    val editableMints: Set<String>? = if (access.isPro) null else setOf(NO_MINT)
+    val items = if (access.isPro) currentItems else currentItems.filter { it.mint == NO_MINT }
     val checked = remember(coin.stableKey) {
-        mutableStateMapOf<CoinQuality, Boolean>().apply {
-            CoinQuality.entries.forEach { quality ->
-                this[quality] = currentItems.any { it.quality == quality } ||
-                    (currentItems.isEmpty() && quality == CoinQuality.STANDARD)
-            }
+        mutableStateMapOf<MintFinish, Boolean>().apply {
+            items.forEach { this[MintFinish(it.mint, it.quality)] = true }
+            // Alla prima apertura (nessuna voce, di nessuna zecca) "Standard" è già spuntata.
+            if (currentItems.isEmpty()) this[MintFinish(NO_MINT, CoinQuality.STANDARD)] = true
         }
     }
-    // Una data per FINITURA, facoltativa e vuota di default: una finitura aggiunta dopo non eredita quella
-    // delle altre (prima era una sola per moneta, e salvando la sovrascriveva per tutte).
+    // Una data per FINITURA (e per zecca), facoltativa e vuota di default: una finitura aggiunta dopo non eredita
+    // quella delle altre (prima era una sola per moneta, e salvando la sovrascriveva per tutte).
     val dates = remember(coin.stableKey) {
-        mutableStateMapOf<CoinQuality, Long?>().apply {
-            CoinQuality.entries.forEach { quality -> this[quality] = currentItems.firstOrNull { it.quality == quality }?.purchasedOn }
+        mutableStateMapOf<MintFinish, Long?>().apply {
+            items.forEach { this[MintFinish(it.mint, it.quality)] = it.purchasedOn }
+        }
+    }
+    val prices = remember(coin.stableKey) {
+        mutableStateMapOf<MintFinish, String>().apply {
+            items.forEach { this[MintFinish(it.mint, it.quality)] = formatPrice(it.priceCents) }
         }
     }
     var confirmRemove by remember(coin.stableKey) { mutableStateOf(false) }
-    val prices = remember(coin.stableKey) {
-        mutableStateMapOf<CoinQuality, String>().apply {
-            CoinQuality.entries.forEach { quality ->
-                this[quality] = formatPrice(currentItems.firstOrNull { it.quality == quality }?.priceCents)
-            }
-        }
+    // Si apre sulla zecca che ha qualcosa: "No mint" se c'è la voce semplice (o niente), altrimenti la prima lettera.
+    // Senza Pro sempre "No mint" (le altre sono bloccate).
+    var selectedMint by remember(coin.stableKey) {
+        mutableStateOf(
+            if (!access.isPro || items.isEmpty() || items.any { it.mint == NO_MINT }) NO_MINT
+            else items.map { it.mint }.min(),
+        )
     }
+    // Puntino sul chip: finiture spuntate in bozza, più (senza Pro) le zecche già registrate che la bozza non vede.
+    val withData: Set<String> = checked.filterValues { it }.keys.map { it.mint }.toSet() +
+        (if (access.isPro) emptySet() else currentItems.map { it.mint }.filter { it != NO_MINT }.toSet())
 
+    if (showProPrompt) {
+        MintRecordProPrompt(onDismiss = { showProPrompt = false }, onGoPro = access.onGoPro)
+    }
     if (confirmRemove) {
         RemoveConfirmDialog(
-            message = commemorativeRemovalMessage(coin.displayTema(), currentItems.map { it.quality }),
-            onConfirm = { confirmRemove = false; onSave(emptyMap()) },
+            message = commemorativeRemovalMessageFor(coin.displayTema(), items.map { MintFinish(it.mint, it.quality) }),
+            onConfirm = { confirmRemove = false; onSave(emptyMap(), editableMints) },
             onDismiss = { confirmRemove = false },
         )
     }
@@ -178,16 +198,31 @@ fun CollectionSheet(
                 modifier = Modifier.padding(top = 4.dp, bottom = 12.dp),
             )
 
+            if (letters.isNotEmpty()) {
+                MintStrip(
+                    paese = coin.paese,
+                    mints = letters,
+                    selected = selectedMint,
+                    withData = withData,
+                    locked = !access.isPro,
+                    onSelect = { selectedMint = it },
+                    onLockedTap = { showProPrompt = true },
+                    modifier = Modifier.padding(bottom = 0.dp),
+                )
+                Spacer(Modifier.height(8.dp))
+            }
+
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 CoinQuality.entries.forEach { quality ->
+                    val key = MintFinish(selectedMint, quality)
                     FinishCard(
                         quality = quality,
-                        checked = checked[quality] == true,
-                        price = prices[quality].orEmpty(),
-                        onCheckedChange = { checked[quality] = it },
-                        onPriceChange = { prices[quality] = it },
-                        date = dates[quality],
-                        onDateChange = { dates[quality] = it },
+                        checked = checked[key] == true,
+                        price = prices[key].orEmpty(),
+                        onCheckedChange = { checked[key] = it },
+                        onPriceChange = { prices[key] = it },
+                        date = dates[key],
+                        onDateChange = { dates[key] = it },
                     )
                 }
             }
@@ -198,7 +233,7 @@ fun CollectionSheet(
                 modifier = Modifier.fillMaxWidth(),
             ) {
                 // Solo se la moneta ha già qualcosa di salvato: alla prima apertura non c'è niente da togliere.
-                if (currentItems.isNotEmpty()) {
+                if (items.isNotEmpty()) {
                     RemoveButton(onClick = { confirmRemove = true })
                     Spacer(Modifier.weight(1f))
                 }
@@ -206,9 +241,9 @@ fun CollectionSheet(
                 Button(
                     onClick = {
                         onSave(
-                            CoinQuality.entries
-                                .filter { checked[it] == true }
+                            checked.filterValues { it }.keys
                                 .associateWith { FinishEntry(parsePriceCents(prices[it].orEmpty()), dates[it]) },
+                            editableMints,
                         )
                     },
                 ) { Text("Save") }

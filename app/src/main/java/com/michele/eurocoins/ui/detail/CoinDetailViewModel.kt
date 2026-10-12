@@ -44,9 +44,10 @@ class CoinDetailViewModel(
         }
     }
 
-    fun onSaveCollection(entries: Map<CoinQuality, FinishEntry>) {
+    /** [editableMints]: le zecche che il pannello può cambiare (`null` = tutte), vedi `CollectionSheet`. */
+    fun onSaveCollection(entries: Map<MintFinish, FinishEntry>, editableMints: Set<String>?) {
         val coin = _coin.value ?: return
-        viewModelScope.launch { repository.saveCollection(coin, entries.mapKeys { MintFinish(NO_MINT, it.key) }, editableMints = setOf(NO_MINT)) }
+        viewModelScope.launch { repository.saveCollection(coin, entries, editableMints) }
     }
 }
 
