@@ -101,6 +101,9 @@ import com.michele.eurocoins.ui.components.LocalMintLetters
 import com.michele.eurocoins.ui.components.keepScrollInside
 import com.michele.eurocoins.ui.components.protectFromSheetDrag
 import com.michele.eurocoins.ui.components.LocalProAccess
+import com.michele.eurocoins.ui.components.MintLetterBadges
+import com.michele.eurocoins.data.NO_MINT
+import com.michele.eurocoins.data.mintLettersFor
 import com.michele.eurocoins.ui.components.MintLettersProPrompt
 import com.michele.eurocoins.ui.components.ProLockedRow
 import androidx.compose.material3.SegmentedButton
@@ -894,13 +897,25 @@ private fun RegularCollectionCard(items: List<RegularCollectionItem>, onEdit: (Y
                 modifier = Modifier.padding(top = 4.dp),
             )
         }
+        // Le cinque zecche dell'anno scelto (oggi la Germania): cerchi pieni dove la moneta è posseduta. Si vedono
+        // con il Pro, o dove l'utente ha già registrato una lettera (un Pro scaduto non le nasconde).
+        val paese = items.first().paese
+        val mintLetters = remember(paese) { mintLettersFor(paese) }
+        if (mintLetters.isNotEmpty() && (LocalProAccess.current.isPro || items.any { it.mint != NO_MINT })) {
+            MintLetterBadges(
+                paese = paese,
+                letters = mintLetters,
+                owned = items.filter { YearOption(it.anno, it.variety) == current && it.mint != NO_MINT }.map { it.mint }.toSet(),
+                modifier = Modifier.padding(top = 12.dp),
+            )
+        }
         Column(
             modifier = Modifier.padding(top = 12.dp).animateContentSize(),
             verticalArrangement = Arrangement.spacedBy(6.dp),
         ) {
             items
                 .filter { !showYears || YearOption(it.anno, it.variety) == current }
-                .sortedWith(compareBy({ it.quality.ordinal }, { it.anno }, { it.variety }))
+                .sortedWith(compareBy({ it.quality.ordinal }, { it.anno }, { it.variety }, { it.mint }))
                 .forEach { item ->
                     val cents = item.priceCents?.takeIf { it > 0 }
                     val rowShape = RoundedCornerShape(14.dp)
@@ -917,7 +932,11 @@ private fun RegularCollectionCard(items: List<RegularCollectionItem>, onEdit: (Y
                         Column(modifier = Modifier.weight(1f)) {
                             Text(
                                 // L'anno è già nel chip scelto: nell'etichetta solo con un anno solo, dove i chip non ci sono.
-                                text = if (showYears) item.quality.label else "${item.quality.label} · ${YearOption(item.anno, item.variety).chipLabel()}",
+                                text = buildString {
+                                    append(item.quality.label)
+                                    if (!showYears) append(" · ${YearOption(item.anno, item.variety).chipLabel()}")
+                                    if (item.mint != NO_MINT) append(" · ${item.mint}")
+                                },
                                 style = MaterialTheme.typography.bodyLarge,
                                 fontWeight = FontWeight.Medium,
                                 color = colors.onSurface,
