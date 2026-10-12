@@ -1408,8 +1408,8 @@ pubblicazione). Codice in `data/pro/`, solo librerie Google (Billing 9.1, Mobile
     mostrava 200.000 invece di 108.900.000 ("Doppione… tenuta la prima": due type Numista per lo stesso anno,
     lato comune vecchio e nuovo). Ora le righe con lo stesso (anno, qualità) si SOMMANO. Era l'unico caso.
   - **FASE 3 — registrare la lettera in collezione: FATTA sul ramo `german-mints-phase3` (2026-10-12), NON unita a
-    `main`.** Passi 1-5 fatti e provati sul telefono; **non provati**: il backup v5 con voci con zecca su Drive
-    vero (coperto dai test di formato) e il tema chiaro. **Passi 2-5 (2026-10-12)**: riga **Mint** (`MintStrip`,
+    `main`.** Passi 1-5 fatti e provati sul telefono, tema chiaro compreso e backup/ripristino su Drive vero
+    (vedi sotto); **non provato**: il backup v5 dalla build di RELEASE (R8) installata. **Passi 2-5 (2026-10-12)**: riga **Mint** (`MintStrip`,
     chip a peso: "No mint" 2,2 e le lettere 1, non scorrevole, la J usciva di lato) nei pannelli delle commemorative
     (sotto il sottotitolo) e delle Regular (sotto la striscia degli anni); bozza per (zecca, finitura) / (anno,
     varietà, zecca, finitura); si apre sulla zecca che ha qualcosa; puntino sul chip dove c'è una finitura in bozza.
@@ -1429,7 +1429,18 @@ pubblicazione). Codice in `data/pro/`, solo librerie Google (Billing 9.1, Mobile
     mint", tabella a zecche affiancate, inviti al Pro), MAI i dati: le voci con zecca restano, il pannello vede solo
     "No mint" e le salva intatte, e nella card COLLECTION si leggono con la loro lettera. **Build di release (R8)**
     costruita il 2026-10-12: le classi `@Serializable` nuove (`BackupItem`, `RegularBackupItem`, `MintLettersJson`…)
-    sono tenute e non rinominate (`mapping.txt`/`seeds.txt`); NON provata sul telefono con un backup v5 vero.
+    sono tenute e non rinominate (`mapping.txt`/`seeds.txt`); non installata sul telefono. **Backup verificato
+    sul telefono con Drive vero (2026-10-12, build debug)**: con "Standard · D" registrata, "Back up now" scrive
+    `schemaVersion` 5 con `"mint":"D"` (94 + 205 voci, stato "Up to date"; la copia locale è
+    `files/backup_snapshot.json`, leggibile con `run-as`), il dialog "Restore" dice 94 commemorative + 191 Regular
+    ("up to date"), "Replace" ripristina 299 voci e la zecca D sopravvive; tolta la voce e rifatto il backup, il file
+    torna a `schemaVersion` 4, nessuna zecca, 93 + 205 voci (Drive di nuovo "pulito"). **Tema chiaro verificato**:
+    riga Mint (chip lilla selezionato, puntino), cerchi A D F G J nella card COLLECTION, "View by mint" e tabella a
+    zecche affiancate (filetti e velo sul totale leggibili), interruttore "German mints". **Interruttore spento**
+    (provato): niente riga Mint né pulsante né cerchi, la voce "Standard · D" resta elencata nella card, e un Save
+    senza modifiche non la tocca. **Card Pro in Free**: "No ads · German mints" sta su una riga con la pillola
+    "2,99 €". Nei test su telefono: in Free il layout delle Impostazioni cambia (la card Pro è più alta), le
+    coordinate vanno prese dal dump di uiautomator e non a memoria.
     **Passo 1 (2026-10-11)**: `mint` nelle due
     entity e nella chiave (`NO_MINT = ""`, `MintFinish`), `MIGRATION_10_11` (SQL in `CollectionMigration.kt`),
     pianificatori puri `planCommemorativeSave`/`planRegularSave` (`CollectionSave.kt`, con `editableMints`: le zecche
