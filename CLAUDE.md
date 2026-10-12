@@ -1424,10 +1424,14 @@ pubblicazione). Codice in `data/pro/`, solo librerie Google (Billing 9.1, Mobile
     e i cinque cerchi A D F G J con "1 of 5 mints" (`MintLetterBadges`; solo con Pro o dove c'è già una lettera: un
     Pro scaduto non nasconde i dati). **Testo della card Pro** (2026-10-12): "No ads · German mints" (era "Remove
     all ads"; una riga, accanto alla pillola del prezzo: da controllare che non si tronchi con il font ingrandito).
-    **Interruttore "German mints"** (Impostazioni → Collection, acceso di default, `UserSettings.showMints`,
-    `LocalShowMints`): spento nasconde la FUNZIONE per tutti, anche chi non ha il Pro (riga Mint, cerchi, "View by
-    mint", tabella a zecche affiancate, inviti al Pro), MAI i dati: le voci con zecca restano, il pannello vede solo
-    "No mint" e le salva intatte, e nella card COLLECTION si leggono con la loro lettera. **Build di release (R8)**
+    **Interruttore "German mints"** (Impostazioni → Catalogs → card "German mints", "Show mints", acceso di
+    default, `UserSettings.showMints`, `LocalShowMints`; spostato da "Collection" il 2026-10-12: nasconde una parte
+    dei cataloghi come "Hide microstates", non è un comportamento come Quick add; "Collection" resta col solo Quick
+    add, e la riga "Catalog options" nomina "German mints hidden" solo se nascoste): è un'**opzione del Pro**, senza
+    Pro è attenuata e non si tocca, mostra "acceso" (valore effettivo) e la funzione si vede sempre, bloccata e con
+    gli inviti; il valore salvato torna a valere col Pro. Spento (con Pro) nasconde la FUNZIONE (riga Mint, cerchi,
+    "View by mint", tabella a zecche affiancate, inviti al Pro), MAI i dati: le voci con zecca restano, il pannello
+    vede solo "No mint" e le salva intatte, e nella card COLLECTION si leggono con la loro lettera. **Build di release (R8)**
     costruita il 2026-10-12: le classi `@Serializable` nuove (`BackupItem`, `RegularBackupItem`, `MintLettersJson`…)
     sono tenute e non rinominate (`mapping.txt`/`seeds.txt`); non installata sul telefono. **Backup verificato
     sul telefono con Drive vero (2026-10-12, build debug)**: con "Standard · D" registrata, "Back up now" scrive
@@ -2019,7 +2023,7 @@ lingua da servire.
 Unit test JVM in `app/src/test` (`./gradlew.bat --offline :app:testDebugUnitTest`).
 `ProStateTest` (proprietà del Pro, una verifica fallita non lo toglie, pagamento in sospeso) e
 `InterstitialPolicyTest` (6 monete E 30 secondi, né una né l'altra da sole, più l'orologio portato indietro) coprono la logica pura di Pro e
-annuncio a tutto schermo; il billing e gli annunci veri non sono testabili in JVM. Oggi 283 test, nessuno saltato (`CollectionMintsTest`: salvataggio per zecca, Quick add, backup v5; `CollectionMigrationTest`: SQL della migrazione 10-11 contro lo schema di Room) (`MintLettersAssetTest` incrocia `mint_letters.json` con gli altri due asset, `MintLetterTableTest` la tabella e i numeri compatti).
+annuncio a tutto schermo; il billing e gli annunci veri non sono testabili in JVM. Oggi 284 test, nessuno saltato (`CollectionMintsTest`: salvataggio per zecca, Quick add, backup v5; `CollectionMigrationTest`: SQL della migrazione 10-11 contro lo schema di Room) (`MintLettersAssetTest` incrocia `mint_letters.json` con gli altri due asset, `MintLetterTableTest` la tabella e i numeri compatti).
 `UnsharpMaskTest` copre `unsharpMask()` (immagine uniforme invariata, intensità 0 = identità, bordo
 netto accentuato dai due lati e invariato lontano, valori nel campo 0-255, alfa intatta); il
 rendering con `Bitmap` di `ThumbnailSharpen` non è testabile in JVM.
