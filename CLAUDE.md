@@ -1422,8 +1422,15 @@ pubblicazione). Codice in `data/pro/`, solo librerie Google (Billing 9.1, Mobile
     conferma del Quick add toglie TUTTO (`onRemoveAll`); i testi nominano le zecche ("This removes BU and Standard
     (D) for …", "… Mint D is included."). Card COLLECTION dei dettagli: una riga per finitura e zecca ("Standard · D")
     e i cinque cerchi A D F G J con "1 of 5 mints" (`MintLetterBadges`; solo con Pro o dove c'è già una lettera: un
-    Pro scaduto non nasconde i dati). **Da decidere**: il testo della card Pro nelle Impostazioni dice ancora solo
-    "Remove all ads". **Passo 1 (2026-10-11)**: `mint` nelle due
+    Pro scaduto non nasconde i dati). **Testo della card Pro** (2026-10-12): "No ads · German mints" (era "Remove
+    all ads"; una riga, accanto alla pillola del prezzo: da controllare che non si tronchi con il font ingrandito).
+    **Interruttore "German mints"** (Impostazioni → Collection, acceso di default, `UserSettings.showMints`,
+    `LocalShowMints`): spento nasconde la FUNZIONE per tutti, anche chi non ha il Pro (riga Mint, cerchi, "View by
+    mint", tabella a zecche affiancate, inviti al Pro), MAI i dati: le voci con zecca restano, il pannello vede solo
+    "No mint" e le salva intatte, e nella card COLLECTION si leggono con la loro lettera. **Build di release (R8)**
+    costruita il 2026-10-12: le classi `@Serializable` nuove (`BackupItem`, `RegularBackupItem`, `MintLettersJson`…)
+    sono tenute e non rinominate (`mapping.txt`/`seeds.txt`); NON provata sul telefono con un backup v5 vero.
+    **Passo 1 (2026-10-11)**: `mint` nelle due
     entity e nella chiave (`NO_MINT = ""`, `MintFinish`), `MIGRATION_10_11` (SQL in `CollectionMigration.kt`),
     pianificatori puri `planCommemorativeSave`/`planRegularSave` (`CollectionSave.kt`, con `editableMints`: le zecche
     che il pannello può cambiare; i ViewModel passano `{NO_MINT}`, quindi i pannelli di oggi non toccano le voci con
