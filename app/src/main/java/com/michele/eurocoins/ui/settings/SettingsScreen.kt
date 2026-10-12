@@ -158,34 +158,20 @@ fun SettingsScreen(
                     },
                     verticalAlignment = Alignment.Top,
                 )
-                HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f))
-                // Opzione del Pro: senza Pro è bloccata (e la funzione si vede sempre, con gli inviti). Il sottotesto
-                // dice cosa fa; la nota sotto cosa succede ai dati se la si spegne.
-                SwitchRow(
-                    title = "German mints",
-                    subtitle = "Show mints on German coins",
-                    // Senza Pro il valore effettivo è sempre "acceso" (la funzione si vede, bloccata): si mostra quello.
-                    checked = showMints || !isPro,
-                    onCheckedChange = settingsViewModel::setShowMints,
-                    enabled = isPro,
-                )
-                InfoNote(
-                    text = if (isPro) {
-                        "Record which mint (A, D, F, G, J) each coin comes from and see mintages by mint. " +
-                            "Hiding it keeps what you saved."
-                    } else {
-                        "Record which mint (A, D, F, G, J) each coin comes from and see mintages by mint. " +
-                            "Part of Pro."
-                    },
-                    modifier = Modifier.padding(top = 8.dp),
-                )
             }
 
             // Microstati nascosti e scheda iniziale di ciascun catalogo stanno in una sottopagina (sono cinque controlli
             // che si toccano una volta sola): qui una riga con il riepilogo di come sono impostati.
             SectionHeader("Catalogs")
             CatalogsRow(
-                summary = catalogsSummary(hideCommemorativeMicrostates, hideRegularMicrostates, defaultTab, defaultRegularTab),
+                summary = catalogsSummary(
+                    hideCommemorativeMicrostates,
+                    hideRegularMicrostates,
+                    defaultTab,
+                    defaultRegularTab,
+                    // Senza Pro la funzione si vede sempre (bloccata): "nascosta" vale solo con il Pro.
+                    germanMintsHidden = isPro && !showMints,
+                ),
                 onClick = onCatalogsClick,
             )
 

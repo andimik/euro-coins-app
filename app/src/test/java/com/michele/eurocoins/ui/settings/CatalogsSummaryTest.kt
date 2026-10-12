@@ -31,4 +31,15 @@ class CatalogsSummaryTest {
         assertEquals("$tabs\nMicrostates hidden in Regular Issues", catalogsSummary(false, true, BrowseMode.ALL, RegularBrowseMode.ALL))
         assertEquals("$tabs\nMicrostates hidden in both", catalogsSummary(true, true, BrowseMode.ALL, RegularBrowseMode.ALL))
     }
+
+    @Test
+    fun germanMintsAreNamedOnlyWhenHidden() {
+        val tabs = "Commemorative: All\nRegular Issues: All"
+        assertEquals(tabs, catalogsSummary(false, false, BrowseMode.ALL, RegularBrowseMode.ALL, germanMintsHidden = false))
+        assertEquals("$tabs\nGerman mints hidden", catalogsSummary(false, false, BrowseMode.ALL, RegularBrowseMode.ALL, germanMintsHidden = true))
+        assertEquals(
+            "$tabs\nMicrostates hidden in both\nGerman mints hidden",
+            catalogsSummary(true, true, BrowseMode.ALL, RegularBrowseMode.ALL, germanMintsHidden = true),
+        )
+    }
 }

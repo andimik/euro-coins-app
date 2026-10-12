@@ -20,7 +20,9 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import com.michele.eurocoins.ui.backup.SettingsCard
 import com.michele.eurocoins.ui.browse.BrowseMode
+import com.michele.eurocoins.ui.components.InfoNote
 import com.michele.eurocoins.ui.regular.RegularBrowseMode
 import com.michele.eurocoins.ui.theme.appBarColors
 
@@ -48,6 +50,8 @@ internal fun catalogsSummary(
     hideRegular: Boolean,
     defaultTab: BrowseMode,
     defaultRegularTab: RegularBrowseMode,
+    /** Le zecche tedesche nascoste (Pro): si dice solo se lo sono, come i microstati. */
+    germanMintsHidden: Boolean = false,
 ): String {
     val tabs = "Commemorative: ${defaultTab.settingsLabel()}\nRegular Issues: ${defaultRegularTab.settingsLabel()}"
     val hidden = when {
@@ -56,7 +60,7 @@ internal fun catalogsSummary(
         hideRegular -> "Microstates hidden in Regular Issues"
         else -> null
     }
-    return if (hidden == null) tabs else "$tabs\n$hidden"
+    return listOfNotNull(tabs, hidden, "German mints hidden".takeIf { germanMintsHidden }).joinToString("\n")
 }
 
 /**
@@ -68,8 +72,11 @@ internal fun catalogsSummary(
 @Composable
 fun CatalogSettingsScreen(
     settingsViewModel: SettingsViewModel,
+    /** "German mints" è del Pro: senza, l'interruttore è bloccato. */
+    isPro: Boolean,
     onBack: () -> Unit,
 ) {
+    val showMints by settingsViewModel.showMints.collectAsState()
     val hideCommemorativeMicrostates by settingsViewModel.hideCommemorativeMicrostates.collectAsState()
     val hideRegularMicrostates by settingsViewModel.hideRegularMicrostates.collectAsState()
     val defaultTab by settingsViewModel.defaultTab.collectAsState()
@@ -116,6 +123,31 @@ fun CatalogSettingsScreen(
                 label = { it.settingsLabel() },
                 onSelect = settingsViewModel::setDefaultRegularTab,
             )
+
+            // Le zecche tedesche valgono per ENTRAMBI i cataloghi, quindi una card a sé e non dentro una delle due.
+            // Sta qui e non in "Collection" (2026-10-12): come "Hide microstates" mostra o nasconde una parte dei
+            // cataloghi, non è un comportamento come Quick add. Opzione del Pro: senza, bloccata.
+            SectionHeader("German mints")
+            SettingsCard {
+                SwitchRow(
+                    title = "Show mints",
+                    subtitle = "Mint letters on German coins",
+                    // Senza Pro il valore effettivo è sempre "acceso" (la funzione si vede, bloccata, con gli inviti).
+                    checked = showMints || !isPro,
+                    onCheckedChange = settingsViewModel::setShowMints,
+                    enabled = isPro,
+                )
+                InfoNote(
+                    text = if (isPro) {
+                        "Record which mint (A, D, F, G, J) each coin comes from and see mintages by mint. " +
+                            "Hiding it keeps what you saved."
+                    } else {
+                        "Record which mint (A, D, F, G, J) each coin comes from and see mintages by mint. " +
+                            "Part of Pro."
+                    },
+                    modifier = Modifier.padding(top = 8.dp),
+                )
+            }
             Spacer(Modifier.height(24.dp))
         }
     }

@@ -172,8 +172,10 @@ fun EuroCoinsNavHost(
                 key = "settings-catalogs",
                 factory = viewModelFactory { initializer { SettingsViewModel(repository, regularIssueRepository, userSettings, themePreference) } },
             )
+            val proState by monetization.billing.state.collectAsState()
             CatalogSettingsScreen(
                 settingsViewModel = settingsViewModel,
+                isPro = proState.isPro,
                 onBack = { navController.popBackStack() },
             )
         }
