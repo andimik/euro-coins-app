@@ -166,8 +166,8 @@ fun RegularIssueCountryScreen(
             seriesNumber = state.selectedIndex + 1,
             denomination = current.image,
             currentItems = current.items,
-            onSave = { entries ->
-                viewModel.onSaveCollection(current.denomination, entries)
+            onSave = { entries, editableMints ->
+                viewModel.onSaveCollection(current.denomination, entries, editableMints)
                 editing = null
             },
             onDismiss = { editing = null },
@@ -180,9 +180,10 @@ fun RegularIssueCountryScreen(
                 denomination = target.image.taglio,
                 where = "${state.countryName} · ${seriesTitle(state.selectedIndex + 1)}",
                 years = target.items.map { YearOption(it.anno, it.variety) },
+                mints = target.items.map { it.mint },
             ),
             onConfirm = {
-                viewModel.onSaveCollection(target.denomination, emptyList())
+                viewModel.onRemoveAll(target.denomination)
                 removing = null
             },
             onDismiss = { removing = null },

@@ -260,8 +260,8 @@ private fun RegularDenominationDetailPage(viewModel: RegularDenominationDetailVi
             seriesNumber = state.seriesNumber,
             denomination = image,
             currentItems = state.items,
-            onSave = { entries ->
-                viewModel.onSaveCollection(entries)
+            onSave = { entries, editableMints ->
+                viewModel.onSaveCollection(entries, editableMints)
                 showSheet = false
             },
             onDismiss = { showSheet = false },

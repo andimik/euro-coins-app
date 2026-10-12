@@ -115,10 +115,18 @@ class RegularDenominationListViewModel(
         viewModelScope.launch { repository.quickToggle(row.denomination, row.items) }
     }
 
-    fun onSaveCollection(row: DenominationRow, entries: List<RegularCollectionEntry>) {
+    fun onSaveCollection(row: DenominationRow, entries: List<RegularCollectionEntry>, editableMints: Set<String>?) {
         val series = row.denomination.series
         viewModelScope.launch {
-            repository.saveCollection(series.stableKey, taglio, series.paese, entries, window = row.denomination, editableMints = setOf(NO_MINT))
+            repository.saveCollection(series.stableKey, taglio, series.paese, entries, window = row.denomination, editableMints = editableMints)
+        }
+    }
+
+    /** Conferma di rimozione: toglie tutte le voci della riga, anche quelle con zecca. */
+    fun onRemoveAll(row: DenominationRow) {
+        val series = row.denomination.series
+        viewModelScope.launch {
+            repository.saveCollection(series.stableKey, taglio, series.paese, emptyList(), window = row.denomination, editableMints = null)
         }
     }
 }

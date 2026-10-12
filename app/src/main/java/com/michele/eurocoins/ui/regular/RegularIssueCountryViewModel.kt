@@ -117,10 +117,18 @@ class RegularIssueCountryViewModel(
         viewModelScope.launch { repository.quickToggle(denomination, items) }
     }
 
-    fun onSaveCollection(denomination: SeriesDenomination, entries: List<RegularCollectionEntry>) {
+    fun onSaveCollection(denomination: SeriesDenomination, entries: List<RegularCollectionEntry>, editableMints: Set<String>?) {
         val series = denomination.series
         viewModelScope.launch {
-            repository.saveCollection(series.stableKey, denomination.image.taglio, series.paese, entries, window = denomination, editableMints = setOf(NO_MINT))
+            repository.saveCollection(series.stableKey, denomination.image.taglio, series.paese, entries, window = denomination, editableMints = editableMints)
+        }
+    }
+
+    /** Conferma di rimozione: toglie tutte le voci della riga, anche quelle con zecca. */
+    fun onRemoveAll(denomination: SeriesDenomination) {
+        val series = denomination.series
+        viewModelScope.launch {
+            repository.saveCollection(series.stableKey, denomination.image.taglio, series.paese, emptyList(), window = denomination, editableMints = null)
         }
     }
 }

@@ -373,8 +373,8 @@ fun RegularIssuesScreen(
             seriesNumber = current.seriesNumber,
             denomination = current.denomination.image,
             currentItems = current.items,
-            onSave = { entries ->
-                viewModel.onSaveCollection(current, entries)
+            onSave = { entries, editableMints ->
+                viewModel.onSaveCollection(current, entries, editableMints)
                 editing = null
             },
             onDismiss = { editing = null },
@@ -387,9 +387,10 @@ fun RegularIssuesScreen(
                 denomination = target.denomination.image.taglio,
                 where = "${target.countryName} · ${seriesTitle(target.seriesNumber)}",
                 years = target.items.map { YearOption(it.anno, it.variety) },
+                mints = target.items.map { it.mint },
             ),
             onConfirm = {
-                viewModel.onSaveCollection(target, emptyList())
+                viewModel.onRemoveAll(target)
                 removing = null
             },
             onDismiss = { removing = null },

@@ -81,9 +81,9 @@ class RegularDenominationDetailViewModel(
         )
     }
 
-    fun onSaveCollection(entries: List<RegularCollectionEntry>) {
+    fun onSaveCollection(entries: List<RegularCollectionEntry>, editableMints: Set<String>?) {
         val denomination = uiState.value.denomination ?: return
         val series = denomination.series
-        viewModelScope.launch { repository.saveCollection(series.stableKey, taglio, series.paese, entries, window = denomination, editableMints = setOf(NO_MINT)) }
+        viewModelScope.launch { repository.saveCollection(series.stableKey, taglio, series.paese, entries, window = denomination, editableMints = editableMints) }
     }
 }
