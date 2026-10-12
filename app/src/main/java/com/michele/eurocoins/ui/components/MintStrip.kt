@@ -1,7 +1,6 @@
 package com.michele.eurocoins.ui.components
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
@@ -9,7 +8,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Lock
@@ -23,6 +21,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.michele.eurocoins.data.NO_MINT
 import com.michele.eurocoins.data.mintLetterCity
@@ -69,23 +68,32 @@ fun MintStrip(
             Text(text = "Pro", style = MaterialTheme.typography.labelMedium, color = colors.onSurfaceVariant)
         }
     }
+    // Larghezze a peso (non scorrevole): "No mint" ha più spazio delle lettere e tutte e sei entrano su un telefono
+    // da 375 dp senza che l ultima esca di lato (la J era tagliata).
     Row(
         horizontalArrangement = Arrangement.spacedBy(6.dp),
         modifier = Modifier
             .fillMaxWidth()
-            .horizontalScroll(rememberScrollState())
             .padding(top = 4.dp, bottom = 4.dp),
     ) {
         (listOf(NO_MINT) + mints).forEach { mint ->
             val hasData = mint in withData
             val isSelected = mint == selected
             val city = if (mint == NO_MINT) null else mintLetterCity(paese, mint)
-            Box(modifier = Modifier.alpha(if (locked) 0.6f else 1f)) {
+            Box(modifier = Modifier.weight(if (mint == NO_MINT) 2.2f else 1f).alpha(if (locked) 0.6f else 1f)) {
                 FilterChip(
                     selected = isSelected,
                     onClick = { if (locked) onLockedTap() else onSelect(mint) },
-                    label = { Text(mintChipLabel(mint)) },
-                    modifier = Modifier.semantics {
+                    label = {
+                        Text(
+                            text = mintChipLabel(mint),
+                            maxLines = 1,
+                            softWrap = false,
+                            textAlign = TextAlign.Center,
+                            modifier = Modifier.fillMaxWidth(),
+                        )
+                    },
+                    modifier = Modifier.fillMaxWidth().semantics {
                         contentDescription = buildString {
                             append(if (mint == NO_MINT) "No mint recorded" else "Mint $mint")
                             city?.let { append(", $it") }

@@ -258,4 +258,19 @@ class CollectionMintsTest {
         assertEquals(listOf("A", "D", "F", "G", "J"), mintLettersFor("Germania"))
         assertTrue(mintLettersFor("Francia").isEmpty())
     }
+
+    // ---- preselezione morbida di Standard "No mint" ----
+
+    @Test
+    fun theDefaultStandardStaysOnlyWhileNothingElseWasChosen() {
+        val d = MintFinish("D", CoinQuality.STANDARD)
+        // Prima apertura, niente toccato: la preselezione c'è (un tocco e Save, come sempre).
+        assertTrue(isSoftDefaultActive(firstOpen = true, noMintTouched = false, checkedFinishes = emptyList()))
+        // L'utente spunta qualcosa in una lettera: la preselezione sparisce, niente doppione "Standard" + "Standard D".
+        assertEquals(false, isSoftDefaultActive(firstOpen = true, noMintTouched = false, checkedFinishes = listOf(d)))
+        // L'utente ha toccato una card di "No mint": è una scelta sua, non più una preselezione.
+        assertEquals(false, isSoftDefaultActive(firstOpen = true, noMintTouched = true, checkedFinishes = emptyList()))
+        // Moneta già con qualcosa: nessuna preselezione.
+        assertEquals(false, isSoftDefaultActive(firstOpen = false, noMintTouched = false, checkedFinishes = emptyList()))
+    }
 }

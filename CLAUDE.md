@@ -1407,8 +1407,23 @@ pubblicazione). Codice in `data/pro/`, solo librerie Google (Billing 9.1, Mobile
   - **Bug trovato e corretto di passaggio** in `export-regular-issues.ps1`: Germania 20 cent 2007 Standard
     mostrava 200.000 invece di 108.900.000 ("Doppione… tenuta la prima": due type Numista per lo stesso anno,
     lato comune vecchio e nuovo). Ora le righe con lo stesso (anno, qualità) si SOMMANO. Era l'unico caso.
-  - **FASE 3 — registrare la lettera in collezione: piano del 2026-10-11; PASSO 1 FATTO (database, repository,
-    backup, test), i passi 2-6 NO** (ramo `german-mints-phase3`). **Passo 1 (2026-10-11)**: `mint` nelle due
+  - **FASE 3 — registrare la lettera in collezione: FATTA sul ramo `german-mints-phase3` (2026-10-12), NON unita a
+    `main`.** Passi 1-5 fatti e provati sul telefono; **non provati**: il backup v5 con voci con zecca su Drive
+    vero (coperto dai test di formato) e il tema chiaro. **Passi 2-5 (2026-10-12)**: riga **Mint** (`MintStrip`,
+    chip a peso: "No mint" 2,2 e le lettere 1, non scorrevole, la J usciva di lato) nei pannelli delle commemorative
+    (sotto il sottotitolo) e delle Regular (sotto la striscia degli anni); bozza per (zecca, finitura) / (anno,
+    varietà, zecca, finitura); si apre sulla zecca che ha qualcosa; puntino sul chip dove c'è una finitura in bozza.
+    **Con Pro** il pannello vede e salva TUTTE le voci (`editableMints = null`); **senza Pro** vede solo "No mint",
+    le lettere sono bloccate (lucchetto "Mint 🔒 Pro", tocco = invito "Record the mint") e il salvataggio le lascia
+    intatte (verificato sul telefono: salvare un BU semplice senza Pro non cancella "Standard · D"). **Preselezione
+    morbida** (`isSoftDefaultActive`): alla prima apertura "Standard" senza zecca è già spuntata ma sparisce da sola
+    se l'utente spunta qualcosa in una lettera, altrimenti registrare solo "Standard · D" salvava anche la voce
+    semplice (doppione, visto sul telefono). Rimozione: il "Remove" del pannello toglie ciò che il pannello vede, la
+    conferma del Quick add toglie TUTTO (`onRemoveAll`); i testi nominano le zecche ("This removes BU and Standard
+    (D) for …", "… Mint D is included."). Card COLLECTION dei dettagli: una riga per finitura e zecca ("Standard · D")
+    e i cinque cerchi A D F G J con "1 of 5 mints" (`MintLetterBadges`; solo con Pro o dove c'è già una lettera: un
+    Pro scaduto non nasconde i dati). **Da decidere**: il testo della card Pro nelle Impostazioni dice ancora solo
+    "Remove all ads". **Passo 1 (2026-10-11)**: `mint` nelle due
     entity e nella chiave (`NO_MINT = ""`, `MintFinish`), `MIGRATION_10_11` (SQL in `CollectionMigration.kt`),
     pianificatori puri `planCommemorativeSave`/`planRegularSave` (`CollectionSave.kt`, con `editableMints`: le zecche
     che il pannello può cambiare; i ViewModel passano `{NO_MINT}`, quindi i pannelli di oggi non toccano le voci con
@@ -1986,7 +2001,7 @@ lingua da servire.
 Unit test JVM in `app/src/test` (`./gradlew.bat --offline :app:testDebugUnitTest`).
 `ProStateTest` (proprietà del Pro, una verifica fallita non lo toglie, pagamento in sospeso) e
 `InterstitialPolicyTest` (6 monete E 30 secondi, né una né l'altra da sole, più l'orologio portato indietro) coprono la logica pura di Pro e
-annuncio a tutto schermo; il billing e gli annunci veri non sono testabili in JVM. Oggi 279 test, nessuno saltato (`CollectionMintsTest`: salvataggio per zecca, Quick add, backup v5; `CollectionMigrationTest`: SQL della migrazione 10-11 contro lo schema di Room) (`MintLettersAssetTest` incrocia `mint_letters.json` con gli altri due asset, `MintLetterTableTest` la tabella e i numeri compatti).
+annuncio a tutto schermo; il billing e gli annunci veri non sono testabili in JVM. Oggi 283 test, nessuno saltato (`CollectionMintsTest`: salvataggio per zecca, Quick add, backup v5; `CollectionMigrationTest`: SQL della migrazione 10-11 contro lo schema di Room) (`MintLettersAssetTest` incrocia `mint_letters.json` con gli altri due asset, `MintLetterTableTest` la tabella e i numeri compatti).
 `UnsharpMaskTest` copre `unsharpMask()` (immagine uniforme invariata, intensità 0 = identità, bordo
 netto accentuato dai due lati e invariato lontano, valori nel campo 0-255, alfa intatta); il
 rendering con `Bitmap` di `ThumbnailSharpen` non è testabile in JVM.

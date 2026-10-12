@@ -68,6 +68,7 @@ import com.michele.eurocoins.data.CoinQuality
 import com.michele.eurocoins.data.CollectionItem
 import com.michele.eurocoins.data.FinishEntry
 import com.michele.eurocoins.data.MintFinish
+import com.michele.eurocoins.data.isSoftDefaultActive
 import com.michele.eurocoins.data.mintLettersFor
 import com.michele.eurocoins.data.displayCountry
 import com.michele.eurocoins.data.stableKey
@@ -128,8 +129,19 @@ fun CollectionSheet(
     val checked = remember(coin.stableKey) {
         mutableStateMapOf<MintFinish, Boolean>().apply {
             items.forEach { this[MintFinish(it.mint, it.quality)] = true }
-            // Alla prima apertura (nessuna voce, di nessuna zecca) "Standard" è già spuntata.
-            if (currentItems.isEmpty()) this[MintFinish(NO_MINT, CoinQuality.STANDARD)] = true
+        }
+    }
+    // Alla prima apertura (nessuna voce, di nessuna zecca) "Standard" senza zecca è già spuntata, ma come
+    // preselezione MORBIDA: sparisce da sola se l'utente spunta qualcosa in una lettera (vedi isSoftDefaultActive).
+    var noMintTouched by remember(coin.stableKey) { mutableStateOf(false) }
+    val softKey = MintFinish(NO_MINT, CoinQuality.STANDARD)
+    val soft = isSoftDefaultActive(currentItems.isEmpty(), noMintTouched, checked.filterValues { it }.keys)
+    fun isChecked(key: MintFinish): Boolean = checked[key] == true || (soft && key == softKey)
+    // Toccare una card "No mint" rende la preselezione una scelta vera (si scrive nella bozza).
+    fun touchNoMint(key: MintFinish) {
+        if (key.mint == NO_MINT && !noMintTouched) {
+            if (soft) checked[softKey] = true
+            noMintTouched = true
         }
     }
     // Una data per FINITURA (e per zecca), facoltativa e vuota di default: una finitura aggiunta dopo non eredita
@@ -154,7 +166,7 @@ fun CollectionSheet(
         )
     }
     // Puntino sul chip: finiture spuntate in bozza, più (senza Pro) le zecche già registrate che la bozza non vede.
-    val withData: Set<String> = checked.filterValues { it }.keys.map { it.mint }.toSet() +
+    val withData: Set<String> = (checked.filterValues { it }.keys + listOfNotNull(softKey.takeIf { soft })).map { it.mint }.toSet() +
         (if (access.isPro) emptySet() else currentItems.map { it.mint }.filter { it != NO_MINT }.toSet())
 
     if (showProPrompt) {
@@ -217,12 +229,12 @@ fun CollectionSheet(
                     val key = MintFinish(selectedMint, quality)
                     FinishCard(
                         quality = quality,
-                        checked = checked[key] == true,
+                        checked = isChecked(key),
                         price = prices[key].orEmpty(),
-                        onCheckedChange = { checked[key] = it },
-                        onPriceChange = { prices[key] = it },
+                        onCheckedChange = { touchNoMint(key); checked[key] = it },
+                        onPriceChange = { touchNoMint(key); prices[key] = it },
                         date = dates[key],
-                        onDateChange = { dates[key] = it },
+                        onDateChange = { touchNoMint(key); dates[key] = it },
                     )
                 }
             }
@@ -241,7 +253,7 @@ fun CollectionSheet(
                 Button(
                     onClick = {
                         onSave(
-                            checked.filterValues { it }.keys
+                            (checked.filterValues { it }.keys + listOfNotNull(softKey.takeIf { soft }))
                                 .associateWith { FinishEntry(parsePriceCents(prices[it].orEmpty()), dates[it]) },
                             editableMints,
                         )

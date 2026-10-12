@@ -122,3 +122,13 @@ private fun regularItems(
         )
     }
 }
+
+/**
+ * Alla PRIMA apertura di una moneta ("Standard" senza zecca già spuntata, il caso di quasi tutte: un tocco e Save)
+ * quella spunta è una preselezione, non una scelta dell'utente. Se l'utente passa a una lettera e spunta lì le sue
+ * finiture, la preselezione deve sparire da sola: altrimenti registrare solo "Standard · D" salverebbe anche la voce
+ * senza zecca, un doppione (2026-10-12, visto sul telefono). La preselezione resta finché l'utente non tocca una
+ * card di "No mint" ([noMintTouched]) e finché non ha spuntato niente in una zecca con lettera.
+ */
+fun isSoftDefaultActive(firstOpen: Boolean, noMintTouched: Boolean, checkedFinishes: Collection<MintFinish>): Boolean =
+    firstOpen && !noMintTouched && checkedFinishes.none { it.mint != NO_MINT }
