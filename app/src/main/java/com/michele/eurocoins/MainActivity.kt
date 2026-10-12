@@ -99,7 +99,8 @@ class MainActivity : ComponentActivity() {
                     CompositionLocalProvider(
                         LocalSwipeHint provides app.swipeHint,
                         LocalQuickAdd provides quickAdd,
-                        LocalShowMints provides showMints,
+                        // Senza Pro la funzione si vede sempre (bloccata, con gli inviti): l'interruttore è del Pro e non si può toccare.
+                        LocalShowMints provides (showMints || !pro.isPro),
                         LocalProAccess provides proAccess,
                         LocalMintLetters provides app.mintLetters,
                     ) {

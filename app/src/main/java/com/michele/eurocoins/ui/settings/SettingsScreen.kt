@@ -106,6 +106,8 @@ fun SettingsScreen(
     val rotateHomeCoins by settingsViewModel.rotateHomeCoins.collectAsState()
     val quickAdd by settingsViewModel.quickAdd.collectAsState()
     val showMints by settingsViewModel.showMints.collectAsState()
+    val proState by monetization.billing.state.collectAsState()
+    val isPro = proState.isPro
     val themeMode by settingsViewModel.themeMode.collectAsState()
     val owned by settingsViewModel.ownedCounts.collectAsState()
     val backupState by backupViewModel.state.collectAsState()
@@ -157,11 +159,25 @@ fun SettingsScreen(
                     verticalAlignment = Alignment.Top,
                 )
                 HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f))
+                // Opzione del Pro: senza Pro è bloccata (e la funzione si vede sempre, con gli inviti). Il sottotesto
+                // dice cosa fa; la nota sotto cosa succede ai dati se la si spegne.
                 SwitchRow(
                     title = "German mints",
-                    subtitle = "Mint letters and mintages by mint",
-                    checked = showMints,
+                    subtitle = "Show mints on German coins",
+                    // Senza Pro il valore effettivo è sempre "acceso" (la funzione si vede, bloccata): si mostra quello.
+                    checked = showMints || !isPro,
                     onCheckedChange = settingsViewModel::setShowMints,
+                    enabled = isPro,
+                )
+                InfoNote(
+                    text = if (isPro) {
+                        "Record which mint (A, D, F, G, J) each coin comes from and see mintages by mint. " +
+                            "Hiding it keeps what you saved."
+                    } else {
+                        "Record which mint (A, D, F, G, J) each coin comes from and see mintages by mint. " +
+                            "Part of Pro."
+                    },
+                    modifier = Modifier.padding(top = 8.dp),
                 )
             }
 
@@ -546,9 +562,16 @@ private fun ResetRow(owned: OwnedCounts, onClick: () -> Unit) {
 
 /** Riga con titolo, spiegazione e interruttore (stessa resa per tutte le opzioni on/off). */
 @Composable
-internal fun SwitchRow(title: String, subtitle: String, checked: Boolean, onCheckedChange: (Boolean) -> Unit) {
+internal fun SwitchRow(
+    title: String,
+    subtitle: String,
+    checked: Boolean,
+    onCheckedChange: (Boolean) -> Unit,
+    /** false = bloccato (opzione del Pro senza Pro): attenuato e non toccabile. */
+    enabled: Boolean = true,
+) {
     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-        Column(modifier = Modifier.weight(1f)) {
+        Column(modifier = Modifier.weight(1f).alpha(if (enabled) 1f else 0.6f)) {
             Text(title, style = MaterialTheme.typography.titleMedium)
             Text(
                 subtitle,
@@ -560,6 +583,7 @@ internal fun SwitchRow(title: String, subtitle: String, checked: Boolean, onChec
         Switch(
             checked = checked,
             onCheckedChange = onCheckedChange,
+            enabled = enabled,
             thumbContent = if (checked) {
                 { Icon(Icons.Filled.Check, contentDescription = null, modifier = Modifier.size(SwitchDefaults.IconSize)) }
             } else {
