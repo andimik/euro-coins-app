@@ -101,6 +101,7 @@ import com.michele.eurocoins.ui.components.LocalMintLetters
 import com.michele.eurocoins.ui.components.keepScrollInside
 import com.michele.eurocoins.ui.components.protectFromSheetDrag
 import com.michele.eurocoins.ui.components.LocalProAccess
+import com.michele.eurocoins.ui.components.LocalShowMints
 import com.michele.eurocoins.ui.components.MintLetterBadges
 import com.michele.eurocoins.data.NO_MINT
 import com.michele.eurocoins.data.mintLettersFor
@@ -477,8 +478,10 @@ private fun RegularMintageHistorySheet(
     val mintLetters = LocalMintLetters.current
     var letterQuality by remember { mutableStateOf(CoinQuality.STANDARD) }
     var showProPrompt by remember { mutableStateOf(false) }
-    val letterTable = remember(mintLetters, denomination, rows, letterQuality) {
-        mintLetterTable(mintLetters, paese, denomination.taglio, rows.map { it.first }, letterQuality)
+    // "German mints" spento: nessuna tabella a zecche affiancate e nemmeno la riga che invita al Pro.
+    val showMints = LocalShowMints.current
+    val letterTable = remember(mintLetters, denomination, rows, letterQuality, showMints) {
+        if (showMints) mintLetterTable(mintLetters, paese, denomination.taglio, rows.map { it.first }, letterQuality) else null
     }
     val matrix = if (access.isPro) letterTable else null
     if (showProPrompt) {
@@ -901,7 +904,7 @@ private fun RegularCollectionCard(items: List<RegularCollectionItem>, onEdit: (Y
         // con il Pro, o dove l'utente ha già registrato una lettera (un Pro scaduto non le nasconde).
         val paese = items.first().paese
         val mintLetters = remember(paese) { mintLettersFor(paese) }
-        if (mintLetters.isNotEmpty() && (LocalProAccess.current.isPro || items.any { it.mint != NO_MINT })) {
+        if (LocalShowMints.current && mintLetters.isNotEmpty() && (LocalProAccess.current.isPro || items.any { it.mint != NO_MINT })) {
             MintLetterBadges(
                 paese = paese,
                 letters = mintLetters,

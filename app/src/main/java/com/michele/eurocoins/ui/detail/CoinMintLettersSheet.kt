@@ -40,6 +40,7 @@ import com.michele.eurocoins.data.displayTema
 import com.michele.eurocoins.data.mintLetterCity
 import com.michele.eurocoins.ui.components.LocalMintLetters
 import com.michele.eurocoins.ui.components.LocalProAccess
+import com.michele.eurocoins.ui.components.LocalShowMints
 import com.michele.eurocoins.ui.components.MintLettersProPrompt
 import java.text.NumberFormat
 import java.util.Locale
@@ -52,6 +53,8 @@ import java.util.Locale
  */
 @Composable
 fun CoinMintLettersEntry(coin: Coin) {
+    // "German mints" spento nelle Impostazioni: nessun pulsante, nemmeno quello bloccato con l'invito al Pro.
+    if (!LocalShowMints.current) return
     val shares = LocalMintLetters.current.forCommemorative(coin.numistaId, coin.anno)
     if (shares.isEmpty()) return
     val access = LocalProAccess.current

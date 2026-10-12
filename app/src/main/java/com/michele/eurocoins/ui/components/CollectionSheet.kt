@@ -122,10 +122,14 @@ fun CollectionSheet(
 ) {
     val access = LocalProAccess.current
     // Le lettere di zecca del paese (oggi la Germania): senza, nessuna riga Mint e il pannello è quello di sempre.
-    val letters = remember(coin.paese) { mintLettersFor(coin.paese) }
+    val showMints = LocalShowMints.current
+    val letters = remember(coin.paese, showMints) { if (showMints) mintLettersFor(coin.paese) else emptyList() }
+    // Il pannello cambia le zecche solo con il Pro E con la funzione accesa: altrimenti vede solo "No mint" e il
+    // salvataggio lascia intatte le voci con zecca.
+    val canEditMints = access.isPro && showMints
     var showProPrompt by remember { mutableStateOf(false) }
-    val editableMints: Set<String>? = if (access.isPro) null else setOf(NO_MINT)
-    val items = if (access.isPro) currentItems else currentItems.filter { it.mint == NO_MINT }
+    val editableMints: Set<String>? = if (canEditMints) null else setOf(NO_MINT)
+    val items = if (canEditMints) currentItems else currentItems.filter { it.mint == NO_MINT }
     val checked = remember(coin.stableKey) {
         mutableStateMapOf<MintFinish, Boolean>().apply {
             items.forEach { this[MintFinish(it.mint, it.quality)] = true }
@@ -161,13 +165,13 @@ fun CollectionSheet(
     // Senza Pro sempre "No mint" (le altre sono bloccate).
     var selectedMint by remember(coin.stableKey) {
         mutableStateOf(
-            if (!access.isPro || items.isEmpty() || items.any { it.mint == NO_MINT }) NO_MINT
+            if (!canEditMints || items.isEmpty() || items.any { it.mint == NO_MINT }) NO_MINT
             else items.map { it.mint }.min(),
         )
     }
     // Puntino sul chip: finiture spuntate in bozza, più (senza Pro) le zecche già registrate che la bozza non vede.
     val withData: Set<String> = (checked.filterValues { it }.keys + listOfNotNull(softKey.takeIf { soft })).map { it.mint }.toSet() +
-        (if (access.isPro) emptySet() else currentItems.map { it.mint }.filter { it != NO_MINT }.toSet())
+        (if (canEditMints) emptySet() else currentItems.map { it.mint }.filter { it != NO_MINT }.toSet())
 
     if (showProPrompt) {
         MintRecordProPrompt(onDismiss = { showProPrompt = false }, onGoPro = access.onGoPro)

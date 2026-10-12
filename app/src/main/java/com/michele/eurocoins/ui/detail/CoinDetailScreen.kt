@@ -102,6 +102,7 @@ import com.michele.eurocoins.data.CoinQuality
 import com.michele.eurocoins.data.anyPurchaseDate
 import com.michele.eurocoins.ui.components.PurchaseDateLine
 import com.michele.eurocoins.ui.components.LocalProAccess
+import com.michele.eurocoins.ui.components.LocalShowMints
 import com.michele.eurocoins.ui.components.MintLetterBadges
 import com.michele.eurocoins.data.NO_MINT
 import com.michele.eurocoins.data.mintLettersFor
@@ -757,7 +758,7 @@ private fun CollectionCard(items: List<CollectionItem>, paese: String, onEdit: (
         // l'utente ha già registrato una lettera (un Pro scaduto non le nasconde); senza nessuna delle due niente.
         val mintLetters = remember(paese) { mintLettersFor(paese) }
         val ownedMints = items.map { it.mint }.filter { it != NO_MINT }.toSet()
-        if (mintLetters.isNotEmpty() && (LocalProAccess.current.isPro || ownedMints.isNotEmpty())) {
+        if (LocalShowMints.current && mintLetters.isNotEmpty() && (LocalProAccess.current.isPro || ownedMints.isNotEmpty())) {
             MintLetterBadges(
                 paese = paese,
                 letters = mintLetters,

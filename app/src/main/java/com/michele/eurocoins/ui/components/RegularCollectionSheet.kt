@@ -123,11 +123,14 @@ fun RegularCollectionSheet(
 ) {
     val access = LocalProAccess.current
     // Le lettere di zecca del paese (oggi la Germania): senza, nessuna riga Mint e il pannello è quello di sempre.
-    val letters = remember(series.paese) { mintLettersFor(series.paese) }
+    val showMints = LocalShowMints.current
+    val letters = remember(series.paese, showMints) { if (showMints) mintLettersFor(series.paese) else emptyList() }
+    // Il pannello cambia le zecche solo con il Pro E con la funzione accesa (vedi [LocalShowMints]).
+    val canEditMints = access.isPro && showMints
     var showProPrompt by remember { mutableStateOf(false) }
-    val editableMints: Set<String>? = if (access.isPro) null else setOf(NO_MINT)
+    val editableMints: Set<String>? = if (canEditMints) null else setOf(NO_MINT)
     // Con Pro la bozza ha TUTTE le voci; senza, solo quelle senza zecca (le altre restano intatte al salvataggio).
-    val items = if (access.isPro) currentItems else currentItems.filter { it.mint == NO_MINT }
+    val items = if (canEditMints) currentItems else currentItems.filter { it.mint == NO_MINT }
     val stateKey = "${series.stableKey}|${denomination.taglio}"
     var confirmRemove by remember(stateKey) { mutableStateOf(false) }
     val currentYear = remember { Year.now().value }
@@ -141,7 +144,7 @@ fun RegularCollectionSheet(
     var selectedMint by remember(stateKey) {
         val atInitial = items.filter { YearOption(it.anno, it.variety) == initial }
         mutableStateOf(
-            if (!access.isPro || atInitial.isEmpty() || atInitial.any { it.mint == NO_MINT }) NO_MINT
+            if (!canEditMints || atInitial.isEmpty() || atInitial.any { it.mint == NO_MINT }) NO_MINT
             else atInitial.map { it.mint }.min(),
         )
     }
@@ -167,7 +170,7 @@ fun RegularCollectionSheet(
         }
     }
     // Voci con zecca che questo pannello non vede (senza Pro): contano solo per i puntini.
-    val hidden = if (access.isPro) emptyList() else currentItems.filter { it.mint != NO_MINT }
+    val hidden = if (canEditMints) emptyList() else currentItems.filter { it.mint != NO_MINT }
     val withData: Set<YearOption> = checked.filterValues { it }.keys.map { YearOption(it.year, it.variety) }.toSet() +
         hidden.map { YearOption(it.anno, it.variety) }
     // Puntino sul chip della zecca: finiture spuntate (o già registrate) dell'anno scelto.

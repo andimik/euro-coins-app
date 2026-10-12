@@ -105,6 +105,7 @@ fun SettingsScreen(
     val defaultRegularTab by settingsViewModel.defaultRegularTab.collectAsState()
     val rotateHomeCoins by settingsViewModel.rotateHomeCoins.collectAsState()
     val quickAdd by settingsViewModel.quickAdd.collectAsState()
+    val showMints by settingsViewModel.showMints.collectAsState()
     val themeMode by settingsViewModel.themeMode.collectAsState()
     val owned by settingsViewModel.ownedCounts.collectAsState()
     val backupState by backupViewModel.state.collectAsState()
@@ -154,6 +155,13 @@ fun SettingsScreen(
                         append(" asks you to confirm before it's removed.")
                     },
                     verticalAlignment = Alignment.Top,
+                )
+                HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f))
+                SwitchRow(
+                    title = "German mints",
+                    subtitle = "Mint letters and mintages by mint",
+                    checked = showMints,
+                    onCheckedChange = settingsViewModel::setShowMints,
                 )
             }
 
@@ -458,7 +466,7 @@ private fun ProCard(
                 Text(
                     when {
                         isPro -> "No ads. Thank you!"
-                        else -> "Remove all ads"
+                        else -> "No ads · German mints"
                     },
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,

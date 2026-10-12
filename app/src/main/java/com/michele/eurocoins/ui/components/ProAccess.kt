@@ -38,6 +38,14 @@ val LocalProAccess = compositionLocalOf { ProAccess(isPro = false, onGoPro = {})
 val LocalMintLetters = staticCompositionLocalOf { MintLetters.EMPTY }
 
 /**
+ * "German mints" acceso (Impostazioni, sezione Collection, acceso di default): la riga Mint nei pannelli, i cerchi
+ * A D F G J, "View by mint" e la tabella a zecche affiancate. Spento, nasconde la FUNZIONE (anche gli inviti al Pro),
+ * mai i dati: le voci con zecca restano salvate, si salvano intatte e nella card COLLECTION si leggono con la
+ * loro lettera. Fornito da `MainActivity`.
+ */
+val LocalShowMints = compositionLocalOf { true }
+
+/**
  * Invito al Pro per il dettaglio per zecca (2026-10-11, mockup approvato): dice cosa si ottiene in una frase,
  * "Not now" a sinistra e "Go Pro" pieno a pillola, come il pulsante della card Pro delle Impostazioni.
  */

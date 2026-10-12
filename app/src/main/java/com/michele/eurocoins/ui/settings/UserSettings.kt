@@ -30,6 +30,7 @@ class UserSettings(context: Context) {
     private val _defaultRegularTab = MutableStateFlow(parseRegularBrowseMode(prefs.getString(KEY_DEFAULT_REGULAR_TAB, null)))
     private val _rotateHomeCoins = MutableStateFlow(prefs.getBoolean(KEY_ROTATE_HOME_COINS, true))
     private val _quickAdd = MutableStateFlow(prefs.getBoolean(KEY_QUICK_ADD, false))
+    private val _showMints = MutableStateFlow(prefs.getBoolean(KEY_SHOW_MINTS, true))
 
     /** true = nasconde monete e card di Andorra, Monaco, San Marino e Città del Vaticano nelle commemorative. */
     val hideCommemorativeMicrostates: StateFlow<Boolean> = _hideCommemorativeMicrostates.asStateFlow()
@@ -128,6 +129,19 @@ class UserSettings(context: Context) {
         _quickAdd.value = value
     }
 
+    /**
+     * true = i pannelli di collezione, i dettagli e le tabelle mostrano le zecche delle monete tedesche (la riga
+     * Mint, i cerchi A D F G J, "View by mint"). Acceso di default. Spento nasconde la FUNZIONE, mai i dati: le
+     * voci con zecca già registrate restano e si salvano intatte. Vale per tutti (anche senza Pro: chi non la
+     * vuole non vede nemmeno gli inviti).
+     */
+    val showMints: StateFlow<Boolean> = _showMints.asStateFlow()
+
+    fun setShowMints(value: Boolean) {
+        prefs.edit().putBoolean(KEY_SHOW_MINTS, value).apply()
+        _showMints.value = value
+    }
+
     fun setRotateHomeCoins(value: Boolean) {
         prefs.edit().putBoolean(KEY_ROTATE_HOME_COINS, value).apply()
         _rotateHomeCoins.value = value
@@ -150,6 +164,7 @@ class UserSettings(context: Context) {
         const val KEY_DEFAULT_REGULAR_TAB = "default_regular_tab"
         const val KEY_ROTATE_HOME_COINS = "rotate_home_coins"
         const val KEY_QUICK_ADD = "quick_add"
+        const val KEY_SHOW_MINTS = "show_mints"
         const val KEY_LAST_SHOWCASE = "last_showcase"
         const val KEY_SHOWCASE_DAY_PREFIX = "showcase_day_"
         const val KEY_LAST_SHOWCASE_REGULAR = "last_showcase_regular"
