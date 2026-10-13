@@ -41,26 +41,33 @@ internal fun RegularBrowseMode.settingsLabel(): String = when (this) {
 }
 
 /**
- * Riepilogo della riga "Catalog options" nelle Impostazioni: dice come sono impostati i cataloghi senza aprire la
- * sottopagina. Una riga per catalogo con la scheda iniziale (due righe: "Commemorative: Countries" / "Regular Issues: Countries", perché in una sola "Regular Issues" andava a capo a metà); una terza solo se si nascondono dei microstati, perché cambia
- * ciò che si vede (e i totali).
+ * Titolo della riga che apre la sottopagina dei cataloghi nelle Impostazioni (variante A del mockup del
+ * 2026-10-13): una frase che dice COSA c'è dentro, uguale per Free e Pro (le zecche si nominano anche se sono
+ * bloccate: da Free è l'unico posto dove si scopre che esistono). Prima il titolo era "Catalog options", che
+ * ripeteva la sezione "Catalogs", e il riepilogo elencava le schede iniziali ("Commemorative: Countries / Regular
+ * Issues: Countries"): prolisso e poco utile, la scheda iniziale si cambia una volta sola.
+ * Tra "German" e "mints" c'è uno spazio NON separabile (U+00A0): sul telefono la frase va a capo dopo "and" e
+ * senza, a capo dopo "German", "mints" restava da solo sulla seconda riga.
  */
-internal fun catalogsSummary(
+internal const val CATALOGS_ROW_TITLE = "Microstates, start tab and German mints"
+
+/**
+ * Riga di avviso sotto il titolo: SOLO ciò che è nascosto (microstati, zecche tedesche), perché cambia ciò che si
+ * vede e i totali. `null` se non è nascosto niente: allora la riga è il solo titolo.
+ */
+internal fun catalogsHiddenNote(
     hideCommemorative: Boolean,
     hideRegular: Boolean,
-    defaultTab: BrowseMode,
-    defaultRegularTab: RegularBrowseMode,
-    /** Le zecche tedesche nascoste (Pro): si dice solo se lo sono, come i microstati. */
-    germanMintsHidden: Boolean = false,
-): String {
-    val tabs = "Commemorative: ${defaultTab.settingsLabel()}\nRegular Issues: ${defaultRegularTab.settingsLabel()}"
-    val hidden = when {
+    germanMintsHidden: Boolean,
+): String? {
+    val microstates = when {
         hideCommemorative && hideRegular -> "Microstates hidden in both"
         hideCommemorative -> "Microstates hidden in Commemorative"
         hideRegular -> "Microstates hidden in Regular Issues"
         else -> null
     }
-    return listOfNotNull(tabs, hidden, "German mints hidden".takeIf { germanMintsHidden }).joinToString("\n")
+    return listOfNotNull(microstates, "German mints hidden".takeIf { germanMintsHidden })
+        .takeIf { it.isNotEmpty() }?.joinToString("\n")
 }
 
 /**

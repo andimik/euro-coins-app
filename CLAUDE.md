@@ -475,11 +475,15 @@ che apre la sottopagina `CatalogSettingsScreen`, vedi sotto), Appearance, Danger
 **Riorganizzazione (2026-10-11, dopo mockup)**: la pagina era arrivata a ~2,6 schermate (le card di backup e Pro
 sono alte e Quick add aveva aggiunto una sezione). I cinque controlli che si toccano una volta sola, microstati nascosti
 e scheda iniziale di ciascun catalogo, stanno ora in una SOTTOPAGINA "Catalogs" (`CatalogSettingsScreen`, route
-`settings/catalogs`, le stesse due `CatalogCard` di prima, una schermata intera), raggiunta da una riga "Catalog options"
-con il RIEPILOGO dei valori correnti (`catalogsSummary`: "Commemorative: Countries / Regular Issues: Countries", una
-riga per catalogo perché in una sola "Regular Issues" andava a capo a metà, e una terza "Microstates hidden in …"
-solo se se ne nascondono, perché cambia ciò che si vede e i totali): di solito non serve aprirla per leggere come sono
-impostati. **Quick add resta IN LINEA sulla principale** (scelta dell'utente, variante "card in linea": è la funzione
+`settings/catalogs`, le stesse due `CatalogCard` di prima più la card "German mints", una schermata intera), raggiunta
+da una riga che è UNA FRASE sul contenuto, uguale per Free e Pro: "Microstates, start tab and German mints"
+(`CATALOGS_ROW_TITLE`; variante A scelta il 2026-10-13 dopo mockup). **Storia**: la riga si chiamava "Catalog options"
+(ripeteva il titolo della sezione "Catalogs") e sotto aveva il riepilogo dei valori correnti ("Commemorative: Countries
+/ Regular Issues: Countries": prolisso, e la scheda iniziale si cambia una volta sola); da Free non diceva che le zecche
+tedesche stanno là dentro. Ora le zecche si nominano anche da Free (è l'unico punto dove si scopre che esistono) e
+sotto compare una riga SOLO se qualcosa è nascosto (`catalogsHiddenNote`: "Microstates hidden in Commemorative / Regular
+Issues / both", "German mints hidden", perché cambia ciò che si vede e i totali). Spazio non separabile (U+00A0) tra
+"German" e "mints": senza, a capo dopo "German" lasciava "mints" da solo. `CatalogsSummaryTest`. **Quick add resta IN LINEA sulla principale** (scelta dell'utente, variante "card in linea": è la funzione
 nuova e si accende/spegne per provarla, non va cercata in una sottopagina). Appearance resta in linea: una
 sottopagina per due controlli sarebbe solo attrito. Scartate: sezioni a fisarmonica (nasconde senza accorciare) e una
 sottopagina per sezione (troppo frammentata). Costo: un tocco in più per cambiare uno dei cinque controlli spostati.
@@ -1427,7 +1431,7 @@ pubblicazione). Codice in `data/pro/`, solo librerie Google (Billing 9.1, Mobile
     **Interruttore "German mints"** (Impostazioni → Catalogs → card "German mints", "Show mints", acceso di
     default, `UserSettings.showMints`, `LocalShowMints`; spostato da "Collection" il 2026-10-12: nasconde una parte
     dei cataloghi come "Hide microstates", non è un comportamento come Quick add; "Collection" resta col solo Quick
-    add, e la riga "Catalog options" nomina "German mints hidden" solo se nascoste): è un'**opzione del Pro**, senza
+    add, e la riga di Catalogs nelle Impostazioni nomina "German mints hidden" solo se nascoste): è un'**opzione del Pro**, senza
     Pro è attenuata e non si tocca, mostra "acceso" (valore effettivo) e la funzione si vede sempre, bloccata e con
     gli inviti; il valore salvato torna a valere col Pro. Spento (con Pro) nasconde la FUNZIONE (riga Mint, cerchi,
     "View by mint", tabella a zecche affiancate, inviti al Pro), MAI i dati: le voci con zecca restano, il pannello

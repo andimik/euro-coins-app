@@ -1,45 +1,36 @@
 package com.michele.eurocoins.ui.settings
 
-import com.michele.eurocoins.ui.browse.BrowseMode
-import com.michele.eurocoins.ui.regular.RegularBrowseMode
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNull
 import org.junit.Test
 
-/** Il riepilogo della riga "Catalog options": come sono impostati i cataloghi senza aprire la sottopagina. */
+/**
+ * La riga "Microstates, start tab and German mints" delle Impostazioni: il titolo dice cosa c'è dentro e, SOLO se
+ * qualcosa è nascosto, una riga sotto lo dice (cambia ciò che si vede e i totali).
+ */
 class CatalogsSummaryTest {
 
     @Test
-    fun oneLinePerCatalogWithTheStartingTabWhenNothingIsHidden() {
-        assertEquals(
-            "Commemorative: Countries\nRegular Issues: Countries",
-            catalogsSummary(false, false, BrowseMode.COUNTRIES, RegularBrowseMode.COUNTRIES),
-        )
+    fun theTitleNamesWhatIsInsideAndIsTheSameForFreeAndPro() {
+        // Le zecche si nominano anche da Free (bloccate): è l'unico posto dove si scopre che esistono.
+        assertEquals("Microstates, start tab and German mints", CATALOGS_ROW_TITLE)
     }
 
     @Test
-    fun theRegularValuesTabIsCalledValuesLikeInTheSelector() {
-        assertEquals(
-            "Commemorative: Years\nRegular Issues: Values",
-            catalogsSummary(false, false, BrowseMode.YEARS, RegularBrowseMode.DENOMINATIONS),
-        )
+    fun nothingIsSaidWhenNothingIsHidden() {
+        assertNull(catalogsHiddenNote(hideCommemorative = false, hideRegular = false, germanMintsHidden = false))
     }
 
     @Test
-    fun hiddenMicrostatesAddAThirdLineNamingTheCatalogs() {
-        val tabs = "Commemorative: All\nRegular Issues: All"
-        assertEquals("$tabs\nMicrostates hidden in Commemorative", catalogsSummary(true, false, BrowseMode.ALL, RegularBrowseMode.ALL))
-        assertEquals("$tabs\nMicrostates hidden in Regular Issues", catalogsSummary(false, true, BrowseMode.ALL, RegularBrowseMode.ALL))
-        assertEquals("$tabs\nMicrostates hidden in both", catalogsSummary(true, true, BrowseMode.ALL, RegularBrowseMode.ALL))
+    fun hiddenMicrostatesNameTheCatalogs() {
+        assertEquals("Microstates hidden in Commemorative", catalogsHiddenNote(true, false, false))
+        assertEquals("Microstates hidden in Regular Issues", catalogsHiddenNote(false, true, false))
+        assertEquals("Microstates hidden in both", catalogsHiddenNote(true, true, false))
     }
 
     @Test
-    fun germanMintsAreNamedOnlyWhenHidden() {
-        val tabs = "Commemorative: All\nRegular Issues: All"
-        assertEquals(tabs, catalogsSummary(false, false, BrowseMode.ALL, RegularBrowseMode.ALL, germanMintsHidden = false))
-        assertEquals("$tabs\nGerman mints hidden", catalogsSummary(false, false, BrowseMode.ALL, RegularBrowseMode.ALL, germanMintsHidden = true))
-        assertEquals(
-            "$tabs\nMicrostates hidden in both\nGerman mints hidden",
-            catalogsSummary(true, true, BrowseMode.ALL, RegularBrowseMode.ALL, germanMintsHidden = true),
-        )
+    fun hiddenGermanMintsAreNamedAfterTheMicrostates() {
+        assertEquals("German mints hidden", catalogsHiddenNote(false, false, true))
+        assertEquals("Microstates hidden in both\nGerman mints hidden", catalogsHiddenNote(true, true, true))
     }
 }
