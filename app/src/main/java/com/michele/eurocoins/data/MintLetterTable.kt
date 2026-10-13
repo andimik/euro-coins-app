@@ -47,8 +47,8 @@ fun mintLetterTable(
  * Tiratura compatta per una colonna stretta, SEMPRE con una cifra decimale: "960.0 M", "119.4 M", "4.0 B", "85.0 k"
  * (scelta del proprietario, 2026-10-11: coerenza tra le colonne e più spazio). Perde le ultime cifre ("125.37 M"
  * diventa "125.4 M"): è fatta per confrontare le zecche tra loro, il numero esatto sta nella card e nella tabella
- * dei totali. Sotto 1.000 è il numero intero. Niente "≈" davanti, a differenza di [formatApproxTotal]: ripetuto in
- * ogni cella sarebbe rumore.
+ * dei totali. Sotto 1.000 è il numero intero. Niente "≈" davanti: ripetuto in ogni cella sarebbe rumore. Lo
+ * usa anche la card MINTAGES dei tagli con più anni ([formatCardMintage]).
  */
 fun formatCompactMintage(value: Long): String {
     if (value < 1_000L) return value.toString()

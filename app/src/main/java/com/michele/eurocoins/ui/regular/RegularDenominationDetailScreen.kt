@@ -128,7 +128,7 @@ import com.michele.eurocoins.data.YearMintPart
 import com.michele.eurocoins.data.numistaUrl
 import com.michele.eurocoins.data.yearMintLabels
 import com.michele.eurocoins.data.yearMintParts
-import com.michele.eurocoins.data.formatApproxTotal
+import com.michele.eurocoins.data.formatCardMintage
 import com.michele.eurocoins.data.groupMintagesByYear
 import com.michele.eurocoins.data.summarizeMintages
 import com.michele.eurocoins.ui.components.RegularCollectionSheet
@@ -371,8 +371,9 @@ private fun DenominationHero(image: RegularIssueImage, owned: Boolean) {
  */
 @Composable
 private fun RegularMintageCard(image: RegularIssueImage, onViewByYear: () -> Unit) {
-    val numberFormat = remember { NumberFormat.getIntegerInstance(Locale.ENGLISH) }
     val distinctYears = remember(image) { image.tirature.map { it.anno }.distinct().size }
+    // Compatta ("14.2 B", "10.1 M", "19.0 k") solo se "View by year" esiste: lì i numeri sono esatti (vedi formatCardMintage).
+    val compact = distinctYears > 1
     DetailCard {
         SectionLabel("MINTAGES")
         Spacer(Modifier.height(10.dp))
@@ -381,7 +382,7 @@ private fun RegularMintageCard(image: RegularIssueImage, onViewByYear: () -> Uni
                 val summary = remember(image, quality) { summarizeMintages(image.tirature, quality) }
                 Column(modifier = Modifier.weight(1f), horizontalAlignment = Alignment.CenterHorizontally) {
                     ValueLabel(
-                        value = summary.total?.let { if (summary.isSum) formatApproxTotal(it) else numberFormat.format(it) } ?: NO_VALUE,
+                        value = summary.total?.let { formatCardMintage(it, compact) } ?: NO_VALUE,
                         label = quality.label,
                         shrinkToFit = true,
                     )

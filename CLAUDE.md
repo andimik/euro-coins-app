@@ -1081,6 +1081,16 @@ catalogo completo.
     un'aggregazione). Senza questa distinzione una somma tra più anni si legge come la tiratura di
     un anno solo, un ordine di grandezza fuorviante per chi guarda la card — punto sollevato
     dall'utente come consulenza UI/UX (vedi § Convenzioni di lavoro, "Pareri su UI/UX").
+    **Formato dei numeri** (2026-10-13, `formatCardMintage`): con almeno due anni (cioè quando "View by year"
+    esiste) le tre colonne sono SEMPRE compatte a UNA cifra decimale, "14.2 B", "10.1 M", "19.0 k" (la stessa
+    `formatCompactMintage` delle tabelle per zecca); con un anno solo i numeri sono esatti ("12,345,678"), perché
+    non c'è nessun altro posto dove leggerli e sono tutti dello stesso ordine di grandezza. Motivo: prima le somme
+    erano a 3 cifre significative con "≈" (`formatApproxTotal`, tolta) e un anno solo restava esatto, quindi una
+    card poteva mostrare "≈ 14.2 B · ≈ 10.1 M · 19,000" ("poco armonioso", segnalato dal proprietario). **Scelte
+    dell'utente**: una cifra decimale (non tre significative: "7.9 B" invece di "7.87 B", per coerenza con le
+    zecche) e **nessuna riga Total nella tabella "by year"** (proposta e scartata): la somma esatta di una
+    qualità non è scritta da nessuna parte, si legge solo arrotondata nella card. Le commemorative non cambiano
+    (una tiratura per qualità, al massimo 8 cifre, nessuna tabella dove leggere l'esatto).
   - **"View by year" compare solo se ci sono almeno due anni distinti in totale** (su qualunque
     qualità): con un solo anno la somma coincide già col dato di quell'anno, un pulsante per
     aprire una tabella da una riga sola sarebbe solo attrito.
