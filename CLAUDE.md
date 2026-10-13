@@ -1433,7 +1433,8 @@ pubblicazione). Codice in `data/pro/`, solo librerie Google (Billing 9.1, Mobile
     w≈637) separano gli anni, le lettere A D F G J a x≈207 raggruppano gli ordini, i tagli sono otto colonne a
     x≈250…670, e un'etichetta ruotata con "(" nel blocco marca la 2 € commemorativa.
   - Nelle commemorative, "View by mint" sotto i tre numeri di MINTAGES
-    (`CoinMintLettersEntry`) apre un pannello con una riga per lettera e il totale. **Senza Pro**: nella tabella by
+    (`CoinMintLettersEntry`) apre un pannello con una riga per lettera e il totale (colonna della lettera a
+    larghezza fissa: con "  Città" in coda la città partiva dove finiva la lettera e non si allineava, 2026-10-13). **Senza Pro**: nella tabella by
     year una riga lilla "Go Pro to split by mint (A, D, F, G, J)" (`ProLockedRow`), nelle commemorative il
     pulsante lilla con lucchetto; il tocco apre `MintLettersProPrompt` ("Not now" / "Go Pro"). **Testi del blocco
     (2026-10-13)**: dove qualcosa è bloccato l'invito è un'azione ("Go Pro to unlock." nella nota di Impostazioni →
