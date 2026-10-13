@@ -104,6 +104,7 @@ import com.michele.eurocoins.ui.components.PurchaseDateLine
 import com.michele.eurocoins.ui.components.LocalProAccess
 import com.michele.eurocoins.ui.components.LocalShowMints
 import com.michele.eurocoins.ui.components.MintLetterBadges
+import com.michele.eurocoins.ui.components.MintRecordProPrompt
 import com.michele.eurocoins.data.NO_MINT
 import com.michele.eurocoins.data.mintLettersFor
 import com.michele.eurocoins.data.CollectionItem
@@ -188,6 +189,8 @@ private fun CoinDetailPage(viewModel: CoinDetailViewModel) {
     val coin by viewModel.coin.collectAsState()
     val items by viewModel.items.collectAsState()
     var showSheet by remember { mutableStateOf(false) }
+    // Zecca scelta toccando una lettera della card COLLECTION: il pannello si apre su quella (null = la predefinita).
+    var sheetMint by remember { mutableStateOf<String?>(null) }
     val scrollState = rememberScrollState()
     var viewport by remember { mutableStateOf<Rect?>(null) }
 
@@ -205,6 +208,7 @@ private fun CoinDetailPage(viewModel: CoinDetailViewModel) {
                 showSheet = false
             },
             onDismiss = { showSheet = false },
+            initialMint = sheetMint,
         )
     }
     Column(
@@ -222,7 +226,18 @@ private fun CoinDetailPage(viewModel: CoinDetailViewModel) {
         ) {
             CoinHero(currentCoin, owned = items.isNotEmpty())
             MintageCard(currentCoin)
-            CollectionCard(items = items, paese = currentCoin.paese, onEdit = { showSheet = true })
+            CollectionCard(
+                items = items,
+                paese = currentCoin.paese,
+                onEdit = {
+                    sheetMint = null
+                    showSheet = true
+                },
+                onEditMint = { mint ->
+                    sheetMint = mint
+                    showSheet = true
+                },
+            )
             currentCoin.noteStoriche?.let { NotesCard(it, scrollState, viewport = { viewport }) }
             ImageCreditFooter(currentCoin)
         }
@@ -704,7 +719,13 @@ fun FooterLine(text: String) {
  * Lo stesso pannello dell'elenco si apre da entrambi i pulsanti.
  */
 @Composable
-private fun CollectionCard(items: List<CollectionItem>, paese: String, onEdit: () -> Unit) {
+private fun CollectionCard(
+    items: List<CollectionItem>,
+    paese: String,
+    onEdit: () -> Unit,
+    /** Tocco su una lettera di zecca: il pannello si apre su quella zecca. */
+    onEditMint: (String) -> Unit,
+) {
     if (items.isEmpty()) {
         DetailCard {
             SectionLabel("COLLECTION")
@@ -758,12 +779,19 @@ private fun CollectionCard(items: List<CollectionItem>, paese: String, onEdit: (
         // l'utente ha già registrato una lettera (un Pro scaduto non le nasconde); senza nessuna delle due niente.
         val mintLetters = remember(paese) { mintLettersFor(paese) }
         val ownedMints = items.map { it.mint }.filter { it != NO_MINT }.toSet()
-        if (LocalShowMints.current && mintLetters.isNotEmpty() && (LocalProAccess.current.isPro || ownedMints.isNotEmpty())) {
+        val access = LocalProAccess.current
+        var showMintPrompt by remember { mutableStateOf(false) }
+        if (showMintPrompt) {
+            MintRecordProPrompt(onDismiss = { showMintPrompt = false }, onGoPro = access.onGoPro)
+        }
+        if (LocalShowMints.current && mintLetters.isNotEmpty() && (access.isPro || ownedMints.isNotEmpty())) {
             MintLetterBadges(
                 paese = paese,
                 letters = mintLetters,
                 owned = ownedMints,
                 modifier = Modifier.padding(top = 12.dp),
+                // Con il Pro il tocco apre il pannello su quella zecca; senza, l'invito (registrare una zecca è del Pro).
+                onLetterClick = { letter -> if (access.isPro) onEditMint(letter) else showMintPrompt = true },
             )
         }
         Column(

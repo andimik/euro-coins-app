@@ -106,6 +106,7 @@ import com.michele.eurocoins.ui.components.MintLetterBadges
 import com.michele.eurocoins.data.NO_MINT
 import com.michele.eurocoins.data.mintLettersFor
 import com.michele.eurocoins.ui.components.MintLettersProPrompt
+import com.michele.eurocoins.ui.components.MintRecordProPrompt
 import com.michele.eurocoins.ui.components.ProLockedRow
 import androidx.compose.material3.SegmentedButton
 import androidx.compose.material3.SegmentedButtonDefaults
@@ -247,6 +248,8 @@ private fun RegularDenominationDetailPage(viewModel: RegularDenominationDetailVi
     var showSheet by remember { mutableStateOf(false) }
     // Anno scelto nella card COLLECTION quando si apre "Edit collection": il pannello si apre su quello.
     var sheetYear by remember { mutableStateOf<YearOption?>(null) }
+    // Zecca scelta toccando una lettera della card: il pannello si apre su quella (null = la predefinita).
+    var sheetMint by remember { mutableStateOf<String?>(null) }
     var showMintageHistory by remember { mutableStateOf(false) }
     val scrollState = rememberScrollState()
     var viewport by remember { mutableStateOf<Rect?>(null) }
@@ -270,6 +273,7 @@ private fun RegularDenominationDetailPage(viewModel: RegularDenominationDetailVi
             },
             onDismiss = { showSheet = false },
             initialYear = sheetYear,
+            initialMint = sheetMint,
         )
     }
     if (showMintageHistory) {
@@ -297,6 +301,12 @@ private fun RegularDenominationDetailPage(viewModel: RegularDenominationDetailVi
                 items = state.items,
                 onEdit = { year ->
                     sheetYear = year
+                    sheetMint = null
+                    showSheet = true
+                },
+                onEditMint = { year, mint ->
+                    sheetYear = year
+                    sheetMint = mint
                     showSheet = true
                 },
             )
@@ -794,7 +804,12 @@ private fun MintageHeaderCell(text: String, modifier: Modifier = Modifier, cente
  */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-private fun RegularCollectionCard(items: List<RegularCollectionItem>, onEdit: (YearOption?) -> Unit) {
+private fun RegularCollectionCard(
+    items: List<RegularCollectionItem>,
+    onEdit: (YearOption?) -> Unit,
+    /** Tocco su una lettera di zecca: il pannello si apre sull'anno scelto e su quella zecca. */
+    onEditMint: (YearOption, String) -> Unit,
+) {
     if (items.isEmpty()) {
         DetailCard {
             SectionLabel("COLLECTION")
@@ -905,12 +920,19 @@ private fun RegularCollectionCard(items: List<RegularCollectionItem>, onEdit: (Y
         // con il Pro, o dove l'utente ha già registrato una lettera (un Pro scaduto non le nasconde).
         val paese = items.first().paese
         val mintLetters = remember(paese) { mintLettersFor(paese) }
-        if (LocalShowMints.current && mintLetters.isNotEmpty() && (LocalProAccess.current.isPro || items.any { it.mint != NO_MINT })) {
+        val access = LocalProAccess.current
+        var showMintPrompt by remember { mutableStateOf(false) }
+        if (showMintPrompt) {
+            MintRecordProPrompt(onDismiss = { showMintPrompt = false }, onGoPro = access.onGoPro)
+        }
+        if (LocalShowMints.current && mintLetters.isNotEmpty() && (access.isPro || items.any { it.mint != NO_MINT })) {
             MintLetterBadges(
                 paese = paese,
                 letters = mintLetters,
                 owned = items.filter { YearOption(it.anno, it.variety) == current && it.mint != NO_MINT }.map { it.mint }.toSet(),
                 modifier = Modifier.padding(top = 12.dp),
+                // Con il Pro il tocco apre il pannello su quella zecca; senza, l'invito (registrare una zecca è del Pro).
+                onLetterClick = { letter -> if (access.isPro) onEditMint(current, letter) else showMintPrompt = true },
             )
         }
         Column(
