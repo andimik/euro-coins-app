@@ -61,6 +61,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.michele.eurocoins.data.NO_MINT
+import com.michele.eurocoins.data.canSaveCollection
 import com.michele.eurocoins.data.formatPurchaseDate
 import com.michele.eurocoins.data.Coin
 import com.michele.eurocoins.data.displayTema
@@ -68,7 +69,6 @@ import com.michele.eurocoins.data.CoinQuality
 import com.michele.eurocoins.data.CollectionItem
 import com.michele.eurocoins.data.FinishEntry
 import com.michele.eurocoins.data.MintFinish
-import com.michele.eurocoins.data.isSoftDefaultActive
 import com.michele.eurocoins.data.mintLettersFor
 import com.michele.eurocoins.data.displayCountry
 import com.michele.eurocoins.data.stableKey
@@ -101,9 +101,10 @@ private val PriceFieldHeight = 40.dp
  *
  * Lavora su una BOZZA locale e scrive solo con "Save": chiudere il pannello
  * senza salvare non cambia nulla, quindi un tocco sbagliato non cancella un
- * prezzo già inserito. Alla prima apertura (moneta non ancora posseduta)
- * "Standard" è già spuntata, perché è il caso di quasi tutte le monete: un
- * tocco sulla casella + Save.
+ * prezzo già inserito. Alla prima apertura (moneta non ancora posseduta) NESSUNA
+ * finitura è spuntata, come nel pannello delle Regular Issues (2026-10-13: prima
+ * "Standard" era già spuntata, e chi aveva solo un BU la registrava in più
+ * senza accorgersene); "Save" resta spento finché non c'è una spunta.
  *
  * Usato sia dall'elenco (casella accanto a ogni moneta) sia dal dettaglio.
  */
@@ -135,19 +136,9 @@ fun CollectionSheet(
             items.forEach { this[MintFinish(it.mint, it.quality)] = true }
         }
     }
-    // Alla prima apertura (nessuna voce, di nessuna zecca) "Standard" senza zecca è già spuntata, ma come
-    // preselezione MORBIDA: sparisce da sola se l'utente spunta qualcosa in una lettera (vedi isSoftDefaultActive).
-    var noMintTouched by remember(coin.stableKey) { mutableStateOf(false) }
-    val softKey = MintFinish(NO_MINT, CoinQuality.STANDARD)
-    val soft = isSoftDefaultActive(currentItems.isEmpty(), noMintTouched, checked.filterValues { it }.keys)
-    fun isChecked(key: MintFinish): Boolean = checked[key] == true || (soft && key == softKey)
-    // Toccare una card "No mint" rende la preselezione una scelta vera (si scrive nella bozza).
-    fun touchNoMint(key: MintFinish) {
-        if (key.mint == NO_MINT && !noMintTouched) {
-            if (soft) checked[softKey] = true
-            noMintTouched = true
-        }
-    }
+    // Nessuna spunta preselezionata (2026-10-13, come le Regular Issues): una spunta già messa non si distingue da
+    // una scelta dell'utente, e chi compra una commemorativa solo in BU o Proof registrerebbe senza accorgersene
+    // anche una Standard che non ha. Chi vuole solo "ce l'ho" usa la casella con Quick add.
     // Una data per FINITURA (e per zecca), facoltativa e vuota di default: una finitura aggiunta dopo non eredita
     // quella delle altre (prima era una sola per moneta, e salvando la sovrascriveva per tutte).
     val dates = remember(coin.stableKey) {
@@ -170,7 +161,7 @@ fun CollectionSheet(
         )
     }
     // Puntino sul chip: finiture spuntate in bozza, più (senza Pro) le zecche già registrate che la bozza non vede.
-    val withData: Set<String> = (checked.filterValues { it }.keys + listOfNotNull(softKey.takeIf { soft })).map { it.mint }.toSet() +
+    val withData: Set<String> = checked.filterValues { it }.keys.map { it.mint }.toSet() +
         (if (canEditMints) emptySet() else currentItems.map { it.mint }.filter { it != NO_MINT }.toSet())
 
     if (showProPrompt) {
@@ -233,12 +224,12 @@ fun CollectionSheet(
                     val key = MintFinish(selectedMint, quality)
                     FinishCard(
                         quality = quality,
-                        checked = isChecked(key),
+                        checked = checked[key] == true,
                         price = prices[key].orEmpty(),
-                        onCheckedChange = { touchNoMint(key); checked[key] = it },
-                        onPriceChange = { touchNoMint(key); prices[key] = it },
+                        onCheckedChange = { checked[key] = it },
+                        onPriceChange = { prices[key] = it },
                         date = dates[key],
-                        onDateChange = { touchNoMint(key); dates[key] = it },
+                        onDateChange = { dates[key] = it },
                     )
                 }
             }
@@ -255,9 +246,12 @@ fun CollectionSheet(
                 }
                 TextButton(onClick = onDismiss) { Text("Cancel") }
                 Button(
+                    // Spento finché non c'è nulla da salvare: moneta non ancora in collezione e nessuna finitura
+                    // spuntata. Con qualcosa di salvato resta acceso: tutto deselezionato + Save equivale a togliere.
+                    enabled = canSaveCollection(hasSaved = items.isNotEmpty(), anyChecked = checked.any { it.value }),
                     onClick = {
                         onSave(
-                            (checked.filterValues { it }.keys + listOfNotNull(softKey.takeIf { soft }))
+                            checked.filterValues { it }.keys
                                 .associateWith { FinishEntry(parsePriceCents(prices[it].orEmpty()), dates[it]) },
                             editableMints,
                         )

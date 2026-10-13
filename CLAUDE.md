@@ -276,8 +276,9 @@ nella card COLLECTION), così c'è un solo modo di registrare.
 
 - Il pannello lavora su una **bozza** e scrive solo con "Save": chiuderlo
   senza salvare non cambia nulla (un tocco sbagliato non cancella un
-  prezzo). Alla prima apertura di una moneta non posseduta "Standard" è già
-  spuntata.
+  prezzo). Alla prima apertura di una moneta non posseduta NESSUNA finitura è
+  spuntata e "Save" è spento finché non c'è una spunta (2026-10-13, come le
+  Regular Issues; prima "Standard" era già spuntata: vedi § Collezione su Regular Issues).
 - Una moneta conta come "posseduta" (casella piena, barre "x / y collected"
   di home/anni/paesi) se ha almeno una qualità.
 - Il salvataggio sostituisce in blocco le qualità della moneta
@@ -1280,8 +1281,15 @@ e un utente può avere più annate dello stesso taglio (es. Belgio serie 2, 1 eu
     anni si spuntano uno per uno senza toccare niente due volte, e il puntino verde sul chip mostra quali anni hanno
     qualcosa. Scelta consigliata e approvata dal proprietario. Scartata: una spunta "suggerita" con aspetto diverso
     (tratteggiata, sparisce se si spunta un altro anno senza averla toccata): risolverebbe entrambi i casi ma aggiunge
-    uno stato visivo nuovo per risparmiare un tocco a chi registra l'anno iniziale. Nelle commemorative la
-    preselezione resta (la moneta è una sola, nessuna ambiguità).
+    uno stato visivo nuovo per risparmiare un tocco a chi registra l'anno iniziale. **Preselezione tolta anche
+    nelle commemorative (2026-10-13, richiesta del proprietario "per uniformità")**: prima lì "Standard" era già
+    spuntata ("la moneta è una sola, nessuna ambiguità"), ma chi compra una commemorativa solo in BU o Proof, come
+    capita con i set, registrava in più una Standard che non ha senza accorgersene. Il costo è un tocco in più
+    (apri, spunta, Save); chi vuole solo "ce l'ho" usa Quick add. **"Save" spento** in entrambi i pannelli finché
+    la moneta non è in collezione e nessuna finitura è spuntata (`canSaveCollection`, `CollectionSave.kt`); con
+    qualcosa di salvato resta acceso, perché tutto deselezionato + Save toglie (c'è anche il tasto Remove). Sparita
+    con la preselezione la logica "morbida" delle zecche (`isSoftDefaultActive`, `noMintTouched`), e con lei la
+    classe di bug del doppione "Standard" + "Standard · D".
   - **Bozza per anno + Save**: le spunte e i prezzi sono in mappe chiave (anno, varietà, finitura);
     cambiare anno non li perde, "Save" scrive tutti gli anni insieme, chiudere senza salvare non
     cambia nulla.
@@ -1424,10 +1432,9 @@ pubblicazione). Codice in `data/pro/`, solo librerie Google (Billing 9.1, Mobile
     varietà, zecca, finitura); si apre sulla zecca che ha qualcosa; puntino sul chip dove c'è una finitura in bozza.
     **Con Pro** il pannello vede e salva TUTTE le voci (`editableMints = null`); **senza Pro** vede solo "No mint",
     le lettere sono bloccate (lucchetto "Mint 🔒 Pro", tocco = invito "Record the mint") e il salvataggio le lascia
-    intatte (verificato sul telefono: salvare un BU semplice senza Pro non cancella "Standard · D"). **Preselezione
-    morbida** (`isSoftDefaultActive`): alla prima apertura "Standard" senza zecca è già spuntata ma sparisce da sola
-    se l'utente spunta qualcosa in una lettera, altrimenti registrare solo "Standard · D" salvava anche la voce
-    semplice (doppione, visto sul telefono). Rimozione: il "Remove" del pannello toglie ciò che il pannello vede, la
+    intatte (verificato sul telefono: salvare un BU semplice senza Pro non cancella "Standard · D"). **Nessuna
+    preselezione** (dal 2026-10-13; prima ce n'era una "morbida" di "Standard" senza zecca, che spariva se si
+    spuntava qualcosa in una lettera per non salvare il doppione "Standard" + "Standard · D"). Rimozione: il "Remove" del pannello toglie ciò che il pannello vede, la
     conferma del Quick add toglie TUTTO (`onRemoveAll`); i testi nominano le zecche ("This removes BU and Standard
     (D) for …", "… Mint D is included."). Card COLLECTION dei dettagli: una riga per finitura e zecca ("Standard · D")
     e i cinque cerchi A D F G J con "1 of 5 mints" (`MintLetterBadges`; solo con Pro o dove c'è già una lettera: un

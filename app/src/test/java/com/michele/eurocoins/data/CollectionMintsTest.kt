@@ -259,18 +259,15 @@ class CollectionMintsTest {
         assertTrue(mintLettersFor("Francia").isEmpty())
     }
 
-    // ---- preselezione morbida di Standard "No mint" ----
+    // ---- Save dei pannelli ----
 
     @Test
-    fun theDefaultStandardStaysOnlyWhileNothingElseWasChosen() {
-        val d = MintFinish("D", CoinQuality.STANDARD)
-        // Prima apertura, niente toccato: la preselezione c'è (un tocco e Save, come sempre).
-        assertTrue(isSoftDefaultActive(firstOpen = true, noMintTouched = false, checkedFinishes = emptyList()))
-        // L'utente spunta qualcosa in una lettera: la preselezione sparisce, niente doppione "Standard" + "Standard D".
-        assertEquals(false, isSoftDefaultActive(firstOpen = true, noMintTouched = false, checkedFinishes = listOf(d)))
-        // L'utente ha toccato una card di "No mint": è una scelta sua, non più una preselezione.
-        assertEquals(false, isSoftDefaultActive(firstOpen = true, noMintTouched = true, checkedFinishes = emptyList()))
-        // Moneta già con qualcosa: nessuna preselezione.
-        assertEquals(false, isSoftDefaultActive(firstOpen = false, noMintTouched = false, checkedFinishes = emptyList()))
+    fun saveIsOffUntilThereIsSomethingToSave() {
+        // Moneta non ancora in collezione e nessuna spunta: non c'è niente da scrivere.
+        assertEquals(false, canSaveCollection(hasSaved = false, anyChecked = false))
+        // Una spunta (qualunque finitura, anno o zecca) basta.
+        assertTrue(canSaveCollection(hasSaved = false, anyChecked = true))
+        // Con qualcosa di salvato resta acceso anche a bozza vuota: tutto deselezionato + Save toglie.
+        assertTrue(canSaveCollection(hasSaved = true, anyChecked = false))
     }
 }

@@ -124,11 +124,12 @@ private fun regularItems(
 }
 
 /**
- * Alla PRIMA apertura di una moneta ("Standard" senza zecca già spuntata, il caso di quasi tutte: un tocco e Save)
- * quella spunta è una preselezione, non una scelta dell'utente. Se l'utente passa a una lettera e spunta lì le sue
- * finiture, la preselezione deve sparire da sola: altrimenti registrare solo "Standard · D" salverebbe anche la voce
- * senza zecca, un doppione (2026-10-12, visto sul telefono). La preselezione resta finché l'utente non tocca una
- * card di "No mint" ([noMintTouched]) e finché non ha spuntato niente in una zecca con lettera.
+ * Se "Save" dei pannelli (commemorative e Regular) ha senso: c'è qualcosa di spuntato, oppure la moneta ha già voci
+ * salvate (a bozza vuota "Save" le toglie: è il caso del tutto deselezionato). Con una moneta non ancora in
+ * collezione e niente spuntato il pulsante sarebbe un tocco che non fa niente.
+ *
+ * Nessun pannello preseleziona più una finitura (2026-10-13): prima nelle commemorative "Standard" era già
+ * spuntata (con una preselezione "morbida" che spariva se si spuntava qualcosa in una lettera, per evitare il
+ * doppione "Standard" + "Standard · D"), ma una spunta già messa non si distingue da una scelta dell'utente.
  */
-fun isSoftDefaultActive(firstOpen: Boolean, noMintTouched: Boolean, checkedFinishes: Collection<MintFinish>): Boolean =
-    firstOpen && !noMintTouched && checkedFinishes.none { it.mint != NO_MINT }
+fun canSaveCollection(hasSaved: Boolean, anyChecked: Boolean): Boolean = hasSaved || anyChecked

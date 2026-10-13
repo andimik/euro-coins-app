@@ -63,6 +63,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.michele.eurocoins.data.NO_MINT
+import com.michele.eurocoins.data.canSaveCollection
 import com.michele.eurocoins.data.mintLettersFor
 import com.michele.eurocoins.data.CoinQuality
 import com.michele.eurocoins.data.RegularCollectionEntry
@@ -285,6 +286,9 @@ fun RegularCollectionSheet(
                 }
                 TextButton(onClick = onDismiss) { Text("Cancel") }
                 Button(
+                    // Spento finché non c'è nulla da salvare: taglio non ancora in collezione e nessuna spunta in
+                    // nessun anno. Con qualcosa di salvato resta acceso: tutto deselezionato + Save equivale a togliere.
+                    enabled = canSaveCollection(hasSaved = items.isNotEmpty(), anyChecked = checked.any { it.value }),
                     onClick = {
                         onSave(
                             checked.filterValues { it }.keys.map { key ->
