@@ -1039,7 +1039,20 @@ catalogo completo.
   Il testo è
   Numista (verbatim, inglese, scritto da utenti: più ricco della BCE) o, dove Numista non ha il
   type, la pagina BCE del taglio (`descrizioneFonte` = "numista"/"ecb"; il testo BCE è uno per
-  paese e a volte descrive più serie insieme). (Lussemburgo 2026 2 euro non aveva testo finché Numista non ha avuto il type, N#585823, ottobre 2026: né
+  paese e a volte descrive più serie insieme). **Stesso disegno = stesso testo** (2026-10-13, richiesta del
+  proprietario, `$SameDesign` in `scripts/export-regular-issues.ps1`): Numista ha un type per taglio e i testi li
+  scrivono gli utenti, quindi lo stesso ritratto arrivava con descrizioni diverse (Belgio serie 3: 340, 235, 114 e 72
+  caratteri). Una tabella a mano di gruppi (serie + tagli + "donor") copia nei tagli dello stesso disegno il testo
+  del più ricco di dettaglio, che non citi cose di un solo taglio (l'"anello esterno" dei bimetallici sui
+  centesimi); 86 tagli su 303, solo `descrizione` e `fonte_url` cambiano (verificato confrontando i JSON campo per
+  campo). **I gruppi sono ricavati dalle foto (somiglianza dei contorni a 48 px, soglia 0.70) e rivisti a mano, non
+  vanno estesi a occhio**: la somiglianza da sola sbagliava (Portogallo ha tre sigilli diversi, Croazia mappa e
+  Tesla, San Marino un soggetto per moneta, Spagna Santiago e Cervantes) e quei casi non sono nella tabella; un testo
+  copiato su un disegno diverso scrive il falso. Tre cose da sapere: le foto con lo stesso contenuto (hash) erano
+  solo 7 gruppi e già coerenti, quindi "stessa immagine" è il disegno e non il file; `numista_id`, tirature, zecca e
+  incisore restano del taglio (il link "Data: Numista N#…" dei crediti punta al type del taglio, non a quello del
+  testo; l'app non mostra `fonte_url`); i testi BCE (per taglio, "The 5 cent coin features…") non si copiano.
+  `RegularIssuesAssetTest.coinsWithTheSameDesignShareTheSameText`. (Lussemburgo 2026 2 euro non aveva testo finché Numista non ha avuto il type, N#585823, ottobre 2026: né
   Numista né BCE, che descriverebbe la serie precedente: la card mancava). `RegularDenominationDetailViewModel` rilegge reattivamente da `RegularIssueRepository.series`/
   `collectionItems` (come `RegularIssueCountryViewModel`), non un fetch singolo come
   `CoinDetailViewModel.getById`: qui non serve un id stabile per riga, il taglio è già una chiave
