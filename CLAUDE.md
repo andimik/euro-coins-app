@@ -1403,8 +1403,13 @@ pubblicazione). Codice in `data/pro/`, solo librerie Google (Billing 9.1, Mobile
     x≈250…670, e un'etichetta ruotata con "(" nel blocco marca la 2 € commemorativa.
   - Nelle commemorative, "View by mint" sotto i tre numeri di MINTAGES
     (`CoinMintLettersEntry`) apre un pannello con una riga per lettera e il totale. **Senza Pro**: nella tabella by
-    year una riga lilla "Split by mint (A, D, F, G, J) is part of Pro" (`ProLockedRow`), nelle commemorative il
-    pulsante lilla con lucchetto; il tocco apre `MintLettersProPrompt` ("Not now" / "Go Pro"). **"Go Pro" porta alle
+    year una riga lilla "Go Pro to split by mint (A, D, F, G, J)" (`ProLockedRow`), nelle commemorative il
+    pulsante lilla con lucchetto; il tocco apre `MintLettersProPrompt` ("Not now" / "Go Pro"). **Testi del blocco
+    (2026-10-13)**: dove qualcosa è bloccato l'invito è un'azione ("Go Pro to unlock." nella nota di Impostazioni →
+    Catalogs → German mints, "Go Pro to split by mint …" nella riga), non "Part of Pro": stesso verbo del
+    pulsante "Go Pro"; "Become Pro" scartato (suona come un'iscrizione, è un acquisto una tantum) e niente "!".
+    Invariati i dialog ("Part of Euro Coins Pro, with no ads.": il pulsante "Go Pro" è già lì) e le etichette
+    del badge/TalkBack. **"Go Pro" porta alle
     Impostazioni** (`ProAccess.onGoPro` → `openSettings()`), non avvia l'acquisto: resta SOLO la pillola col prezzo
     a farlo. `LocalProAccess` e `LocalMintLetters` sono forniti da `MainActivity` (il `NavController` è stato
     sollevato lì). **Non verificato sul telefono.**

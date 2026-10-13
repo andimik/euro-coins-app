@@ -150,7 +150,7 @@ fun CatalogSettingsScreen(
                             "Hiding it keeps what you saved."
                     } else {
                         "Record which mint (A, D, F, G, J) each coin comes from and see mintages by mint. " +
-                            "Part of Pro."
+                            "Go Pro to unlock."
                     },
                     modifier = Modifier.padding(top = 8.dp),
                 )

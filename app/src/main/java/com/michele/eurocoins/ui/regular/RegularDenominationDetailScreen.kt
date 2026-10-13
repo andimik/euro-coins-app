@@ -521,7 +521,7 @@ private fun RegularMintageHistorySheet(
             Column(modifier = Modifier.protectFromSheetDrag()) {
                 if (letterTable != null && !access.isPro) {
                     ProLockedRow(
-                        text = "Split by mint (${letterTable.letters.joinToString(", ")}) is part of Pro",
+                        text = "Go Pro to split by mint (${letterTable.letters.joinToString(", ")})",
                         onClick = { showProPrompt = true },
                         modifier = Modifier.padding(bottom = 12.dp),
                     )
