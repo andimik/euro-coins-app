@@ -120,8 +120,6 @@ fun CollectionSheet(
      */
     onSave: (Map<MintFinish, FinishEntry>, Set<String>?) -> Unit,
     onDismiss: () -> Unit,
-    /** Zecca su cui aprire il pannello (il tocco su una lettera della card COLLECTION); `null` = quella predefinita. */
-    initialMint: String? = null,
 ) {
     val access = LocalProAccess.current
     // Le lettere di zecca del paese (oggi la Germania): senza, nessuna riga Mint e il pannello è quello di sempre.
@@ -158,12 +156,8 @@ fun CollectionSheet(
     // Senza Pro sempre "No mint" (le altre sono bloccate).
     var selectedMint by remember(coin.stableKey) {
         mutableStateOf(
-            when {
-                !canEditMints -> NO_MINT
-                initialMint != null && (initialMint == NO_MINT || initialMint in letters) -> initialMint
-                items.isEmpty() || items.any { it.mint == NO_MINT } -> NO_MINT
-                else -> items.map { it.mint }.min()
-            },
+            if (!canEditMints || items.isEmpty() || items.any { it.mint == NO_MINT }) NO_MINT
+            else items.map { it.mint }.min(),
         )
     }
     // Puntino sul chip: finiture spuntate in bozza, più (senza Pro) le zecche già registrate che la bozza non vede.

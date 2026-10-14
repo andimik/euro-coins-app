@@ -1462,14 +1462,7 @@ pubblicazione). Codice in `data/pro/`, solo librerie Google (Billing 9.1, Mobile
     conferma del Quick add toglie TUTTO (`onRemoveAll`); i testi nominano le zecche ("This removes BU and Standard
     (D) for …", "… Mint D is included."). Card COLLECTION dei dettagli: una riga per finitura e zecca ("Standard · D")
     e i cinque cerchi A D F G J con "1 of 5 mints" (`MintLetterBadges`; solo con Pro o dove c'è già una lettera: un
-    Pro scaduto non nasconde i dati). **I cerchi si toccano** (2026-10-13, dopo un parere UX: stavano sotto i chip
-    dell'anno con la stessa forma ma non rispondevano, un controllo finto): il tocco su una lettera apre il pannello
-    My collection già su quella zecca (e sull'anno scelto nelle Regular, `initialMint`/`initialYear`); senza Pro apre
-    l'invito "Record the mint" (`MintRecordProPrompt`). Perché non un filtro come i chip degli anni: gli anni sono una
-    sequenza da sfogliare, le zecche cinque posti fissi, una lista di controllo, dove il tocco naturale agisce sul posto;
-    un filtro aggiungerebbe uno stato (cerchi pieni, vuoti e scelti) per 1-5 righe e righe che sembrano sparite. Cerchi
-    da 36 dp (erano 30) senza area di tocco più grande: a 48 dp si sovrapporrebbero con 6 dp di spazio. Provato in
-    mockup (due passaggi); NON verificato sul telefono (bloccato). **Testo della card Pro** (2026-10-12): "No ads · German mints" (era "Remove
+    Pro scaduto non nasconde i dati). **Testo della card Pro** (2026-10-12): "No ads · German mints" (era "Remove
     all ads"; una riga, accanto alla pillola del prezzo: da controllare che non si tronchi con il font ingrandito).
     **Interruttore "German mints"** (Impostazioni → Catalogs → card "German mints", "Show mints", acceso di
     default, `UserSettings.showMints`, `LocalShowMints`; spostato da "Collection" il 2026-10-12: nasconde una parte

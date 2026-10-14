@@ -121,8 +121,6 @@ fun RegularCollectionSheet(
     onDismiss: () -> Unit,
     /** Anno su cui aprire il pannello (es. quello scelto nella card COLLECTION del dettaglio); null = il predefinito. */
     initialYear: YearOption? = null,
-    /** Zecca su cui aprire il pannello (il tocco su una lettera della card COLLECTION); null = quella predefinita. */
-    initialMint: String? = null,
 ) {
     val access = LocalProAccess.current
     // Le lettere di zecca del paese (oggi la Germania): senza, nessuna riga Mint e il pannello è quello di sempre.
@@ -147,12 +145,8 @@ fun RegularCollectionSheet(
     var selectedMint by remember(stateKey) {
         val atInitial = items.filter { YearOption(it.anno, it.variety) == initial }
         mutableStateOf(
-            when {
-                !canEditMints -> NO_MINT
-                initialMint != null && (initialMint == NO_MINT || initialMint in letters) -> initialMint
-                atInitial.isEmpty() || atInitial.any { it.mint == NO_MINT } -> NO_MINT
-                else -> atInitial.map { it.mint }.min()
-            },
+            if (!canEditMints || atInitial.isEmpty() || atInitial.any { it.mint == NO_MINT }) NO_MINT
+            else atInitial.map { it.mint }.min(),
         )
     }
     // La riga di aiuto sotto i chip (solo con la varietà EFS scelta) apre la spiegazione di cosa significa.
