@@ -1462,7 +1462,18 @@ pubblicazione). Codice in `data/pro/`, solo librerie Google (Billing 9.1, Mobile
     conferma del Quick add toglie TUTTO (`onRemoveAll`); i testi nominano le zecche ("This removes BU and Standard
     (D) for …", "… Mint D is included."). Card COLLECTION dei dettagli: una riga per finitura e zecca ("Standard · D")
     e i cinque cerchi A D F G J con "1 of 5 mints" (`MintLetterBadges`; solo con Pro o dove c'è già una lettera: un
-    Pro scaduto non nasconde i dati). **Testo della card Pro** (2026-10-12): "No ads · German mints" (era "Remove
+    Pro scaduto non nasconde i dati). **Filtro per zecca** (2026-10-14, richiesta del proprietario "come gli anni"):
+    i cerchi si toccano e sotto restano solo le righe di quella zecca (con l'anno scelto, nelle Regular); un secondo
+    tocco sulla stessa lettera toglie il filtro, e nessuna scelta = righe di tutte (com'era, nessuna riga sparisce
+    all'apertura). La lettera scelta ha un anello viola (`PurpleField*`, come i bordi delle righe) sopra il riempimento
+    verde "posseduta": possono valere insieme. Una zecca senza voci mostra "Nothing recorded for F in 2002" (nelle
+    commemorative senza l'anno). Il filtro vale anche senza Pro (è solo una vista), dove i cerchi ci sono. Cerchi
+    da 36 dp (erano 30) in riquadri da 40 dp per l'anello. **Storia**: il 2026-10-13 avevo proposto, come consulente
+    UX, che il tocco aprisse il pannello su quella zecca (le zecche sono una lista di controllo, non una sequenza
+    come gli anni), implementato e committato (e41a487); il proprietario l'ha scartato: duplicava "Edit collection"
+    e non dava ciò che chiedeva (vedere le righe di una zecca posseduta). Rimesso a posto con un revert (d55660f)
+    e fatto il filtro. Lezione: se il proprietario chiede un comportamento esplicito ("come gli anni"), la
+    raccomandazione alternativa va detta ma non sostituita senza il suo via libera. **Testo della card Pro** (2026-10-12): "No ads · German mints" (era "Remove
     all ads"; una riga, accanto alla pillola del prezzo: da controllare che non si tronchi con il font ingrandito).
     **Interruttore "German mints"** (Impostazioni → Catalogs → card "German mints", "Show mints", acceso di
     default, `UserSettings.showMints`, `LocalShowMints`; spostato da "Collection" il 2026-10-12: nasconde una parte
