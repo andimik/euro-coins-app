@@ -38,21 +38,47 @@ val LocalProAccess = compositionLocalOf { ProAccess(isPro = false, onGoPro = {})
 val LocalMintLetters = staticCompositionLocalOf { MintLetters.EMPTY }
 
 /**
+ * "German mints" acceso (Impostazioni, sezione Collection, acceso di default): la riga Mint nei pannelli, i cerchi
+ * A D F G J, "View by mint" e la tabella a zecche affiancate. Spento, nasconde la FUNZIONE (anche gli inviti al Pro),
+ * mai i dati: le voci con zecca restano salvate, si salvano intatte e nella card COLLECTION si leggono con la
+ * loro lettera. Fornito da `MainActivity`.
+ */
+val LocalShowMints = compositionLocalOf { true }
+
+/**
  * Invito al Pro per il dettaglio per zecca (2026-10-11, mockup approvato): dice cosa si ottiene in una frase,
  * "Not now" a sinistra e "Go Pro" pieno a pillola, come il pulsante della card Pro delle Impostazioni.
  */
 @Composable
 fun MintLettersProPrompt(onDismiss: () -> Unit, onGoPro: () -> Unit) {
+    ProFeaturePrompt(
+        title = "Mintage by mint",
+        text = "See how many coins each German mint struck, for every coin and year. " +
+            "Part of Euro Coins Pro, with no ads.",
+        onDismiss = onDismiss,
+        onGoPro = onGoPro,
+    )
+}
+
+/** Invito al Pro per registrare la zecca (A, D, F, G, J) di una moneta nella collezione. */
+@Composable
+fun MintRecordProPrompt(onDismiss: () -> Unit, onGoPro: () -> Unit) {
+    ProFeaturePrompt(
+        title = "Record the mint",
+        text = "Keep track of which German mint each of your coins comes from, with its own price and date. " +
+            "Part of Euro Coins Pro, with no ads.",
+        onDismiss = onDismiss,
+        onGoPro = onGoPro,
+    )
+}
+
+@Composable
+private fun ProFeaturePrompt(title: String, text: String, onDismiss: () -> Unit, onGoPro: () -> Unit) {
     AlertDialog(
         containerColor = MaterialTheme.colorScheme.surface,
         onDismissRequest = onDismiss,
-        title = { DialogTitle("Mintage by mint") },
-        text = {
-            Text(
-                "See how many coins each German mint struck, for every coin and year. " +
-                    "Part of Euro Coins Pro, with no ads.",
-            )
-        },
+        title = { DialogTitle(title) },
+        text = { Text(text) },
         confirmButton = {
             Button(
                 onClick = {

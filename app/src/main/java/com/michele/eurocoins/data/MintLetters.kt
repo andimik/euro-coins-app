@@ -112,3 +112,11 @@ private val MINT_LETTER_CITIES: Map<String, Map<String, String>> = mapOf(
 
 /** "Berlin" per ("Germania", "A"); `null` se il paese o la lettera non sono in tabella. */
 fun mintLetterCity(paese: String, lettera: String): String? = MINT_LETTER_CITIES[paese]?.get(lettera)
+
+/**
+ * Le lettere di zecca di un paese, in ordine ("A", "D", "F", "G", "J" per la Germania); vuota per i paesi
+ * che non hanno più zecche a lettera in contemporanea. Decide dove i pannelli di collezione mostrano la
+ * riga "Mint": dipende dal paese, non dal dato delle tirature (la lettera c'è su ogni moneta tedesca anche dove
+ * Numista non ha il numero).
+ */
+fun mintLettersFor(paese: String): List<String> = MINT_LETTER_CITIES[paese]?.keys?.sorted().orEmpty()

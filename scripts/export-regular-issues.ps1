@@ -57,6 +57,57 @@ $StartOverrides = @{
 $NoEcbFallbackSources = @('bcl', 'vaticanstate_cfn')
 $NegInf = -9999
 $PosInf = 9999
+
+# Tagli della STESSA serie con lo STESSO disegno nazionale (ottobre 2026, richiesta del proprietario): Numista ha un
+# type per taglio e i testi li scrivono gli utenti, quindi la stessa immagine arriva con descrizioni diverse
+# (Belgio serie 3: 340, 235, 114 e 72 caratteri per lo stesso ritratto). Dentro ogni gruppo tutti i tagli ricevono il
+# testo (e la sua fonte) del taglio "Donor", scelto a mano come il più ricco di dettaglio tra quelli che non citano
+# cose valide per un solo taglio (es. l'"anello esterno" dei bimetallici sui centesimi). Il resto dei dati (numero
+# Numista, tirature, zecca, incisore) resta del taglio. I gruppi sono stati ricavati dalle foto (somiglianza dei
+# contorni, soglia 0.70) e RILETTI A MANO: la somiglianza da sola sbagliava (Portogallo: tre sigilli diversi,
+# Croazia: mappa e Tesla, San Marino: un soggetto per moneta) e quei casi NON sono qui. Non va esteso senza guardare
+# le foto: un testo copiato su un disegno diverso scrive il falso. Vale solo per i testi Numista (con
+# -ExcludeNumista il testo BCE è già per taglio e il gruppo non si applica). Chiave "paese|ordine_cronologico".
+$Cents = @('1 cent', '2 cent', '5 cent', '10 cent', '20 cent', '50 cent')
+$AllCoins = $Cents + @('1 euro', '2 euro')
+$Vat = "Citt$([char]0xE0) del Vaticano"
+$SameDesign = @(
+    @{ Serie = 'Belgio|1'; Donor = '1 euro'; Tagli = $AllCoins }
+    @{ Serie = 'Belgio|2'; Donor = '1 euro'; Tagli = $AllCoins }
+    @{ Serie = 'Belgio|3'; Donor = '1 euro'; Tagli = $AllCoins }
+    @{ Serie = 'Cipro|1'; Donor = '1 cent'; Tagli = @('1 cent', '2 cent', '5 cent') }
+    @{ Serie = 'Cipro|1'; Donor = '10 cent'; Tagli = @('10 cent', '20 cent', '50 cent') }
+    @{ Serie = 'Estonia|1'; Donor = '2 euro'; Tagli = $AllCoins }
+    @{ Serie = 'Finlandia|1'; Donor = '1 cent'; Tagli = $Cents }
+    @{ Serie = 'Francia|1'; Donor = '50 cent'; Tagli = @('10 cent', '20 cent', '50 cent') }
+    @{ Serie = 'Francia|1'; Donor = '1 euro'; Tagli = @('1 euro', '2 euro') }
+    @{ Serie = 'Germania|1'; Donor = '1 cent'; Tagli = @('1 cent', '2 cent', '5 cent') }
+    @{ Serie = 'Germania|1'; Donor = '50 cent'; Tagli = @('10 cent', '20 cent', '50 cent') }
+    @{ Serie = 'Irlanda|1'; Donor = '5 cent'; Tagli = $AllCoins }
+    @{ Serie = 'Lituania|1'; Donor = '1 cent'; Tagli = $AllCoins }
+    @{ Serie = 'Lussemburgo|1'; Donor = '1 cent'; Tagli = @('1 cent', '2 cent', '5 cent') }
+    @{ Serie = 'Lussemburgo|1'; Donor = '20 cent'; Tagli = @('10 cent', '20 cent', '50 cent') }
+    @{ Serie = 'Lussemburgo|1'; Donor = '2 euro'; Tagli = @('1 euro', '2 euro') }
+    @{ Serie = 'Malta|1'; Donor = '2 cent'; Tagli = @('1 cent', '2 cent', '5 cent') }
+    @{ Serie = 'Malta|1'; Donor = '50 cent'; Tagli = @('10 cent', '20 cent', '50 cent') }
+    @{ Serie = 'Malta|1'; Donor = '2 euro'; Tagli = @('1 euro', '2 euro') }
+    @{ Serie = 'Monaco|2'; Donor = '20 cent'; Tagli = @('10 cent', '20 cent', '50 cent') }
+    @{ Serie = 'Monaco|2'; Donor = '2 cent'; Tagli = @('1 cent', '2 cent', '5 cent') }
+    @{ Serie = 'Monaco|3'; Donor = '2 euro'; Tagli = @('1 euro', '2 euro') }
+    @{ Serie = 'Paesi Bassi|1'; Donor = '50 cent'; Tagli = $Cents }
+    @{ Serie = 'Paesi Bassi|1'; Donor = '1 euro'; Tagli = @('1 euro', '2 euro') }
+    @{ Serie = 'Paesi Bassi|2'; Donor = '1 cent'; Tagli = $AllCoins }
+    @{ Serie = 'Portogallo|1'; Donor = '1 cent'; Tagli = @('1 cent', '2 cent', '5 cent') }
+    @{ Serie = 'Slovacchia|1'; Donor = '2 cent'; Tagli = @('1 cent', '2 cent', '5 cent') }
+    @{ Serie = 'Slovacchia|1'; Donor = '2 euro'; Tagli = @('1 euro', '2 euro') }
+    @{ Serie = "$Vat|1"; Donor = '2 euro'; Tagli = $AllCoins }
+    @{ Serie = "$Vat|2"; Donor = '10 cent'; Tagli = $Cents }
+    @{ Serie = "$Vat|3"; Donor = '5 cent'; Tagli = @('1 cent', '2 cent', '5 cent') }
+    @{ Serie = "$Vat|3"; Donor = '2 euro'; Tagli = @('1 euro', '2 euro') }
+    @{ Serie = "$Vat|4"; Donor = '20 cent'; Tagli = @('10 cent', '20 cent', '50 cent') }
+    @{ Serie = "$Vat|4"; Donor = '2 euro'; Tagli = @('1 euro', '2 euro') }
+    @{ Serie = "$Vat|5"; Donor = '1 cent'; Tagli = $AllCoins }
+)
 # Ultimo anno di una serie quando le monete datate si sovrappongono alla serie successiva: il
 # Vaticano ha coniato monete di Giovanni Paolo II ANCHE datate 2005 (type Numista 2002-2005),
 # oltre alla Sede Vacante 2005 (serie 2). Chiave "paese|ordine_cronologico".
@@ -297,6 +348,28 @@ foreach ($s in $series) {
         }
     }
 }
+
+# Testo condiviso tra i tagli con lo stesso disegno (vedi $SameDesign). Solo da testi Numista: il testo BCE è già
+# scritto per taglio ("The 5 cent coin features...") e non si copia.
+$sharedChanged = 0
+foreach ($g in $SameDesign) {
+    $paese, $ordine = $g.Serie -split '\|'
+    $serie = $series | Where-Object { $_.paese -eq $paese -and [string]$_.ordine_cronologico -eq $ordine } | Select-Object -First 1
+    if (-not $serie) { throw "SameDesign: serie $($g.Serie) inesistente" }
+    $donor = $serie.immagini | Where-Object { $_.taglio -eq $g.Donor } | Select-Object -First 1
+    if (-not $donor) { throw "SameDesign: $($g.Serie) non ha il taglio $($g.Donor)" }
+    if ($donor.descrizione_fonte -ne 'numista' -or -not $donor.descrizione) { continue }
+    foreach ($im in $serie.immagini) {
+        if ($im.taglio -eq $g.Donor -or $g.Tagli -notcontains $im.taglio) { continue }
+        if ($im.descrizione -ne $donor.descrizione) {
+            $im.descrizione = $donor.descrizione
+            $im.descrizione_fonte = $donor.descrizione_fonte
+            $im.fonte_url = $donor.fonte_url
+            $sharedChanged++
+        }
+    }
+}
+Write-Host "Testi condivisi tra tagli con lo stesso disegno: $sharedChanged tagli aggiornati"
 
 $json = ConvertTo-Json -InputObject @($series) -Compress -Depth 8
 [System.IO.File]::WriteAllText($Output, $json, [System.Text.UTF8Encoding]::new($false))

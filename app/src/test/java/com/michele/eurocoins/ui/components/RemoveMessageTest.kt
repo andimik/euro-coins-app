@@ -1,6 +1,8 @@
 package com.michele.eurocoins.ui.components
 
 import com.michele.eurocoins.data.CoinQuality
+import com.michele.eurocoins.data.MintFinish
+import com.michele.eurocoins.data.NO_MINT
 import com.michele.eurocoins.data.YearOption
 import org.junit.Assert.assertEquals
 import org.junit.Test
@@ -43,6 +45,44 @@ class RemoveMessageTest {
         assertEquals(
             "This removes all 12 years of 5 cent for Italy · Series 1: 2010, 2011, 2012, 2013, 2014, 2015…",
             regularRemovalMessage("5 cent", "Italy · Series 1", years),
+        )
+    }
+
+    @Test
+    fun commemorativeWithoutMintsReadsAsBefore() {
+        val finishes = listOf(MintFinish(NO_MINT, CoinQuality.BU), MintFinish(NO_MINT, CoinQuality.STANDARD))
+        assertEquals("This removes Standard and BU for X.", commemorativeRemovalMessageFor("X", finishes))
+    }
+
+    @Test
+    fun commemorativeNamesTheMintOfEachFinish() {
+        val finishes = listOf(
+            MintFinish("D", CoinQuality.BU),
+            MintFinish(NO_MINT, CoinQuality.STANDARD),
+            MintFinish("D", CoinQuality.STANDARD),
+            MintFinish("A", CoinQuality.STANDARD),
+        )
+        assertEquals(
+            "This removes Standard, Standard (A), Standard (D) and BU (D) for Schleswig-Holstein.",
+            commemorativeRemovalMessageFor("Schleswig-Holstein", finishes),
+        )
+    }
+
+    @Test
+    fun regularNamesTheMintsThatAreLost() {
+        val years = listOf(YearOption(2005), YearOption(2007))
+        assertEquals(
+            "This removes all 2 years of 1 cent for Germany · Series 1: 2005 and 2007. Mint D is included.",
+            regularRemovalMessage("1 cent", "Germany · Series 1", years, mints = listOf("D", NO_MINT, "D")),
+        )
+        assertEquals(
+            "This removes 2005 of 1 cent for Germany · Series 1. Mints A and J are included.",
+            regularRemovalMessage("1 cent", "Germany · Series 1", listOf(YearOption(2005)), mints = listOf("J", "A")),
+        )
+        // Senza zecche il testo è quello di sempre.
+        assertEquals(
+            "This removes 2005 of 1 cent for Germany · Series 1.",
+            regularRemovalMessage("1 cent", "Germany · Series 1", listOf(YearOption(2005)), mints = listOf(NO_MINT)),
         )
     }
 }

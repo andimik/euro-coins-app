@@ -101,6 +101,11 @@ import com.michele.eurocoins.data.displayTema
 import com.michele.eurocoins.data.CoinQuality
 import com.michele.eurocoins.data.anyPurchaseDate
 import com.michele.eurocoins.ui.components.PurchaseDateLine
+import com.michele.eurocoins.ui.components.LocalProAccess
+import com.michele.eurocoins.ui.components.LocalShowMints
+import com.michele.eurocoins.ui.components.MintLetterBadges
+import com.michele.eurocoins.data.NO_MINT
+import com.michele.eurocoins.data.mintLettersFor
 import com.michele.eurocoins.data.CollectionItem
 import com.michele.eurocoins.data.displayCountry
 import com.michele.eurocoins.data.displayDesigner
@@ -195,8 +200,8 @@ private fun CoinDetailPage(viewModel: CoinDetailViewModel) {
         CollectionSheet(
             coin = currentCoin,
             currentItems = items,
-            onSave = { entries ->
-                viewModel.onSaveCollection(entries)
+            onSave = { entries, editableMints ->
+                viewModel.onSaveCollection(entries, editableMints)
                 showSheet = false
             },
             onDismiss = { showSheet = false },
@@ -217,7 +222,7 @@ private fun CoinDetailPage(viewModel: CoinDetailViewModel) {
         ) {
             CoinHero(currentCoin, owned = items.isNotEmpty())
             MintageCard(currentCoin)
-            CollectionCard(items = items, onEdit = { showSheet = true })
+            CollectionCard(items = items, paese = currentCoin.paese, onEdit = { showSheet = true })
             currentCoin.noteStoriche?.let { NotesCard(it, scrollState, viewport = { viewport }) }
             ImageCreditFooter(currentCoin)
         }
@@ -699,7 +704,7 @@ fun FooterLine(text: String) {
  * Lo stesso pannello dell'elenco si apre da entrambi i pulsanti.
  */
 @Composable
-private fun CollectionCard(items: List<CollectionItem>, onEdit: () -> Unit) {
+private fun CollectionCard(items: List<CollectionItem>, paese: String, onEdit: () -> Unit) {
     if (items.isEmpty()) {
         DetailCard {
             SectionLabel("COLLECTION")
@@ -749,11 +754,24 @@ private fun CollectionCard(items: List<CollectionItem>, onEdit: () -> Unit) {
         // sottile e sbiadito si vedeva poco. Etichetta nel colore normale del testo, prezzo
         // resta viola: è l'unico dato numerico della riga e mantenerlo colorato lo fa leggere
         // a colpo d'occhio anche col fondo bianco.
+        // Le cinque zecche (oggi la Germania): cerchi pieni dove la moneta è posseduta. Si vedono con il Pro, o dove
+        // l'utente ha già registrato una lettera (un Pro scaduto non le nasconde); senza nessuna delle due niente.
+        val mintLetters = remember(paese) { mintLettersFor(paese) }
+        val ownedMints = items.map { it.mint }.filter { it != NO_MINT }.toSet()
+        if (LocalShowMints.current && mintLetters.isNotEmpty() && (LocalProAccess.current.isPro || ownedMints.isNotEmpty())) {
+            MintLetterBadges(
+                paese = paese,
+                letters = mintLetters,
+                owned = ownedMints,
+                modifier = Modifier.padding(top = 12.dp),
+            )
+        }
         Column(
             modifier = Modifier.padding(top = 12.dp),
             verticalArrangement = Arrangement.spacedBy(6.dp),
         ) {
-            CoinQuality.entries.mapNotNull { q -> items.firstOrNull { it.quality == q } }.forEach { item ->
+            // Una riga per finitura e per zecca: la voce senza zecca per prima, poi per lettera.
+            items.sortedWith(compareBy({ it.mint != NO_MINT }, { it.mint }, { it.quality.ordinal })).forEach { item ->
                 val cents = item.priceCents?.takeIf { it > 0 }
                 // Rettangolo a 14 dp come le altre card del dettaglio e la FinishCard del pannello
                 // di modifica, non più una pillola ovale: la riga non è cliccabile (solo "Edit
@@ -773,7 +791,7 @@ private fun CollectionCard(items: List<CollectionItem>, onEdit: () -> Unit) {
                 ) {
                     Column(modifier = Modifier.weight(1f)) {
                         Text(
-                            text = item.quality.label,
+                            text = if (item.mint == NO_MINT) item.quality.label else "${item.quality.label} · ${item.mint}",
                             style = MaterialTheme.typography.bodyLarge,
                             fontWeight = FontWeight.Medium,
                             color = colors.onSurface,

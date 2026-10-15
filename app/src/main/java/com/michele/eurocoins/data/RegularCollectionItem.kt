@@ -16,7 +16,7 @@ import androidx.room.Entity
  * [paese] è una copia di quando la voce è stata salvata: serve solo a riconoscere una voce
  * "orfana" se la chiave della serie cambiasse (vedi [stableKey]).
  */
-@Entity(tableName = "regular_collection_items", primaryKeys = ["seriesKey", "taglio", "anno", "quality", "variety"])
+@Entity(tableName = "regular_collection_items", primaryKeys = ["seriesKey", "taglio", "anno", "quality", "variety", "mint"])
 data class RegularCollectionItem(
     val seriesKey: String,
     val taglio: String,
@@ -28,6 +28,8 @@ data class RegularCollectionItem(
      * qualità ma due monete, e un utente può averle entrambe. Vedi [RegularIssueSeries.varietyFor].
      */
     val variety: String = "",
+    /** Zecca ([NO_MINT] = non indicata; poi la lettera: vedi [CollectionItem.mint]). Nella chiave, dopo la varietà. */
+    val mint: String = NO_MINT,
     /** Prezzo pagato in centesimi di euro, se l'utente lo ha inserito. */
     val priceCents: Int? = null,
     /** Giorno di acquisto (`LocalDate.toEpochDay()`), se l'utente lo ha inserito: vedi `PurchaseDates.kt`. */
@@ -43,4 +45,5 @@ data class RegularCollectionEntry(
     val priceCents: Int?,
     val variety: String = "",
     val purchasedOn: Long? = null,
+    val mint: String = NO_MINT,
 )

@@ -14,10 +14,15 @@ data class FinishEntry(val priceCents: Int?, val purchasedOn: Long?)
  * servono solo a riconoscere una voce "orfana" se la chiave della moneta
  * cambiasse (vedi [stableKey]).
  */
-@Entity(tableName = "collection_items", primaryKeys = ["coinKey", "quality"])
+@Entity(tableName = "collection_items", primaryKeys = ["coinKey", "quality", "mint"])
 data class CollectionItem(
     val coinKey: String,
     val quality: CoinQuality,
+    /**
+     * Zecca della moneta ([NO_MINT] = non indicata; poi la lettera, oggi solo la Germania: vedi [mintLettersFor]).
+     * Nella chiave: la stessa finitura di due zecche sono due monete, ognuna con il suo prezzo e la sua data.
+     */
+    val mint: String = NO_MINT,
     /** Prezzo pagato in centesimi di euro, se l'utente lo ha inserito. */
     val priceCents: Int? = null,
     /** Giorno di acquisto (`LocalDate.toEpochDay()`), se l'utente lo ha inserito: vedi `PurchaseDates.kt`. */

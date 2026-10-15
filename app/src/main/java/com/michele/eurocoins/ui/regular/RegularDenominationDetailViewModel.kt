@@ -2,6 +2,7 @@ package com.michele.eurocoins.ui.regular
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.michele.eurocoins.data.NO_MINT
 import com.michele.eurocoins.data.RegularCollectionEntry
 import com.michele.eurocoins.data.RegularCollectionItem
 import com.michele.eurocoins.data.RegularIssueImage
@@ -80,9 +81,9 @@ class RegularDenominationDetailViewModel(
         )
     }
 
-    fun onSaveCollection(entries: List<RegularCollectionEntry>) {
+    fun onSaveCollection(entries: List<RegularCollectionEntry>, editableMints: Set<String>?) {
         val denomination = uiState.value.denomination ?: return
         val series = denomination.series
-        viewModelScope.launch { repository.saveCollection(series.stableKey, taglio, series.paese, entries, window = denomination) }
+        viewModelScope.launch { repository.saveCollection(series.stableKey, taglio, series.paese, entries, window = denomination, editableMints = editableMints) }
     }
 }

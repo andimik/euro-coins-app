@@ -1,9 +1,10 @@
 package com.michele.eurocoins.ui.list
 
-import com.michele.eurocoins.ui.components.commemorativeRemovalMessage
+import com.michele.eurocoins.ui.components.commemorativeRemovalMessageFor
 import com.michele.eurocoins.ui.components.RemoveConfirmDialog
 import com.michele.eurocoins.data.QuickTap
 import com.michele.eurocoins.data.quickTapFor
+import com.michele.eurocoins.ui.components.CollectionControl
 import com.michele.eurocoins.ui.components.LocalQuickAdd
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -65,6 +66,7 @@ import coil3.compose.AsyncImagePainter
 import coil3.compose.SubcomposeAsyncImage
 import coil3.compose.SubcomposeAsyncImageContent
 import com.michele.eurocoins.data.Coin
+import com.michele.eurocoins.data.MintFinish
 import com.michele.eurocoins.data.displayCountry
 import com.michele.eurocoins.data.displayTema
 import com.michele.eurocoins.data.stableKey
@@ -162,8 +164,8 @@ fun CoinListContent(
         CollectionSheet(
             coin = coin,
             currentItems = state.collection[coin.stableKey].orEmpty(),
-            onSave = { entries ->
-                viewModel.onSaveCollection(coin, entries)
+            onSave = { entries, editableMints ->
+                viewModel.onSaveCollection(coin, entries, editableMints)
                 editing = null
             },
             onDismiss = { editing = null },
@@ -172,9 +174,13 @@ fun CoinListContent(
 
     removing?.let { coin ->
         RemoveConfirmDialog(
-            message = commemorativeRemovalMessage(coin.displayTema(), state.collection[coin.stableKey].orEmpty().map { it.quality }),
+            message = commemorativeRemovalMessageFor(
+                coin.displayTema(),
+                state.collection[coin.stableKey].orEmpty().map { MintFinish(it.mint, it.quality) },
+            ),
             onConfirm = {
-                viewModel.onSaveCollection(coin, emptyMap())
+                // La conferma toglie TUTTO ciò che la riga vede, anche le voci con zecca.
+                viewModel.onRemoveAll(coin)
                 removing = null
             },
             onDismiss = { removing = null },
@@ -348,43 +354,7 @@ private fun CoinRow(
                 overflow = TextOverflow.Ellipsis,
             )
         }
-        CollectionBox(owned = owned, onClick = onEditCollection)
-    }
-}
-
-/** Casella accanto alla moneta: piena con spunta se posseduta in almeno una qualità; un tocco apre il pannello. */
-@Composable
-private fun CollectionBox(owned: Boolean, onClick: () -> Unit) {
-    val primary = MaterialTheme.colorScheme.primary
-    Box(
-        // Area di tocco 44dp, casella visibile 26dp.
-        modifier = Modifier
-            .size(44.dp)
-            .clip(CircleShape)
-            .clickable(onClick = onClick),
-        contentAlignment = Alignment.Center,
-    ) {
-        Box(
-            modifier = Modifier
-                .size(26.dp)
-                .clip(RoundedCornerShape(7.dp))
-                .background(if (owned) primary else Color.Transparent)
-                .border(
-                    2.dp,
-                    if (owned) primary else MaterialTheme.colorScheme.onSurfaceVariant,
-                    RoundedCornerShape(7.dp),
-                ),
-            contentAlignment = Alignment.Center,
-        ) {
-            if (owned) {
-                Icon(
-                    imageVector = Icons.Filled.Check,
-                    contentDescription = "In your collection, tap to edit",
-                    tint = MaterialTheme.colorScheme.onPrimary,
-                    modifier = Modifier.size(18.dp),
-                )
-            }
-        }
+        CollectionControl(owned = owned, onClick = onEditCollection)
     }
 }
 

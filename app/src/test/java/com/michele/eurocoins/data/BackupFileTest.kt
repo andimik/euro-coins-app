@@ -37,7 +37,13 @@ class BackupFileTest {
 
     @Test
     fun regularItemsSurviveARoundTripWithVarietyAndPrice() {
-        val file = BackupFile(exportedAt = 5L, items = listOf(commemorative), regularItems = listOf(regular.toBackupItem()))
+        // Come BackupService: senza nessuna zecca si scrive ancora la versione 4.
+        val file = BackupFile(
+            schemaVersion = BackupFile.versionFor(hasMints = false),
+            exportedAt = 5L,
+            items = listOf(commemorative),
+            regularItems = listOf(regular.toBackupItem()),
+        )
         val back = BackupFile.decode(BackupFile.encode(file))
         assertEquals(4, back.schemaVersion)
         assertEquals(listOf(regular), back.regularItems.map { it.toCollectionItem() })

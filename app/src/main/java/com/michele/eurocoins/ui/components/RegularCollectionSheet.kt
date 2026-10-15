@@ -62,6 +62,9 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import com.michele.eurocoins.data.NO_MINT
+import com.michele.eurocoins.data.canSaveCollection
+import com.michele.eurocoins.data.mintLettersFor
 import com.michele.eurocoins.data.CoinQuality
 import com.michele.eurocoins.data.RegularCollectionEntry
 import com.michele.eurocoins.data.RegularCollectionItem
@@ -77,7 +80,7 @@ import com.michele.eurocoins.data.varietyFor
 import java.time.Year
 
 /** Una casella della bozza: un anno (con varietà) in una finitura. Chiave delle mappe di spunte e prezzi. */
-internal data class DraftKey(val year: Int, val variety: String, val quality: CoinQuality)
+internal data class DraftKey(val year: Int, val variety: String, val mint: String, val quality: CoinQuality)
 
 /**
  * Pannello per registrare una moneta circolante posseduta. **Stesso pannello delle commemorative**
@@ -110,49 +113,84 @@ fun RegularCollectionSheet(
     seriesNumber: Int,
     denomination: RegularIssueImage,
     currentItems: List<RegularCollectionItem>,
-    onSave: (List<RegularCollectionEntry>) -> Unit,
+    /**
+     * Cosa salvare e le zecche che il pannello può cambiare (`null` = tutte): come in [CollectionSheet], senza Pro
+     * il pannello vede e cambia solo "No mint" e il salvataggio lascia intatte le voci con zecca.
+     */
+    onSave: (List<RegularCollectionEntry>, Set<String>?) -> Unit,
     onDismiss: () -> Unit,
     /** Anno su cui aprire il pannello (es. quello scelto nella card COLLECTION del dettaglio); null = il predefinito. */
     initialYear: YearOption? = null,
 ) {
+    val access = LocalProAccess.current
+    // Le lettere di zecca del paese (oggi la Germania): senza, nessuna riga Mint e il pannello è quello di sempre.
+    val showMints = LocalShowMints.current
+    val letters = remember(series.paese, showMints) { if (showMints) mintLettersFor(series.paese) else emptyList() }
+    // Il pannello cambia le zecche solo con il Pro E con la funzione accesa (vedi [LocalShowMints]).
+    val canEditMints = access.isPro && showMints
+    var showProPrompt by remember { mutableStateOf(false) }
+    val editableMints: Set<String>? = if (canEditMints) null else setOf(NO_MINT)
+    // Con Pro la bozza ha TUTTE le voci; senza, solo quelle senza zecca (le altre restano intatte al salvataggio).
+    val items = if (canEditMints) currentItems else currentItems.filter { it.mint == NO_MINT }
     val stateKey = "${series.stableKey}|${denomination.taglio}"
     var confirmRemove by remember(stateKey) { mutableStateOf(false) }
     val currentYear = remember { Year.now().value }
+    // Gli anni da offrire e da cui aprire contano anche le voci con zecca che questo pannello non può cambiare.
     val owned = remember(stateKey) { currentItems.map { YearOption(it.anno, it.variety) }.distinct() }
     val options = remember(stateKey) { regularYearOptions(series, denomination, owned, currentYear) }
     val initial = remember(stateKey) { initialYear?.takeIf { it in options } ?: defaultYearOption(options, owned) }
     var selected by remember(stateKey) { mutableStateOf(initial) }
+    // Si apre sulla zecca che ha qualcosa nell'anno iniziale: "No mint" se c'è la voce semplice (o niente),
+    // altrimenti la prima lettera. Senza Pro sempre "No mint" (le altre sono bloccate).
+    var selectedMint by remember(stateKey) {
+        val atInitial = items.filter { YearOption(it.anno, it.variety) == initial }
+        mutableStateOf(
+            if (!canEditMints || atInitial.isEmpty() || atInitial.any { it.mint == NO_MINT }) NO_MINT
+            else atInitial.map { it.mint }.min(),
+        )
+    }
     // La riga di aiuto sotto i chip (solo con la varietà EFS scelta) apre la spiegazione di cosa significa.
     var showVarietyInfo by remember(stateKey) { mutableStateOf(false) }
     val checked = remember(stateKey) {
         mutableStateMapOf<DraftKey, Boolean>().apply {
             // Nessuna spunta preselezionata: l'anno di partenza è solo un'ipotesi (il primo della serie) e una spunta
             // già messa lì non si distingue da una scelta dell'utente. Vedi la nota sul default qui sopra.
-            currentItems.forEach { this[DraftKey(it.anno, it.variety, it.quality)] = true }
+            items.forEach { this[DraftKey(it.anno, it.variety, it.mint, it.quality)] = true }
         }
     }
     val prices = remember(stateKey) {
         mutableStateMapOf<DraftKey, String>().apply {
-            currentItems.forEach { this[DraftKey(it.anno, it.variety, it.quality)] = formatPrice(it.priceCents) }
+            items.forEach { this[DraftKey(it.anno, it.variety, it.mint, it.quality)] = formatPrice(it.priceCents) }
         }
     }
-    // Una data per FINITURA di ogni annata (e varietà), facoltativa e vuota di default: una finitura
+    // Una data per FINITURA di ogni annata (e varietà e zecca), facoltativa e vuota di default: una finitura
     // aggiunta dopo non eredita la data di un'altra (prima era una per annata, valida per tutte le finiture).
     val dates = remember(stateKey) {
         mutableStateMapOf<DraftKey, Long?>().apply {
-            currentItems.forEach { this[DraftKey(it.anno, it.variety, it.quality)] = it.purchasedOn }
+            items.forEach { this[DraftKey(it.anno, it.variety, it.mint, it.quality)] = it.purchasedOn }
         }
     }
-    val withData: Set<YearOption> = checked.filterValues { it }.keys.map { YearOption(it.year, it.variety) }.toSet()
+    // Voci con zecca che questo pannello non vede (senza Pro): contano solo per i puntini.
+    val hidden = if (canEditMints) emptyList() else currentItems.filter { it.mint != NO_MINT }
+    val withData: Set<YearOption> = checked.filterValues { it }.keys.map { YearOption(it.year, it.variety) }.toSet() +
+        hidden.map { YearOption(it.anno, it.variety) }
+    // Puntino sul chip della zecca: finiture spuntate (o già registrate) dell'anno scelto.
+    val mintsWithData: Set<String> = checked.filterValues { it }.keys
+        .filter { it.year == selected.year && it.variety == selected.variety }.map { it.mint }.toSet() +
+        hidden.filter { it.anno == selected.year && it.variety == selected.variety }.map { it.mint }
 
+    if (showProPrompt) {
+        MintRecordProPrompt(onDismiss = { showProPrompt = false }, onGoPro = access.onGoPro)
+    }
     if (confirmRemove) {
         RemoveConfirmDialog(
             message = regularRemovalMessage(
                 denomination = denomination.taglio,
                 where = "$countryName · ${seriesTitle(seriesNumber)}",
-                years = owned,
+                years = items.map { YearOption(it.anno, it.variety) }.distinct(),
+                mints = items.map { it.mint },
             ),
-            onConfirm = { confirmRemove = false; onSave(emptyList()) },
+            onConfirm = { confirmRemove = false; onSave(emptyList(), editableMints) },
             onDismiss = { confirmRemove = false },
         )
     }
@@ -205,10 +243,25 @@ fun RegularCollectionSheet(
                 }
             }
 
+            // La zecca (oggi la Germania) sta SOTTO l'anno e sempre visibile: l'anno è preselezionato dall'apertura,
+            // farla comparire dopo un tocco avrebbe cambiato l'altezza del pannello e nascosto la funzione.
+            if (letters.isNotEmpty()) {
+                Spacer(Modifier.height(4.dp))
+                MintStrip(
+                    paese = series.paese,
+                    mints = letters,
+                    selected = selectedMint,
+                    withData = mintsWithData,
+                    locked = !access.isPro,
+                    onSelect = { selectedMint = it },
+                    onLockedTap = { showProPrompt = true },
+                )
+            }
+
             Spacer(Modifier.height(8.dp))
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 CoinQuality.entries.forEach { quality ->
-                    val key = DraftKey(selected.year, selected.variety, quality)
+                    val key = DraftKey(selected.year, selected.variety, selectedMint, quality)
                     FinishCard(
                         quality = quality,
                         checked = checked[key] == true,
@@ -227,12 +280,15 @@ fun RegularCollectionSheet(
                 modifier = Modifier.fillMaxWidth(),
             ) {
                 // Solo se il taglio ha già qualcosa di salvato (nella finestra di questa serie): vedi RemoveFromCollection.kt.
-                if (currentItems.isNotEmpty()) {
+                if (items.isNotEmpty()) {
                     RemoveButton(onClick = { confirmRemove = true })
                     Spacer(Modifier.weight(1f))
                 }
                 TextButton(onClick = onDismiss) { Text("Cancel") }
                 Button(
+                    // Spento finché non c'è nulla da salvare: taglio non ancora in collezione e nessuna spunta in
+                    // nessun anno. Con qualcosa di salvato resta acceso: tutto deselezionato + Save equivale a togliere.
+                    enabled = canSaveCollection(hasSaved = items.isNotEmpty(), anyChecked = checked.any { it.value }),
                     onClick = {
                         onSave(
                             checked.filterValues { it }.keys.map { key ->
@@ -242,8 +298,10 @@ fun RegularCollectionSheet(
                                     priceCents = parsePriceCents(prices[key].orEmpty()),
                                     variety = key.variety,
                                     purchasedOn = dates[key],
+                                    mint = key.mint,
                                 )
                             },
+                            editableMints,
                         )
                     },
                 ) { Text("Save") }

@@ -38,6 +38,7 @@ import coil3.compose.SubcomposeAsyncImageContent
 import coil3.request.ImageRequest
 import coil3.request.transformations
 import com.michele.eurocoins.data.RegularIssueImage
+import com.michele.eurocoins.ui.components.CollectionControl
 import com.michele.eurocoins.ui.components.returnHighlight
 import com.michele.eurocoins.ui.components.CoinThumbnailRing
 import com.michele.eurocoins.ui.components.ThumbnailColorFilter
@@ -117,42 +118,7 @@ internal fun RegularCoinRow(
                 overflow = TextOverflow.Ellipsis,
             )
         }
-        CollectionBox(owned = owned, onClick = onEditCollection)
-    }
-}
-
-/** Casella accanto al taglio: piena con spunta se posseduto in almeno un'annata; un tocco apre il pannello. Stesso disegno di `CollectionBox` in `CoinListScreen.kt` (duplicata qui, non condivisa — stesso approccio di `BrowseCard`). */
-@Composable
-private fun CollectionBox(owned: Boolean, onClick: () -> Unit) {
-    val primary = MaterialTheme.colorScheme.primary
-    Box(
-        modifier = Modifier
-            .size(44.dp)
-            .clip(CircleShape)
-            .clickable(onClick = onClick),
-        contentAlignment = Alignment.Center,
-    ) {
-        Box(
-            modifier = Modifier
-                .size(26.dp)
-                .clip(RoundedCornerShape(7.dp))
-                .background(if (owned) primary else Color.Transparent)
-                .border(
-                    2.dp,
-                    if (owned) primary else MaterialTheme.colorScheme.onSurfaceVariant,
-                    RoundedCornerShape(7.dp),
-                ),
-            contentAlignment = Alignment.Center,
-        ) {
-            if (owned) {
-                Icon(
-                    imageVector = Icons.Filled.Check,
-                    contentDescription = "In your collection, tap to edit",
-                    tint = MaterialTheme.colorScheme.onPrimary,
-                    modifier = Modifier.size(18.dp),
-                )
-            }
-        }
+        CollectionControl(owned = owned, onClick = onEditCollection)
     }
 }
 

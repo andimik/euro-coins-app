@@ -101,10 +101,11 @@ fun SettingsScreen(
 ) {
     val hideCommemorativeMicrostates by settingsViewModel.hideCommemorativeMicrostates.collectAsState()
     val hideRegularMicrostates by settingsViewModel.hideRegularMicrostates.collectAsState()
-    val defaultTab by settingsViewModel.defaultTab.collectAsState()
-    val defaultRegularTab by settingsViewModel.defaultRegularTab.collectAsState()
     val rotateHomeCoins by settingsViewModel.rotateHomeCoins.collectAsState()
     val quickAdd by settingsViewModel.quickAdd.collectAsState()
+    val showMints by settingsViewModel.showMints.collectAsState()
+    val proState by monetization.billing.state.collectAsState()
+    val isPro = proState.isPro
     val themeMode by settingsViewModel.themeMode.collectAsState()
     val owned by settingsViewModel.ownedCounts.collectAsState()
     val backupState by backupViewModel.state.collectAsState()
@@ -157,11 +158,16 @@ fun SettingsScreen(
                 )
             }
 
-            // Microstati nascosti e scheda iniziale di ciascun catalogo stanno in una sottopagina (sono cinque controlli
-            // che si toccano una volta sola): qui una riga con il riepilogo di come sono impostati.
+            // Microstati, scheda iniziale e zecche tedesche stanno in una sottopagina (controlli che si toccano una volta
+            // sola): qui una riga che dice COSA c'è dentro, e solo se qualcosa è nascosto lo dice sotto.
             SectionHeader("Catalogs")
             CatalogsRow(
-                summary = catalogsSummary(hideCommemorativeMicrostates, hideRegularMicrostates, defaultTab, defaultRegularTab),
+                hiddenNote = catalogsHiddenNote(
+                    hideCommemorative = hideCommemorativeMicrostates,
+                    hideRegular = hideRegularMicrostates,
+                    // Senza Pro la funzione si vede sempre (bloccata): "nascosta" vale solo con il Pro.
+                    germanMintsHidden = isPro && !showMints,
+                ),
                 onClick = onCatalogsClick,
             )
 
@@ -458,7 +464,7 @@ private fun ProCard(
                 Text(
                     when {
                         isPro -> "No ads. Thank you!"
-                        else -> "Remove all ads"
+                        else -> "No ads · German mints"
                     },
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -538,9 +544,16 @@ private fun ResetRow(owned: OwnedCounts, onClick: () -> Unit) {
 
 /** Riga con titolo, spiegazione e interruttore (stessa resa per tutte le opzioni on/off). */
 @Composable
-internal fun SwitchRow(title: String, subtitle: String, checked: Boolean, onCheckedChange: (Boolean) -> Unit) {
+internal fun SwitchRow(
+    title: String,
+    subtitle: String,
+    checked: Boolean,
+    onCheckedChange: (Boolean) -> Unit,
+    /** false = bloccato (opzione del Pro senza Pro): attenuato e non toccabile. */
+    enabled: Boolean = true,
+) {
     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-        Column(modifier = Modifier.weight(1f)) {
+        Column(modifier = Modifier.weight(1f).alpha(if (enabled) 1f else 0.6f)) {
             Text(title, style = MaterialTheme.typography.titleMedium)
             Text(
                 subtitle,
@@ -552,6 +565,7 @@ internal fun SwitchRow(title: String, subtitle: String, checked: Boolean, onChec
         Switch(
             checked = checked,
             onCheckedChange = onCheckedChange,
+            enabled = enabled,
             thumbContent = if (checked) {
                 { Icon(Icons.Filled.Check, contentDescription = null, modifier = Modifier.size(SwitchDefaults.IconSize)) }
             } else {
@@ -599,9 +613,9 @@ internal fun resetBackupNote(state: BackupUiState, coins: Int = 2): String {
 internal fun resetBackupNoteIsWarning(state: BackupUiState): Boolean =
     state.account == null || state.localStatus != BackupStatus.UpToDate
 
-/** Riga che apre la sottopagina dei cataloghi: titolo, riepilogo dei valori correnti e freccia. */
+/** Riga che apre la sottopagina dei cataloghi: la frase del contenuto, l'avviso se qualcosa è nascosto e la freccia. */
 @Composable
-private fun CatalogsRow(summary: String, onClick: () -> Unit) {
+private fun CatalogsRow(hiddenNote: String?, onClick: () -> Unit) {
     val shape = RoundedCornerShape(14.dp)
     Row(
         modifier = Modifier
@@ -615,12 +629,14 @@ private fun CatalogsRow(summary: String, onClick: () -> Unit) {
         horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         Column(modifier = Modifier.weight(1f)) {
-            Text("Catalog options", style = MaterialTheme.typography.titleMedium)
-            Text(
-                text = summary,
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
+            Text(CATALOGS_ROW_TITLE, style = MaterialTheme.typography.titleMedium)
+            hiddenNote?.let {
+                Text(
+                    text = it,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
         }
         Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
     }

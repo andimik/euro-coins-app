@@ -60,12 +60,16 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import com.michele.eurocoins.data.NO_MINT
+import com.michele.eurocoins.data.canSaveCollection
 import com.michele.eurocoins.data.formatPurchaseDate
 import com.michele.eurocoins.data.Coin
 import com.michele.eurocoins.data.displayTema
 import com.michele.eurocoins.data.CoinQuality
 import com.michele.eurocoins.data.CollectionItem
 import com.michele.eurocoins.data.FinishEntry
+import com.michele.eurocoins.data.MintFinish
+import com.michele.eurocoins.data.mintLettersFor
 import com.michele.eurocoins.data.displayCountry
 import com.michele.eurocoins.data.stableKey
 import com.michele.eurocoins.ui.theme.PurpleFieldDark
@@ -97,9 +101,10 @@ private val PriceFieldHeight = 40.dp
  *
  * Lavora su una BOZZA locale e scrive solo con "Save": chiudere il pannello
  * senza salvare non cambia nulla, quindi un tocco sbagliato non cancella un
- * prezzo già inserito. Alla prima apertura (moneta non ancora posseduta)
- * "Standard" è già spuntata, perché è il caso di quasi tutte le monete: un
- * tocco sulla casella + Save.
+ * prezzo già inserito. Alla prima apertura (moneta non ancora posseduta) NESSUNA
+ * finitura è spuntata, come nel pannello delle Regular Issues (2026-10-13: prima
+ * "Standard" era già spuntata, e chi aveva solo un BU la registrava in più
+ * senza accorgersene); "Save" resta spento finché non c'è una spunta.
  *
  * Usato sia dall'elenco (casella accanto a ogni moneta) sia dal dettaglio.
  */
@@ -108,37 +113,64 @@ private val PriceFieldHeight = 40.dp
 fun CollectionSheet(
     coin: Coin,
     currentItems: List<CollectionItem>,
-    onSave: (Map<CoinQuality, FinishEntry>) -> Unit,
+    /**
+     * Cosa salvare: le finiture spuntate per (zecca, finitura) e le zecche che il pannello può cambiare (`null` =
+     * tutte). Senza Pro il pannello vede e cambia solo "No mint": le voci con zecca non entrano nella bozza e il
+     * salvataggio le lascia intatte (un Pro scaduto non fa perdere ciò che l'utente aveva registrato).
+     */
+    onSave: (Map<MintFinish, FinishEntry>, Set<String>?) -> Unit,
     onDismiss: () -> Unit,
 ) {
+    val access = LocalProAccess.current
+    // Le lettere di zecca del paese (oggi la Germania): senza, nessuna riga Mint e il pannello è quello di sempre.
+    val showMints = LocalShowMints.current
+    val letters = remember(coin.paese, showMints) { if (showMints) mintLettersFor(coin.paese) else emptyList() }
+    // Il pannello cambia le zecche solo con il Pro E con la funzione accesa: altrimenti vede solo "No mint" e il
+    // salvataggio lascia intatte le voci con zecca.
+    val canEditMints = access.isPro && showMints
+    var showProPrompt by remember { mutableStateOf(false) }
+    val editableMints: Set<String>? = if (canEditMints) null else setOf(NO_MINT)
+    val items = if (canEditMints) currentItems else currentItems.filter { it.mint == NO_MINT }
     val checked = remember(coin.stableKey) {
-        mutableStateMapOf<CoinQuality, Boolean>().apply {
-            CoinQuality.entries.forEach { quality ->
-                this[quality] = currentItems.any { it.quality == quality } ||
-                    (currentItems.isEmpty() && quality == CoinQuality.STANDARD)
-            }
+        mutableStateMapOf<MintFinish, Boolean>().apply {
+            items.forEach { this[MintFinish(it.mint, it.quality)] = true }
         }
     }
-    // Una data per FINITURA, facoltativa e vuota di default: una finitura aggiunta dopo non eredita quella
-    // delle altre (prima era una sola per moneta, e salvando la sovrascriveva per tutte).
+    // Nessuna spunta preselezionata (2026-10-13, come le Regular Issues): una spunta già messa non si distingue da
+    // una scelta dell'utente, e chi compra una commemorativa solo in BU o Proof registrerebbe senza accorgersene
+    // anche una Standard che non ha. Chi vuole solo "ce l'ho" usa la casella con Quick add.
+    // Una data per FINITURA (e per zecca), facoltativa e vuota di default: una finitura aggiunta dopo non eredita
+    // quella delle altre (prima era una sola per moneta, e salvando la sovrascriveva per tutte).
     val dates = remember(coin.stableKey) {
-        mutableStateMapOf<CoinQuality, Long?>().apply {
-            CoinQuality.entries.forEach { quality -> this[quality] = currentItems.firstOrNull { it.quality == quality }?.purchasedOn }
+        mutableStateMapOf<MintFinish, Long?>().apply {
+            items.forEach { this[MintFinish(it.mint, it.quality)] = it.purchasedOn }
+        }
+    }
+    val prices = remember(coin.stableKey) {
+        mutableStateMapOf<MintFinish, String>().apply {
+            items.forEach { this[MintFinish(it.mint, it.quality)] = formatPrice(it.priceCents) }
         }
     }
     var confirmRemove by remember(coin.stableKey) { mutableStateOf(false) }
-    val prices = remember(coin.stableKey) {
-        mutableStateMapOf<CoinQuality, String>().apply {
-            CoinQuality.entries.forEach { quality ->
-                this[quality] = formatPrice(currentItems.firstOrNull { it.quality == quality }?.priceCents)
-            }
-        }
+    // Si apre sulla zecca che ha qualcosa: "No mint" se c'è la voce semplice (o niente), altrimenti la prima lettera.
+    // Senza Pro sempre "No mint" (le altre sono bloccate).
+    var selectedMint by remember(coin.stableKey) {
+        mutableStateOf(
+            if (!canEditMints || items.isEmpty() || items.any { it.mint == NO_MINT }) NO_MINT
+            else items.map { it.mint }.min(),
+        )
     }
+    // Puntino sul chip: finiture spuntate in bozza, più (senza Pro) le zecche già registrate che la bozza non vede.
+    val withData: Set<String> = checked.filterValues { it }.keys.map { it.mint }.toSet() +
+        (if (canEditMints) emptySet() else currentItems.map { it.mint }.filter { it != NO_MINT }.toSet())
 
+    if (showProPrompt) {
+        MintRecordProPrompt(onDismiss = { showProPrompt = false }, onGoPro = access.onGoPro)
+    }
     if (confirmRemove) {
         RemoveConfirmDialog(
-            message = commemorativeRemovalMessage(coin.displayTema(), currentItems.map { it.quality }),
-            onConfirm = { confirmRemove = false; onSave(emptyMap()) },
+            message = commemorativeRemovalMessageFor(coin.displayTema(), items.map { MintFinish(it.mint, it.quality) }),
+            onConfirm = { confirmRemove = false; onSave(emptyMap(), editableMints) },
             onDismiss = { confirmRemove = false },
         )
     }
@@ -173,16 +205,31 @@ fun CollectionSheet(
                 modifier = Modifier.padding(top = 4.dp, bottom = 12.dp),
             )
 
+            if (letters.isNotEmpty()) {
+                MintStrip(
+                    paese = coin.paese,
+                    mints = letters,
+                    selected = selectedMint,
+                    withData = withData,
+                    locked = !access.isPro,
+                    onSelect = { selectedMint = it },
+                    onLockedTap = { showProPrompt = true },
+                    modifier = Modifier.padding(bottom = 0.dp),
+                )
+                Spacer(Modifier.height(8.dp))
+            }
+
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 CoinQuality.entries.forEach { quality ->
+                    val key = MintFinish(selectedMint, quality)
                     FinishCard(
                         quality = quality,
-                        checked = checked[quality] == true,
-                        price = prices[quality].orEmpty(),
-                        onCheckedChange = { checked[quality] = it },
-                        onPriceChange = { prices[quality] = it },
-                        date = dates[quality],
-                        onDateChange = { dates[quality] = it },
+                        checked = checked[key] == true,
+                        price = prices[key].orEmpty(),
+                        onCheckedChange = { checked[key] = it },
+                        onPriceChange = { prices[key] = it },
+                        date = dates[key],
+                        onDateChange = { dates[key] = it },
                     )
                 }
             }
@@ -193,17 +240,20 @@ fun CollectionSheet(
                 modifier = Modifier.fillMaxWidth(),
             ) {
                 // Solo se la moneta ha già qualcosa di salvato: alla prima apertura non c'è niente da togliere.
-                if (currentItems.isNotEmpty()) {
+                if (items.isNotEmpty()) {
                     RemoveButton(onClick = { confirmRemove = true })
                     Spacer(Modifier.weight(1f))
                 }
                 TextButton(onClick = onDismiss) { Text("Cancel") }
                 Button(
+                    // Spento finché non c'è nulla da salvare: moneta non ancora in collezione e nessuna finitura
+                    // spuntata. Con qualcosa di salvato resta acceso: tutto deselezionato + Save equivale a togliere.
+                    enabled = canSaveCollection(hasSaved = items.isNotEmpty(), anyChecked = checked.any { it.value }),
                     onClick = {
                         onSave(
-                            CoinQuality.entries
-                                .filter { checked[it] == true }
+                            checked.filterValues { it }.keys
                                 .associateWith { FinishEntry(parsePriceCents(prices[it].orEmpty()), dates[it]) },
+                            editableMints,
                         )
                     },
                 ) { Text("Save") }

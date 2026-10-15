@@ -2,6 +2,7 @@ package com.michele.eurocoins.ui.regular
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.michele.eurocoins.data.NO_MINT
 import com.michele.eurocoins.data.CoinQuality
 import com.michele.eurocoins.data.DenominationRow
 import com.michele.eurocoins.data.Progress
@@ -212,10 +213,18 @@ class RegularIssuesViewModel(
     }
 
     /** Salva dal pannello di una riga di All: stessa chiave (serie di origine) e finestra dell'elenco di un taglio. */
-    fun onSaveCollection(row: DenominationRow, entries: List<RegularCollectionEntry>) {
+    fun onSaveCollection(row: DenominationRow, entries: List<RegularCollectionEntry>, editableMints: Set<String>?) {
         val series = row.denomination.series
         viewModelScope.launch {
-            repository.saveCollection(series.stableKey, row.denomination.image.taglio, series.paese, entries, window = row.denomination)
+            repository.saveCollection(series.stableKey, row.denomination.image.taglio, series.paese, entries, window = row.denomination, editableMints = editableMints)
+        }
+    }
+
+    /** Conferma di rimozione: toglie tutte le voci della riga, anche quelle con zecca. */
+    fun onRemoveAll(row: DenominationRow) {
+        val series = row.denomination.series
+        viewModelScope.launch {
+            repository.saveCollection(series.stableKey, row.denomination.image.taglio, series.paese, emptyList(), window = row.denomination, editableMints = null)
         }
     }
 }

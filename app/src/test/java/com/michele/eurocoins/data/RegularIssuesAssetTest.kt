@@ -50,6 +50,27 @@ class RegularIssuesAssetTest {
     }
 
     @Test
+    fun coinsWithTheSameDesignShareTheSameText() {
+        assumeTrue(hasNumista)
+        fun text(paese: String, ordine: Int, taglio: String) = image(paese, ordine, taglio).descrizione
+        // Belgio: un solo ritratto per tutti e otto i tagli (prima 4 testi diversi da 72 a 340 caratteri).
+        val belgium = listOf("1 cent", "2 cent", "5 cent", "10 cent", "20 cent", "50 cent", "1 euro", "2 euro")
+            .map { text("Belgio", 3, it) }
+        assertEquals(1, belgium.distinct().size)
+        assertTrue(belgium.first()!!.length > 300)
+        // Cipro: i tre centesimi col muflone hanno la descrizione più ricca (due mufloni, due lingue).
+        assertEquals(text("Cipro", 1, "1 cent"), text("Cipro", 1, "5 cent"))
+        // Il Portogallo ha TRE sigilli diversi: 1-2-5 cent condividono il testo, ma non con 10-20-50 cent né con gli euro.
+        assertEquals(text("Portogallo", 1, "1 cent"), text("Portogallo", 1, "5 cent"))
+        assertTrue(text("Portogallo", 1, "1 cent") != text("Portogallo", 1, "10 cent"))
+        assertTrue(text("Portogallo", 1, "10 cent") != text("Portogallo", 1, "2 euro"))
+        // Monaco 2025: il testo francese di 1 euro cede a quello inglese del 2 euro.
+        assertEquals(text("Monaco", 3, "2 euro"), text("Monaco", 3, "1 euro"))
+        // Disegni diversi nella stessa famiglia non si toccano: Croazia 2 euro (mappa) e 50 cent (Tesla).
+        assertTrue(text("Croazia", 1, "2 euro") != text("Croazia", 1, "50 cent"))
+    }
+
+    @Test
     fun billionsFitAndSurviveTheRoundTrip() {
         assumeTrue(hasNumista)
         val germany = image("Germania", 1, "1 cent")

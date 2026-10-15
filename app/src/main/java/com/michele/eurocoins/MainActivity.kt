@@ -27,6 +27,7 @@ import androidx.navigation.compose.rememberNavController
 import com.michele.eurocoins.ui.components.LocalMintLetters
 import com.michele.eurocoins.ui.components.LocalProAccess
 import com.michele.eurocoins.ui.components.LocalQuickAdd
+import com.michele.eurocoins.ui.components.LocalShowMints
 import com.michele.eurocoins.ui.components.ProAccess
 import com.michele.eurocoins.ui.detail.LocalSwipeHint
 import com.michele.eurocoins.ui.navigation.EuroCoinsNavHost
@@ -89,6 +90,7 @@ class MainActivity : ComponentActivity() {
             EuroCoinsTheme(darkTheme = darkTheme) {
                 Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
                     val quickAdd by app.userSettings.quickAdd.collectAsState()
+                    val showMints by app.userSettings.showMints.collectAsState()
                     val navController = rememberNavController()
                     val pro by monetization.billing.state.collectAsState()
                     val proAccess = remember(pro.isPro, navController) {
@@ -97,6 +99,8 @@ class MainActivity : ComponentActivity() {
                     CompositionLocalProvider(
                         LocalSwipeHint provides app.swipeHint,
                         LocalQuickAdd provides quickAdd,
+                        // Senza Pro la funzione si vede sempre (bloccata, con gli inviti): l'interruttore è del Pro e non si può toccare.
+                        LocalShowMints provides (showMints || !pro.isPro),
                         LocalProAccess provides proAccess,
                         LocalMintLetters provides app.mintLetters,
                     ) {

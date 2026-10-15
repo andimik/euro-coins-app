@@ -7,6 +7,8 @@ import com.michele.eurocoins.data.CoinQuality
 import com.michele.eurocoins.data.CoinRepository
 import com.michele.eurocoins.data.CollectionItem
 import com.michele.eurocoins.data.FinishEntry
+import com.michele.eurocoins.data.MintFinish
+import com.michele.eurocoins.data.NO_MINT
 import com.michele.eurocoins.data.displayCountry
 import com.michele.eurocoins.data.stableKey
 import kotlinx.coroutines.Dispatchers
@@ -157,8 +159,14 @@ class CoinListViewModel(
         viewModelScope.launch { repository.quickToggle(coin, items) }
     }
 
-    fun onSaveCollection(coin: Coin, entries: Map<CoinQuality, FinishEntry>) {
-        viewModelScope.launch { repository.saveCollection(coin, entries) }
+    /** [editableMints]: le zecche che il pannello può cambiare (`null` = tutte), vedi `CollectionSheet`. */
+    fun onSaveCollection(coin: Coin, entries: Map<MintFinish, FinishEntry>, editableMints: Set<String>?) {
+        viewModelScope.launch { repository.saveCollection(coin, entries, editableMints) }
+    }
+
+    /** Conferma di rimozione del Quick add: toglie tutte le voci della moneta, anche quelle con zecca. */
+    fun onRemoveAll(coin: Coin) {
+        viewModelScope.launch { repository.saveCollection(coin, emptyMap(), editableMints = null) }
     }
 }
 

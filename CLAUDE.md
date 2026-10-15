@@ -276,10 +276,20 @@ nella card COLLECTION), così c'è un solo modo di registrare.
 
 - Il pannello lavora su una **bozza** e scrive solo con "Save": chiuderlo
   senza salvare non cambia nulla (un tocco sbagliato non cancella un
-  prezzo). Alla prima apertura di una moneta non posseduta "Standard" è già
-  spuntata.
+  prezzo). Alla prima apertura di una moneta non posseduta NESSUNA finitura è
+  spuntata e "Save" è spento finché non c'è una spunta (2026-10-13, come le
+  Regular Issues; prima "Standard" era già spuntata: vedi § Collezione su Regular Issues).
 - Una moneta conta come "posseduta" (casella piena, barre "x / y collected"
   di home/anni/paesi) se ha almeno una qualità.
+- **Il controllo a destra di ogni riga cambia con la modalità** (2026-10-15, parere UX, variante A dopo mockup,
+  `CollectionControl` in `ui/components/`, usato da `CoinRow` e `RegularCoinRow`): con Quick add acceso resta la casella
+  quadrata con la spunta (è un interruttore vero); in modalità dettaglio è un pulsante rotondo, "+" a contorno se non
+  posseduta e cerchio verde pieno con la matita se posseduta. Motivo: la casella con la spunta promette "tocco =
+  spengo", e in dettaglio su una moneta già spuntata apriva un modulo (il proprietario lo trovava fuorviante: "posso
+  cliccare un oggetto già spuntato"). + e matita sono gli stessi glifi di "Add / Edit collection" della card
+  COLLECTION, e lo stato non dipende dal solo colore (cambia il glifo). Scartato "sempre +" (lo stato resterebbe
+  nel solo riempimento, e "+" su una posseduta promette un secondo esemplare che l'app non ha). Le caselle DENTRO il
+  pannello (finiture) restano caselle: lì un tocco su una spuntata la spegne davvero.
 - Il salvataggio sostituisce in blocco le qualità della moneta
   (`CollectionDao.replaceForCoin`, transazione) e conserva `addedAt` delle
   voci già esistenti.
@@ -345,7 +355,8 @@ nella card COLLECTION), così c'è un solo modo di registrare.
   resterebbero orfane; per questo ogni voce conserva anche anno/paese/tema di
   quando è stata salvata. Soluzione definitiva: un id stabile emesso dalla
   pipeline dati.
-- **Migrazioni Room esplicite** (DB versione 10, `CoinDatabase.kt`), mai
+- **Migrazioni Room esplicite** (DB versione 11 sul ramo `german-mints-phase3`: `MIGRATION_10_11` mette la zecca
+  nella chiave, § Zecche tedesche; su `main` ancora 10), `CoinDatabase.kt`), mai
   `fallbackToDestructiveMigration`: distruggerebbe anche la collezione
   dell'utente. `MIGRATION_1_2` (tabella `collection_items`), `MIGRATION_2_3`
   (`coins.emissioneComune`), `MIGRATION_3_4` (`coins.tiraturaNumista{Standard,Bu,Proof}`,
@@ -474,11 +485,15 @@ che apre la sottopagina `CatalogSettingsScreen`, vedi sotto), Appearance, Danger
 **Riorganizzazione (2026-10-11, dopo mockup)**: la pagina era arrivata a ~2,6 schermate (le card di backup e Pro
 sono alte e Quick add aveva aggiunto una sezione). I cinque controlli che si toccano una volta sola, microstati nascosti
 e scheda iniziale di ciascun catalogo, stanno ora in una SOTTOPAGINA "Catalogs" (`CatalogSettingsScreen`, route
-`settings/catalogs`, le stesse due `CatalogCard` di prima, una schermata intera), raggiunta da una riga "Catalog options"
-con il RIEPILOGO dei valori correnti (`catalogsSummary`: "Commemorative: Countries / Regular Issues: Countries", una
-riga per catalogo perché in una sola "Regular Issues" andava a capo a metà, e una terza "Microstates hidden in …"
-solo se se ne nascondono, perché cambia ciò che si vede e i totali): di solito non serve aprirla per leggere come sono
-impostati. **Quick add resta IN LINEA sulla principale** (scelta dell'utente, variante "card in linea": è la funzione
+`settings/catalogs`, le stesse due `CatalogCard` di prima più la card "German mints", una schermata intera), raggiunta
+da una riga che è UNA FRASE sul contenuto, uguale per Free e Pro: "Microstates, start tab and German mints"
+(`CATALOGS_ROW_TITLE`; variante A scelta il 2026-10-13 dopo mockup). **Storia**: la riga si chiamava "Catalog options"
+(ripeteva il titolo della sezione "Catalogs") e sotto aveva il riepilogo dei valori correnti ("Commemorative: Countries
+/ Regular Issues: Countries": prolisso, e la scheda iniziale si cambia una volta sola); da Free non diceva che le zecche
+tedesche stanno là dentro. Ora le zecche si nominano anche da Free (è l'unico punto dove si scopre che esistono) e
+sotto compare una riga SOLO se qualcosa è nascosto (`catalogsHiddenNote`: "Microstates hidden in Commemorative / Regular
+Issues / both", "German mints hidden", perché cambia ciò che si vede e i totali). Spazio non separabile (U+00A0) tra
+"German" e "mints": senza, a capo dopo "German" lasciava "mints" da solo. `CatalogsSummaryTest`. **Quick add resta IN LINEA sulla principale** (scelta dell'utente, variante "card in linea": è la funzione
 nuova e si accende/spegne per provarla, non va cercata in una sottopagina). Appearance resta in linea: una
 sottopagina per due controlli sarebbe solo attrito. Scartate: sezioni a fisarmonica (nasconde senza accorciare) e una
 sottopagina per sezione (troppo frammentata). Costo: un tocco in più per cambiare uno dei cinque controlli spostati.
@@ -1033,7 +1048,20 @@ catalogo completo.
   Il testo è
   Numista (verbatim, inglese, scritto da utenti: più ricco della BCE) o, dove Numista non ha il
   type, la pagina BCE del taglio (`descrizioneFonte` = "numista"/"ecb"; il testo BCE è uno per
-  paese e a volte descrive più serie insieme). (Lussemburgo 2026 2 euro non aveva testo finché Numista non ha avuto il type, N#585823, ottobre 2026: né
+  paese e a volte descrive più serie insieme). **Stesso disegno = stesso testo** (2026-10-13, richiesta del
+  proprietario, `$SameDesign` in `scripts/export-regular-issues.ps1`): Numista ha un type per taglio e i testi li
+  scrivono gli utenti, quindi lo stesso ritratto arrivava con descrizioni diverse (Belgio serie 3: 340, 235, 114 e 72
+  caratteri). Una tabella a mano di gruppi (serie + tagli + "donor") copia nei tagli dello stesso disegno il testo
+  del più ricco di dettaglio, che non citi cose di un solo taglio (l'"anello esterno" dei bimetallici sui
+  centesimi); 86 tagli su 303, solo `descrizione` e `fonte_url` cambiano (verificato confrontando i JSON campo per
+  campo). **I gruppi sono ricavati dalle foto (somiglianza dei contorni a 48 px, soglia 0.70) e rivisti a mano, non
+  vanno estesi a occhio**: la somiglianza da sola sbagliava (Portogallo ha tre sigilli diversi, Croazia mappa e
+  Tesla, San Marino un soggetto per moneta, Spagna Santiago e Cervantes) e quei casi non sono nella tabella; un testo
+  copiato su un disegno diverso scrive il falso. Tre cose da sapere: le foto con lo stesso contenuto (hash) erano
+  solo 7 gruppi e già coerenti, quindi "stessa immagine" è il disegno e non il file; `numista_id`, tirature, zecca e
+  incisore restano del taglio (il link "Data: Numista N#…" dei crediti punta al type del taglio, non a quello del
+  testo; l'app non mostra `fonte_url`); i testi BCE (per taglio, "The 5 cent coin features…") non si copiano.
+  `RegularIssuesAssetTest.coinsWithTheSameDesignShareTheSameText`. (Lussemburgo 2026 2 euro non aveva testo finché Numista non ha avuto il type, N#585823, ottobre 2026: né
   Numista né BCE, che descriverebbe la serie precedente: la card mancava). `RegularDenominationDetailViewModel` rilegge reattivamente da `RegularIssueRepository.series`/
   `collectionItems` (come `RegularIssueCountryViewModel`), non un fetch singolo come
   `CoinDetailViewModel.getById`: qui non serve un id stabile per riga, il taglio è già una chiave
@@ -1075,6 +1103,16 @@ catalogo completo.
     un'aggregazione). Senza questa distinzione una somma tra più anni si legge come la tiratura di
     un anno solo, un ordine di grandezza fuorviante per chi guarda la card — punto sollevato
     dall'utente come consulenza UI/UX (vedi § Convenzioni di lavoro, "Pareri su UI/UX").
+    **Formato dei numeri** (2026-10-13, `formatCardMintage`): con almeno due anni (cioè quando "View by year"
+    esiste) le tre colonne sono SEMPRE compatte a UNA cifra decimale, "14.2 B", "10.1 M", "19.0 k" (la stessa
+    `formatCompactMintage` delle tabelle per zecca); con un anno solo i numeri sono esatti ("12,345,678"), perché
+    non c'è nessun altro posto dove leggerli e sono tutti dello stesso ordine di grandezza. Motivo: prima le somme
+    erano a 3 cifre significative con "≈" (`formatApproxTotal`, tolta) e un anno solo restava esatto, quindi una
+    card poteva mostrare "≈ 14.2 B · ≈ 10.1 M · 19,000" ("poco armonioso", segnalato dal proprietario). **Scelte
+    dell'utente**: una cifra decimale (non tre significative: "7.9 B" invece di "7.87 B", per coerenza con le
+    zecche) e **nessuna riga Total nella tabella "by year"** (proposta e scartata): la somma esatta di una
+    qualità non è scritta da nessuna parte, si legge solo arrotondata nella card. Le commemorative non cambiano
+    (una tiratura per qualità, al massimo 8 cifre, nessuna tabella dove leggere l'esatto).
   - **"View by year" compare solo se ci sono almeno due anni distinti in totale** (su qualunque
     qualità): con un solo anno la somma coincide già col dato di quell'anno, un pulsante per
     aprire una tabella da una riga sola sarebbe solo attrito.
@@ -1275,8 +1313,15 @@ e un utente può avere più annate dello stesso taglio (es. Belgio serie 2, 1 eu
     anni si spuntano uno per uno senza toccare niente due volte, e il puntino verde sul chip mostra quali anni hanno
     qualcosa. Scelta consigliata e approvata dal proprietario. Scartata: una spunta "suggerita" con aspetto diverso
     (tratteggiata, sparisce se si spunta un altro anno senza averla toccata): risolverebbe entrambi i casi ma aggiunge
-    uno stato visivo nuovo per risparmiare un tocco a chi registra l'anno iniziale. Nelle commemorative la
-    preselezione resta (la moneta è una sola, nessuna ambiguità).
+    uno stato visivo nuovo per risparmiare un tocco a chi registra l'anno iniziale. **Preselezione tolta anche
+    nelle commemorative (2026-10-13, richiesta del proprietario "per uniformità")**: prima lì "Standard" era già
+    spuntata ("la moneta è una sola, nessuna ambiguità"), ma chi compra una commemorativa solo in BU o Proof, come
+    capita con i set, registrava in più una Standard che non ha senza accorgersene. Il costo è un tocco in più
+    (apri, spunta, Save); chi vuole solo "ce l'ho" usa Quick add. **"Save" spento** in entrambi i pannelli finché
+    la moneta non è in collezione e nessuna finitura è spuntata (`canSaveCollection`, `CollectionSave.kt`); con
+    qualcosa di salvato resta acceso, perché tutto deselezionato + Save toglie (c'è anche il tasto Remove). Sparita
+    con la preselezione la logica "morbida" delle zecche (`isSoftDefaultActive`, `noMintTouched`), e con lei la
+    classe di bug del doppione "Standard" + "Standard · D".
   - **Bozza per anno + Save**: le spunte e i prezzi sono in mappe chiave (anno, varietà, finitura);
     cambiare anno non li perde, "Save" scrive tutti gli anni insieme, chiudere senza salvare non
     cambia nulla.
@@ -1397,15 +1442,115 @@ pubblicazione). Codice in `data/pro/`, solo librerie Google (Billing 9.1, Mobile
     w≈637) separano gli anni, le lettere A D F G J a x≈207 raggruppano gli ordini, i tagli sono otto colonne a
     x≈250…670, e un'etichetta ruotata con "(" nel blocco marca la 2 € commemorativa.
   - Nelle commemorative, "View by mint" sotto i tre numeri di MINTAGES
-    (`CoinMintLettersEntry`) apre un pannello con una riga per lettera e il totale. **Senza Pro**: nella tabella by
-    year una riga lilla "Split by mint (A, D, F, G, J) is part of Pro" (`ProLockedRow`), nelle commemorative il
-    pulsante lilla con lucchetto; il tocco apre `MintLettersProPrompt` ("Not now" / "Go Pro"). **"Go Pro" porta alle
+    (`CoinMintLettersEntry`) apre un pannello con una riga per lettera e il totale (colonna della lettera a
+    larghezza fissa: con "  Città" in coda la città partiva dove finiva la lettera e non si allineava, 2026-10-13). **Senza Pro**: nella tabella by
+    year una riga lilla "Go Pro to split by mint (A, D, F, G, J)" (`ProLockedRow`), nelle commemorative il
+    pulsante lilla con lucchetto; il tocco apre `MintLettersProPrompt` ("Not now" / "Go Pro"). **Testi del blocco
+    (2026-10-13)**: dove qualcosa è bloccato l'invito è un'azione ("Go Pro to unlock." nella nota di Impostazioni →
+    Catalogs → German mints, "Go Pro to split by mint …" nella riga), non "Part of Pro": stesso verbo del
+    pulsante "Go Pro"; "Become Pro" scartato (suona come un'iscrizione, è un acquisto una tantum) e niente "!".
+    Invariati i dialog ("Part of Euro Coins Pro, with no ads.": il pulsante "Go Pro" è già lì) e le etichette
+    del badge/TalkBack. **"Go Pro" porta alle
     Impostazioni** (`ProAccess.onGoPro` → `openSettings()`), non avvia l'acquisto: resta SOLO la pillola col prezzo
     a farlo. `LocalProAccess` e `LocalMintLetters` sono forniti da `MainActivity` (il `NavController` è stato
     sollevato lì). **Non verificato sul telefono.**
   - **Bug trovato e corretto di passaggio** in `export-regular-issues.ps1`: Germania 20 cent 2007 Standard
     mostrava 200.000 invece di 108.900.000 ("Doppione… tenuta la prima": due type Numista per lo stesso anno,
     lato comune vecchio e nuovo). Ora le righe con lo stesso (anno, qualità) si SOMMANO. Era l'unico caso.
+  - **FASE 3 — registrare la lettera in collezione: FATTA sul ramo `german-mints-phase3` (2026-10-12), NON unita a
+    `main`.** Passi 1-5 fatti e provati sul telefono, tema chiaro compreso e backup/ripristino su Drive vero
+    (vedi sotto); **non provato**: il backup v5 dalla build di RELEASE (R8) installata. **Passi 2-5 (2026-10-12)**: riga **Mint** (`MintStrip`,
+    chip a peso: "No mint" 2,2 e le lettere 1, non scorrevole, la J usciva di lato) nei pannelli delle commemorative
+    (sotto il sottotitolo) e delle Regular (sotto la striscia degli anni); bozza per (zecca, finitura) / (anno,
+    varietà, zecca, finitura); si apre sulla zecca che ha qualcosa; puntino sul chip dove c'è una finitura in bozza.
+    **Con Pro** il pannello vede e salva TUTTE le voci (`editableMints = null`); **senza Pro** vede solo "No mint",
+    le lettere sono bloccate (lucchetto "Mint 🔒 Pro", tocco = invito "Record the mint") e il salvataggio le lascia
+    intatte (verificato sul telefono: salvare un BU semplice senza Pro non cancella "Standard · D"). **Nessuna
+    preselezione** (dal 2026-10-13; prima ce n'era una "morbida" di "Standard" senza zecca, che spariva se si
+    spuntava qualcosa in una lettera per non salvare il doppione "Standard" + "Standard · D"). Rimozione: il "Remove" del pannello toglie ciò che il pannello vede, la
+    conferma del Quick add toglie TUTTO (`onRemoveAll`); i testi nominano le zecche ("This removes BU and Standard
+    (D) for …", "… Mint D is included."). Card COLLECTION dei dettagli: una riga per finitura e zecca ("Standard · D")
+    e i cinque cerchi A D F G J con "1 of 5 mints" (`MintLetterBadges`; solo con Pro o dove c'è già una lettera: un
+    Pro scaduto non nasconde i dati). **I cerchi sono SOLO informativi, nessun filtro per zecca e nessun tocco** (decisione del 2026-10-15, dopo due prove scartate dal proprietario). Provati e tolti: (1) il tocco su una lettera che apriva il pannello su quella zecca (e41a487, revert d55660f): duplicava "Edit collection"; (2) il filtro per zecca come i chip degli anni (769fbc9, revert 510f224): per un anno una moneta ha al massimo 15 righe (3 finiture per 5 zecche, circa 750 dp, il caso del collezionista che ha tutto), tipicamente 1-5, e il filtro aggiungeva una modalità (cerchi pieni, vuoti e scelti, messaggio vuoto) per un problema che quasi nessuno ha. I chip degli anni servivano per 30 righe. **Non riproporre** senza un caso reale di card troppo lunga. Lezione: se il proprietario chiede un comportamento esplicito la raccomandazione alternativa va detta ma non sostituita senza il suo via libera. **Testo della card Pro** (2026-10-12): "No ads · German mints" (era "Remove
+    all ads"; una riga, accanto alla pillola del prezzo: da controllare che non si tronchi con il font ingrandito).
+    **Interruttore "German mints"** (Impostazioni → Catalogs → card "German mints", "Show mints", acceso di
+    default, `UserSettings.showMints`, `LocalShowMints`; spostato da "Collection" il 2026-10-12: nasconde una parte
+    dei cataloghi come "Hide microstates", non è un comportamento come Quick add; "Collection" resta col solo Quick
+    add, e la riga di Catalogs nelle Impostazioni nomina "German mints hidden" solo se nascoste): è un'**opzione del Pro**, senza
+    Pro è attenuata e non si tocca, mostra "acceso" (valore effettivo) e la funzione si vede sempre, bloccata e con
+    gli inviti; il valore salvato torna a valere col Pro. Spento (con Pro) nasconde la FUNZIONE (riga Mint, cerchi,
+    "View by mint", tabella a zecche affiancate, inviti al Pro), MAI i dati: le voci con zecca restano, il pannello
+    vede solo "No mint" e le salva intatte, e nella card COLLECTION si leggono con la loro lettera. **Build di release (R8)**
+    costruita il 2026-10-12: le classi `@Serializable` nuove (`BackupItem`, `RegularBackupItem`, `MintLettersJson`…)
+    sono tenute e non rinominate (`mapping.txt`/`seeds.txt`); non installata sul telefono. **Backup verificato
+    sul telefono con Drive vero (2026-10-12, build debug)**: con "Standard · D" registrata, "Back up now" scrive
+    `schemaVersion` 5 con `"mint":"D"` (94 + 205 voci, stato "Up to date"; la copia locale è
+    `files/backup_snapshot.json`, leggibile con `run-as`), il dialog "Restore" dice 94 commemorative + 191 Regular
+    ("up to date"), "Replace" ripristina 299 voci e la zecca D sopravvive; tolta la voce e rifatto il backup, il file
+    torna a `schemaVersion` 4, nessuna zecca, 93 + 205 voci (Drive di nuovo "pulito"). **Tema chiaro verificato**:
+    riga Mint (chip lilla selezionato, puntino), cerchi A D F G J nella card COLLECTION, "View by mint" e tabella a
+    zecche affiancate (filetti e velo sul totale leggibili), interruttore "German mints". **Interruttore spento**
+    (provato): niente riga Mint né pulsante né cerchi, la voce "Standard · D" resta elencata nella card, e un Save
+    senza modifiche non la tocca. **Card Pro in Free**: "No ads · German mints" sta su una riga con la pillola
+    "2,99 €". Nei test su telefono: in Free il layout delle Impostazioni cambia (la card Pro è più alta), le
+    coordinate vanno prese dal dump di uiautomator e non a memoria.
+    **Passo 1 (2026-10-11)**: `mint` nelle due
+    entity e nella chiave (`NO_MINT = ""`, `MintFinish`), `MIGRATION_10_11` (SQL in `CollectionMigration.kt`),
+    pianificatori puri `planCommemorativeSave`/`planRegularSave` (`CollectionSave.kt`, con `editableMints`: le zecche
+    che il pannello può cambiare; i ViewModel passano `{NO_MINT}`, quindi i pannelli di oggi non toccano le voci con
+    zecca), `mintLettersFor(paese)`, Quick add (la zecca è un dettaglio), backup v5 scritta SOLO con almeno una zecca
+    (`BackupFile.versionFor`), chiavi di `BackupStatus` con la zecca. **Verificato**: `CollectionMigrationTest`
+    confronta lo SQL con quello generato da Room; sul telefono, installando sopra la v10 popolata: `user_version`
+    11, `integrity_check` ok, 93 + 204 voci, tutte con `mint = ''`, Home 93/613 e 194/328 invariate; la copia di
+    `purchasedOn`/prezzi/`addedAt` provata anche su una copia del database con date e prezzi messi a mano (sulle
+    voci vere sono tutte vuote) con `sqlite-jdbc` dalla cache Gradle. **Lacune volute del passo 1**: i pannelli
+    non hanno ancora la riga Mint; "Remove" e la conferma del Quick add passano da `onSaveCollection(…, vuoto)` con
+    scope `{NO_MINT}`, quindi con voci con zecca NON le toglierebbero (da rivedere al passo 4); le card COLLECTION dei
+    dettagli mostrano la prima voce per qualità. Nessuna voce con zecca esiste finché non c'è la UI.
+    **Decisioni** (mockup approvato dal proprietario): nei pannelli di collezione una riga
+    "Mint" con i chip **"No mint"** (sempre presente, PRIMO e predefinito, nome parallelo a "No year"; "None" scartato:
+    ambiguo in una riga di lettere) e A D F G J; puntino verde sulle lettere con qualcosa in bozza. Nelle Regular la
+    riga sta SOTTO la striscia degli anni ed è sempre visibile (l'anno è preselezionato dall'apertura: farla comparire
+    solo dopo un tocco sull'anno cambierebbe l'altezza del pannello e nasconderebbe la funzione). **Ogni zecca è una
+    moneta**: prezzo e data per (zecca, finitura). **Il tocco rapido resta "No mint"** (la voce semplice). I totali
+    NON cambiano (una moneta posseduta conta una volta). **Senza Pro** le lettere già registrate restano visibili e
+    nella scheda di dettaglio i cinque cerchi A D F G J (pieni = posseduta, "3 of 5 mints") restano; aggiungere o
+    cambiare una lettera apre l'invito al Pro. La riga Mint compare solo per i paesi con lettere (`mintLettersFor`,
+    oggi la Germania), anche senza dati di tirature.
+  - **Modello e migrazione 10 → 11.** `mint: String = ""` NELLA CHIAVE di entrambe le tabelle (`""` = "No mint", poi
+    "A".."J"): `collection_items` PK (coinKey, quality, mint); `regular_collection_items` PK (seriesKey, taglio, anno,
+    quality, variety, mint). Riuso di `variety` scartato (mescola due concetti, backup ambiguo). Una sola
+    `MIGRATION_10_11` che RICOSTRUISCE le due tabelle come la 8 → 9 (CREATE `_new` con la PK nuova, INSERT … SELECT con
+    `mint = ''`, DROP, RENAME): SQLite non cambia una chiave con ALTER. **Attenzione**: la 8 → 9 non copiava
+    `purchasedOn` (arrivato dopo con la 9 → 10), la 10 → 11 DEVE copiarlo, insieme a `priceCents` e `addedAt`. Il SQL
+    deve coincidere con quello generato da Room (`build/generated/ksp/.../CoinDatabase_Impl.kt`): se differisce l'app
+    non parte per NESSUNO. Verifica come le altre: installare la build sopra la v10 popolata sul telefono (copia del
+    database sul PC prima), controllare i conteggi (stesse righe, tutte con `mint = ''`) e `PRAGMA integrity_check`.
+    **Non si torna indietro**: con il database a v11 una build v10 non parte (Room non scende di versione) senza
+    rimettere il file del database dalla copia.
+  - **Codice da toccare.** `CollectionItem`/`RegularCollectionItem`/`RegularCollectionEntry` (campo `mint`),
+    `CoinRepository.saveCollection` (da `Map<CoinQuality, FinishEntry>` a una mappa su (zecca, finitura), `existing`
+    per (zecca, qualità)) e `RegularIssueRepository.saveCollection` (la chiave diventa anno+varietà+zecca+qualità,
+    `addedAt` conservato per quella chiave), `QuickAdd.kt` (la voce semplice richiede ANCHE `mint == ""`: una voce con
+    zecca è `CONFIRM_REMOVE`, e `commemorativeRemovalMessage`/`regularRemovalMessage` nominano le lettere),
+    `BackupFile`/`BackupStatus` (`mint` nelle chiavi di confronto), `CollectionSheet`/`RegularCollectionSheet` (bozza su
+    (zecca, anno, varietà, finitura) e riga Mint), card COLLECTION dei due dettagli (riga per finitura con zecca,
+    cerchi A D F G J), `joinQualities` (con più zecche le qualità si ripetono: distinte), e i punti che raggruppano per
+    moneta (`regularProgress`, barre, `ownsAnyQuality`): vanno solo VERIFICATI con un test, devono già contare una volta.
+  - **Backup.** `mint` default `""` in `BackupItem` e `RegularBackupItem`; i file v1-v4 si leggono con zecca vuota.
+    **Versione 5 scritta SOLO se almeno una voce ha una zecca**, altrimenti si continua a scrivere la 4: chi non usa le
+    lettere non obbliga un secondo telefono ad aggiornare per ripristinare (un v5 si rifiuta come "più nuovo", come
+    per v3 e v4). `BackupStatus`: le chiavi di confronto includono la zecca (le istantanee vecchie hanno `""`, quindi
+    nessuna modifica spuria dopo l'aggiornamento).
+  - **Free dopo un Pro scaduto: attenzione al salvataggio.** `replaceForCoin`/`replaceForDenomination` SOSTITUISCONO
+    tutte le voci della moneta: se il pannello senza Pro edita solo le voci "No mint" e salva, cancellerebbe le voci con
+    zecca. Quindi: senza Pro la bozza parte con TUTTE le voci (quelle con zecca in sola lettura, intatte) e il
+    salvataggio le riscrive identiche; "Remove" nel pannello toglie solo le voci "No mint". Da coprire con un test.
+  - **Ordine di lavoro**: (1) modello, migrazione, DAO e repository con test sulla logica pura (Quick add, backup
+    v4/v5 e ordine di versione, chiavi di `BackupStatus`, conteggi); (2) pannello commemorative; (3) pannello Regular;
+    (4) card di dettaglio e messaggi; (5) Pro/Free; (6) prova sul telefono sopra la v10 popolata, ripristino di un
+    backup v4 e v5 (il parsing; Drive vero non è provabile qui), reset. Prima di pubblicare: nuovo .aab con
+    `versionCode` più alto e card Pro aggiornata.
 - **`ProBilling`**: Play è l'unica fonte di verità, in locale c'è una copia (SharedPreferences `pro`,
   `is_pro`) perché un utente Pro offline non deve rivedere gli annunci. Riallineamento a ogni ritorno in
   primo piano (`MainActivity`, `repeatOnLifecycle(STARTED)`) e dal pulsante Restore. **Una verifica
@@ -1927,7 +2072,7 @@ lingua da servire.
 Unit test JVM in `app/src/test` (`./gradlew.bat --offline :app:testDebugUnitTest`).
 `ProStateTest` (proprietà del Pro, una verifica fallita non lo toglie, pagamento in sospeso) e
 `InterstitialPolicyTest` (6 monete E 30 secondi, né una né l'altra da sole, più l'orologio portato indietro) coprono la logica pura di Pro e
-annuncio a tutto schermo; il billing e gli annunci veri non sono testabili in JVM. Oggi 257 test, nessuno saltato (`MintLettersAssetTest` incrocia `mint_letters.json` con gli altri due asset, `MintLetterTableTest` la tabella e i numeri compatti).
+annuncio a tutto schermo; il billing e gli annunci veri non sono testabili in JVM. Oggi 284 test, nessuno saltato (`CollectionMintsTest`: salvataggio per zecca, Quick add, backup v5; `CollectionMigrationTest`: SQL della migrazione 10-11 contro lo schema di Room) (`MintLettersAssetTest` incrocia `mint_letters.json` con gli altri due asset, `MintLetterTableTest` la tabella e i numeri compatti).
 `UnsharpMaskTest` copre `unsharpMask()` (immagine uniforme invariata, intensità 0 = identità, bordo
 netto accentuato dai due lati e invariato lontano, valori nel campo 0-255, alfa intatta); il
 rendering con `Bitmap` di `ThumbnailSharpen` non è testabile in JVM.

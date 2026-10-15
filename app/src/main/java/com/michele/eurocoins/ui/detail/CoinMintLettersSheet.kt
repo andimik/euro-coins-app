@@ -40,6 +40,7 @@ import com.michele.eurocoins.data.displayTema
 import com.michele.eurocoins.data.mintLetterCity
 import com.michele.eurocoins.ui.components.LocalMintLetters
 import com.michele.eurocoins.ui.components.LocalProAccess
+import com.michele.eurocoins.ui.components.LocalShowMints
 import com.michele.eurocoins.ui.components.MintLettersProPrompt
 import java.text.NumberFormat
 import java.util.Locale
@@ -52,6 +53,8 @@ import java.util.Locale
  */
 @Composable
 fun CoinMintLettersEntry(coin: Coin) {
+    // "German mints" spento nelle Impostazioni: nessun pulsante, nemmeno quello bloccato con l'invito al Pro.
+    if (!LocalShowMints.current) return
     val shares = LocalMintLetters.current.forCommemorative(coin.numistaId, coin.anno)
     if (shares.isEmpty()) return
     val access = LocalProAccess.current
@@ -128,10 +131,17 @@ private fun CoinMintLettersSheet(coin: Coin, shares: List<MintLetterShare>, onDi
             shares.forEach { share ->
                 ValuesRow(
                     label = {
-                        Text(share.lettera, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.SemiBold)
+                        // Colonna della lettera a larghezza FISSA: con "  Città" dopo la lettera, la città partiva
+                        // dove finiva la lettera (una "J" è più stretta di una "G") e i nomi non si allineavano.
+                        Text(
+                            text = share.lettera,
+                            style = MaterialTheme.typography.bodyMedium,
+                            fontWeight = FontWeight.SemiBold,
+                            modifier = Modifier.width(LETTER_COLUMN_WIDTH),
+                        )
                         mintLetterCity(coin.paese, share.lettera)?.let {
                             Text(
-                                text = "  $it",
+                                text = it,
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 maxLines = 1,
@@ -156,6 +166,9 @@ private fun CoinMintLettersSheet(coin: Coin, shares: List<MintLetterShare>, onDi
 }
 
 private val MINT_COLUMN_WIDTH = 104.dp
+
+// Abbastanza larga per la lettera più larga (D, G) più il vuoto che prima era "  " davanti alla città.
+private val LETTER_COLUMN_WIDTH = 24.dp
 
 private fun CoinQuality.columnWeight(): Float = if (this == CoinQuality.STANDARD) 1.3f else 1f
 

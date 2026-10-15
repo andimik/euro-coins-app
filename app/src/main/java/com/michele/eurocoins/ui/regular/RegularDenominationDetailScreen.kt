@@ -101,6 +101,10 @@ import com.michele.eurocoins.ui.components.LocalMintLetters
 import com.michele.eurocoins.ui.components.keepScrollInside
 import com.michele.eurocoins.ui.components.protectFromSheetDrag
 import com.michele.eurocoins.ui.components.LocalProAccess
+import com.michele.eurocoins.ui.components.LocalShowMints
+import com.michele.eurocoins.ui.components.MintLetterBadges
+import com.michele.eurocoins.data.NO_MINT
+import com.michele.eurocoins.data.mintLettersFor
 import com.michele.eurocoins.ui.components.MintLettersProPrompt
 import com.michele.eurocoins.ui.components.ProLockedRow
 import androidx.compose.material3.SegmentedButton
@@ -124,7 +128,7 @@ import com.michele.eurocoins.data.YearMintPart
 import com.michele.eurocoins.data.numistaUrl
 import com.michele.eurocoins.data.yearMintLabels
 import com.michele.eurocoins.data.yearMintParts
-import com.michele.eurocoins.data.formatApproxTotal
+import com.michele.eurocoins.data.formatCardMintage
 import com.michele.eurocoins.data.groupMintagesByYear
 import com.michele.eurocoins.data.summarizeMintages
 import com.michele.eurocoins.ui.components.RegularCollectionSheet
@@ -260,8 +264,8 @@ private fun RegularDenominationDetailPage(viewModel: RegularDenominationDetailVi
             seriesNumber = state.seriesNumber,
             denomination = image,
             currentItems = state.items,
-            onSave = { entries ->
-                viewModel.onSaveCollection(entries)
+            onSave = { entries, editableMints ->
+                viewModel.onSaveCollection(entries, editableMints)
                 showSheet = false
             },
             onDismiss = { showSheet = false },
@@ -367,8 +371,9 @@ private fun DenominationHero(image: RegularIssueImage, owned: Boolean) {
  */
 @Composable
 private fun RegularMintageCard(image: RegularIssueImage, onViewByYear: () -> Unit) {
-    val numberFormat = remember { NumberFormat.getIntegerInstance(Locale.ENGLISH) }
     val distinctYears = remember(image) { image.tirature.map { it.anno }.distinct().size }
+    // Compatta ("14.2 B", "10.1 M", "19.0 k") solo se "View by year" esiste: lì i numeri sono esatti (vedi formatCardMintage).
+    val compact = distinctYears > 1
     DetailCard {
         SectionLabel("MINTAGES")
         Spacer(Modifier.height(10.dp))
@@ -377,7 +382,7 @@ private fun RegularMintageCard(image: RegularIssueImage, onViewByYear: () -> Uni
                 val summary = remember(image, quality) { summarizeMintages(image.tirature, quality) }
                 Column(modifier = Modifier.weight(1f), horizontalAlignment = Alignment.CenterHorizontally) {
                     ValueLabel(
-                        value = summary.total?.let { if (summary.isSum) formatApproxTotal(it) else numberFormat.format(it) } ?: NO_VALUE,
+                        value = summary.total?.let { formatCardMintage(it, compact) } ?: NO_VALUE,
                         label = quality.label,
                         shrinkToFit = true,
                     )
@@ -474,8 +479,10 @@ private fun RegularMintageHistorySheet(
     val mintLetters = LocalMintLetters.current
     var letterQuality by remember { mutableStateOf(CoinQuality.STANDARD) }
     var showProPrompt by remember { mutableStateOf(false) }
-    val letterTable = remember(mintLetters, denomination, rows, letterQuality) {
-        mintLetterTable(mintLetters, paese, denomination.taglio, rows.map { it.first }, letterQuality)
+    // "German mints" spento: nessuna tabella a zecche affiancate e nemmeno la riga che invita al Pro.
+    val showMints = LocalShowMints.current
+    val letterTable = remember(mintLetters, denomination, rows, letterQuality, showMints) {
+        if (showMints) mintLetterTable(mintLetters, paese, denomination.taglio, rows.map { it.first }, letterQuality) else null
     }
     val matrix = if (access.isPro) letterTable else null
     if (showProPrompt) {
@@ -515,7 +522,7 @@ private fun RegularMintageHistorySheet(
             Column(modifier = Modifier.protectFromSheetDrag()) {
                 if (letterTable != null && !access.isPro) {
                     ProLockedRow(
-                        text = "Split by mint (${letterTable.letters.joinToString(", ")}) is part of Pro",
+                        text = "Go Pro to split by mint (${letterTable.letters.joinToString(", ")})",
                         onClick = { showProPrompt = true },
                         modifier = Modifier.padding(bottom = 12.dp),
                     )
@@ -894,13 +901,25 @@ private fun RegularCollectionCard(items: List<RegularCollectionItem>, onEdit: (Y
                 modifier = Modifier.padding(top = 4.dp),
             )
         }
+        // Le cinque zecche dell'anno scelto (oggi la Germania): cerchi pieni dove la moneta è posseduta. Si vedono
+        // con il Pro, o dove l'utente ha già registrato una lettera (un Pro scaduto non le nasconde).
+        val paese = items.first().paese
+        val mintLetters = remember(paese) { mintLettersFor(paese) }
+        if (LocalShowMints.current && mintLetters.isNotEmpty() && (LocalProAccess.current.isPro || items.any { it.mint != NO_MINT })) {
+            MintLetterBadges(
+                paese = paese,
+                letters = mintLetters,
+                owned = items.filter { YearOption(it.anno, it.variety) == current && it.mint != NO_MINT }.map { it.mint }.toSet(),
+                modifier = Modifier.padding(top = 12.dp),
+            )
+        }
         Column(
             modifier = Modifier.padding(top = 12.dp).animateContentSize(),
             verticalArrangement = Arrangement.spacedBy(6.dp),
         ) {
             items
                 .filter { !showYears || YearOption(it.anno, it.variety) == current }
-                .sortedWith(compareBy({ it.quality.ordinal }, { it.anno }, { it.variety }))
+                .sortedWith(compareBy({ it.quality.ordinal }, { it.anno }, { it.variety }, { it.mint }))
                 .forEach { item ->
                     val cents = item.priceCents?.takeIf { it > 0 }
                     val rowShape = RoundedCornerShape(14.dp)
@@ -917,7 +936,11 @@ private fun RegularCollectionCard(items: List<RegularCollectionItem>, onEdit: (Y
                         Column(modifier = Modifier.weight(1f)) {
                             Text(
                                 // L'anno è già nel chip scelto: nell'etichetta solo con un anno solo, dove i chip non ci sono.
-                                text = if (showYears) item.quality.label else "${item.quality.label} · ${YearOption(item.anno, item.variety).chipLabel()}",
+                                text = buildString {
+                                    append(item.quality.label)
+                                    if (!showYears) append(" · ${YearOption(item.anno, item.variety).chipLabel()}")
+                                    if (item.mint != NO_MINT) append(" · ${item.mint}")
+                                },
                                 style = MaterialTheme.typography.bodyLarge,
                                 fontWeight = FontWeight.Medium,
                                 color = colors.onSurface,

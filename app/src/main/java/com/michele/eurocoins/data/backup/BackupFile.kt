@@ -34,8 +34,21 @@ data class BackupFile(
     val includesRegularIssues: Boolean get() = schemaVersion >= 2
 
     companion object {
-        /** 4 = le voci Regular possono avere `anno` 0 ("anno non indicato", Quick add: vedi `NO_YEAR`); un'app più vecchia non le saprebbe mostrare. */
-        const val SCHEMA_VERSION = 4
+        /**
+         * 5 = le voci hanno una zecca (`mint`, vuota = non indicata: vedi `NO_MINT`); un'app più vecchia la
+         * perderebbe in silenzio e confonderebbe due zecche della stessa moneta, quindi la rifiuta come "più
+         * nuova". 4 = le voci Regular possono avere `anno` 0 ("anno non indicato", Quick add: vedi `NO_YEAR`).
+         */
+        const val SCHEMA_VERSION = 5
+
+        /** L'ultima versione che non sa niente di zecche: la si scrive ancora quando nessuna voce ne ha una. */
+        const val SCHEMA_VERSION_WITHOUT_MINTS = 4
+
+        /**
+         * La versione da scrivere: 5 solo se almeno una voce ha una zecca, altrimenti 4. Chi non usa le lettere
+         * non obbliga un secondo telefono ad aggiornare l'app per ripristinare il backup.
+         */
+        fun versionFor(hasMints: Boolean): Int = if (hasMints) SCHEMA_VERSION else SCHEMA_VERSION_WITHOUT_MINTS
 
         private val json = Json {
             ignoreUnknownKeys = true
@@ -64,6 +77,8 @@ data class BackupItem(
     val coinKey: String,
     /** Nome dell'enum [CoinQuality] (`STANDARD`, `BU`, `PROOF`). */
     val quality: String,
+    /** Zecca (dalla versione 5); vuota = non indicata, anche in tutti i file precedenti. */
+    val mint: String = "",
     val priceCents: Int? = null,
     val purchasedOn: Long? = null,
     val anno: Int,
@@ -75,6 +90,7 @@ data class BackupItem(
 fun CollectionItem.toBackupItem() = BackupItem(
     coinKey = coinKey,
     quality = quality.name,
+    mint = mint,
     priceCents = priceCents,
     purchasedOn = purchasedOn,
     anno = anno,
@@ -89,6 +105,7 @@ fun BackupItem.toCollectionItem(): CollectionItem? {
     return CollectionItem(
         coinKey = coinKey,
         quality = parsed,
+        mint = mint,
         priceCents = priceCents,
         purchasedOn = purchasedOn,
         anno = anno,
@@ -110,6 +127,8 @@ data class RegularBackupItem(
     /** Nome dell'enum [CoinQuality] (`STANDARD`, `BU`, `PROOF`). */
     val quality: String,
     val variety: String = "",
+    /** Zecca (dalla versione 5); vuota = non indicata, anche in tutti i file precedenti. */
+    val mint: String = "",
     val priceCents: Int? = null,
     val purchasedOn: Long? = null,
     val paese: String,
@@ -122,6 +141,7 @@ fun RegularCollectionItem.toBackupItem() = RegularBackupItem(
     anno = anno,
     quality = quality.name,
     variety = variety,
+    mint = mint,
     priceCents = priceCents,
     purchasedOn = purchasedOn,
     paese = paese,
@@ -137,6 +157,7 @@ fun RegularBackupItem.toCollectionItem(): RegularCollectionItem? {
         anno = anno,
         quality = parsed,
         variety = variety,
+        mint = mint,
         priceCents = priceCents,
         purchasedOn = purchasedOn,
         paese = paese,

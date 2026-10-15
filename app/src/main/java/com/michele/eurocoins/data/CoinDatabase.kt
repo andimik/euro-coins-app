@@ -10,7 +10,7 @@ import androidx.sqlite.db.SupportSQLiteDatabase
 
 @Database(
     entities = [Coin::class, CollectionItem::class, RegularIssueSeries::class, RegularCollectionItem::class],
-    version = 10,
+    version = 11,
     exportSchema = false,
 )
 @TypeConverters(RegularIssueConverters::class)
@@ -144,6 +144,15 @@ abstract class CoinDatabase : RoomDatabase() {
             }
         }
 
+        // La zecca (""= non indicata) entra nella chiave delle due tabelle di collezione: le ricostruisce
+        // (SQL in CollectionMigration.kt, confrontato con lo schema di Room da un test). Le voci esistenti
+        // restano senza zecca. Non si torna a una build v10 senza rimettere il database di prima.
+        private val MIGRATION_10_11 = object : Migration(10, 11) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                MIGRATION_10_11_STATEMENTS.forEach { db.execSQL(it) }
+            }
+        }
+
         @Volatile private var instance: CoinDatabase? = null
 
         fun getInstance(context: Context): CoinDatabase =
@@ -152,7 +161,7 @@ abstract class CoinDatabase : RoomDatabase() {
                     context.applicationContext,
                     CoinDatabase::class.java,
                     "coins.db",
-                ).addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8, MIGRATION_8_9, MIGRATION_9_10).build().also { instance = it }
+                ).addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8, MIGRATION_8_9, MIGRATION_9_10, MIGRATION_10_11).build().also { instance = it }
             }
     }
 }

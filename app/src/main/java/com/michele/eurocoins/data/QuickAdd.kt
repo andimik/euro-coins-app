@@ -27,24 +27,27 @@ enum class QuickTap {
 }
 
 /**
- * Tocco su una commemorativa: nulla → si aggiunge Standard; solo Standard senza prezzo né data → si toglie;
- * altrimenti si chiede conferma, perché togliere cancellerebbe ciò che l'utente ha scritto.
+ * Tocco su una commemorativa: nulla → si aggiunge Standard; solo Standard senza zecca, prezzo né data → si
+ * toglie; altrimenti si chiede conferma, perché togliere cancellerebbe ciò che l'utente ha scritto (una zecca
+ * registrata è un dettaglio come il prezzo).
  */
 fun quickTapFor(items: List<CollectionItem>): QuickTap = when {
     items.isEmpty() -> QuickTap.ADD
-    items.all { it.quality == CoinQuality.STANDARD && it.priceCents == null && it.purchasedOn == null } -> QuickTap.REMOVE
+    items.all {
+        it.quality == CoinQuality.STANDARD && it.mint == NO_MINT && it.priceCents == null && it.purchasedOn == null
+    } -> QuickTap.REMOVE
     else -> QuickTap.CONFIRM_REMOVE
 }
 
 /**
  * Come [quickTapFor] per una riga Regular: [items] sono quelle della riga ([rowItems]). La voce semplice è
- * Standard senza anno, prezzo né data; un anno vero, la varietà EFS, un'altra finitura, un prezzo o una data
- * sono dettagli.
+ * Standard senza anno, zecca, prezzo né data; un anno vero, la varietà EFS, una zecca, un'altra finitura, un
+ * prezzo o una data sono dettagli.
  */
 fun quickTapForRegular(items: List<RegularCollectionItem>): QuickTap = when {
     items.isEmpty() -> QuickTap.ADD
     items.all {
-        it.anno == NO_YEAR && it.quality == CoinQuality.STANDARD && it.variety.isEmpty() &&
+        it.anno == NO_YEAR && it.quality == CoinQuality.STANDARD && it.variety.isEmpty() && it.mint == NO_MINT &&
             it.priceCents == null && it.purchasedOn == null
     } -> QuickTap.REMOVE
     else -> QuickTap.CONFIRM_REMOVE
