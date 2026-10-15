@@ -758,39 +758,20 @@ private fun CollectionCard(items: List<CollectionItem>, paese: String, onEdit: (
         // l'utente ha già registrato una lettera (un Pro scaduto non le nasconde); senza nessuna delle due niente.
         val mintLetters = remember(paese) { mintLettersFor(paese) }
         val ownedMints = items.map { it.mint }.filter { it != NO_MINT }.toSet()
-        // Zecca scelta toccando una lettera (2026-10-14): le righe sotto sono solo le sue. Nessuna scelta = tutte.
-        var mintFilter by remember { mutableStateOf<String?>(null) }
-        val showMints = LocalShowMints.current && mintLetters.isNotEmpty() &&
-            (LocalProAccess.current.isPro || ownedMints.isNotEmpty())
-        if (showMints) {
+        if (LocalShowMints.current && mintLetters.isNotEmpty() && (LocalProAccess.current.isPro || ownedMints.isNotEmpty())) {
             MintLetterBadges(
                 paese = paese,
                 letters = mintLetters,
                 owned = ownedMints,
                 modifier = Modifier.padding(top = 12.dp),
-                selected = mintFilter,
-                onSelect = { mintFilter = it },
-            )
-        }
-        val activeFilter = mintFilter.takeIf { showMints }
-        // Una riga per finitura e per zecca: la voce senza zecca per prima, poi per lettera.
-        val rows = items
-            .filter { activeFilter == null || it.mint == activeFilter }
-            .sortedWith(compareBy({ it.mint != NO_MINT }, { it.mint }, { it.quality.ordinal }))
-        if (rows.isEmpty() && activeFilter != null) {
-            Text(
-                text = "Nothing recorded for $activeFilter",
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                textAlign = TextAlign.Center,
-                modifier = Modifier.fillMaxWidth().padding(top = 16.dp, bottom = 8.dp),
             )
         }
         Column(
             modifier = Modifier.padding(top = 12.dp),
             verticalArrangement = Arrangement.spacedBy(6.dp),
         ) {
-            rows.forEach { item ->
+            // Una riga per finitura e per zecca: la voce senza zecca per prima, poi per lettera.
+            items.sortedWith(compareBy({ it.mint != NO_MINT }, { it.mint }, { it.quality.ordinal })).forEach { item ->
                 val cents = item.priceCents?.takeIf { it > 0 }
                 // Rettangolo a 14 dp come le altre card del dettaglio e la FinishCard del pannello
                 // di modifica, non più una pillola ovale: la riga non è cliccabile (solo "Edit

@@ -905,40 +905,21 @@ private fun RegularCollectionCard(items: List<RegularCollectionItem>, onEdit: (Y
         // con il Pro, o dove l'utente ha già registrato una lettera (un Pro scaduto non le nasconde).
         val paese = items.first().paese
         val mintLetters = remember(paese) { mintLettersFor(paese) }
-        // Zecca scelta toccando una lettera (2026-10-14): le righe sotto sono solo le sue, come per l'anno scelto.
-        // Nessuna scelta = righe di tutte; il filtro resta cambiando anno (le zecche sono le stesse di ogni anno).
-        var mintFilter by remember { mutableStateOf<String?>(null) }
-        val showMints = LocalShowMints.current && mintLetters.isNotEmpty() &&
-            (LocalProAccess.current.isPro || items.any { it.mint != NO_MINT })
-        if (showMints) {
+        if (LocalShowMints.current && mintLetters.isNotEmpty() && (LocalProAccess.current.isPro || items.any { it.mint != NO_MINT })) {
             MintLetterBadges(
                 paese = paese,
                 letters = mintLetters,
                 owned = items.filter { YearOption(it.anno, it.variety) == current && it.mint != NO_MINT }.map { it.mint }.toSet(),
                 modifier = Modifier.padding(top = 12.dp),
-                selected = mintFilter,
-                onSelect = { mintFilter = it },
-            )
-        }
-        val activeFilter = mintFilter.takeIf { showMints }
-        val rows = items
-            .filter { !showYears || YearOption(it.anno, it.variety) == current }
-            .filter { activeFilter == null || it.mint == activeFilter }
-            .sortedWith(compareBy({ it.quality.ordinal }, { it.anno }, { it.variety }, { it.mint }))
-        if (rows.isEmpty() && activeFilter != null) {
-            Text(
-                text = "Nothing recorded for $activeFilter in ${current.chipLabel()}",
-                style = MaterialTheme.typography.bodyMedium,
-                color = colors.onSurfaceVariant,
-                textAlign = TextAlign.Center,
-                modifier = Modifier.fillMaxWidth().padding(top = 16.dp, bottom = 8.dp),
             )
         }
         Column(
             modifier = Modifier.padding(top = 12.dp).animateContentSize(),
             verticalArrangement = Arrangement.spacedBy(6.dp),
         ) {
-            rows
+            items
+                .filter { !showYears || YearOption(it.anno, it.variety) == current }
+                .sortedWith(compareBy({ it.quality.ordinal }, { it.anno }, { it.variety }, { it.mint }))
                 .forEach { item ->
                     val cents = item.priceCents?.takeIf { it > 0 }
                     val rowShape = RoundedCornerShape(14.dp)
