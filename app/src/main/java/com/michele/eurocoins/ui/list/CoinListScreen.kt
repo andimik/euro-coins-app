@@ -4,6 +4,7 @@ import com.michele.eurocoins.ui.components.commemorativeRemovalMessageFor
 import com.michele.eurocoins.ui.components.RemoveConfirmDialog
 import com.michele.eurocoins.data.QuickTap
 import com.michele.eurocoins.data.quickTapFor
+import com.michele.eurocoins.ui.components.CollectionControl
 import com.michele.eurocoins.ui.components.LocalQuickAdd
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -353,43 +354,7 @@ private fun CoinRow(
                 overflow = TextOverflow.Ellipsis,
             )
         }
-        CollectionBox(owned = owned, onClick = onEditCollection)
-    }
-}
-
-/** Casella accanto alla moneta: piena con spunta se posseduta in almeno una qualità; un tocco apre il pannello. */
-@Composable
-private fun CollectionBox(owned: Boolean, onClick: () -> Unit) {
-    val primary = MaterialTheme.colorScheme.primary
-    Box(
-        // Area di tocco 44dp, casella visibile 26dp.
-        modifier = Modifier
-            .size(44.dp)
-            .clip(CircleShape)
-            .clickable(onClick = onClick),
-        contentAlignment = Alignment.Center,
-    ) {
-        Box(
-            modifier = Modifier
-                .size(26.dp)
-                .clip(RoundedCornerShape(7.dp))
-                .background(if (owned) primary else Color.Transparent)
-                .border(
-                    2.dp,
-                    if (owned) primary else MaterialTheme.colorScheme.onSurfaceVariant,
-                    RoundedCornerShape(7.dp),
-                ),
-            contentAlignment = Alignment.Center,
-        ) {
-            if (owned) {
-                Icon(
-                    imageVector = Icons.Filled.Check,
-                    contentDescription = "In your collection, tap to edit",
-                    tint = MaterialTheme.colorScheme.onPrimary,
-                    modifier = Modifier.size(18.dp),
-                )
-            }
-        }
+        CollectionControl(owned = owned, onClick = onEditCollection)
     }
 }
 

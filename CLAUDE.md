@@ -281,6 +281,15 @@ nella card COLLECTION), così c'è un solo modo di registrare.
   Regular Issues; prima "Standard" era già spuntata: vedi § Collezione su Regular Issues).
 - Una moneta conta come "posseduta" (casella piena, barre "x / y collected"
   di home/anni/paesi) se ha almeno una qualità.
+- **Il controllo a destra di ogni riga cambia con la modalità** (2026-10-15, parere UX, variante A dopo mockup,
+  `CollectionControl` in `ui/components/`, usato da `CoinRow` e `RegularCoinRow`): con Quick add acceso resta la casella
+  quadrata con la spunta (è un interruttore vero); in modalità dettaglio è un pulsante rotondo, "+" a contorno se non
+  posseduta e cerchio verde pieno con la matita se posseduta. Motivo: la casella con la spunta promette "tocco =
+  spengo", e in dettaglio su una moneta già spuntata apriva un modulo (il proprietario lo trovava fuorviante: "posso
+  cliccare un oggetto già spuntato"). + e matita sono gli stessi glifi di "Add / Edit collection" della card
+  COLLECTION, e lo stato non dipende dal solo colore (cambia il glifo). Scartato "sempre +" (lo stato resterebbe
+  nel solo riempimento, e "+" su una posseduta promette un secondo esemplare che l'app non ha). Le caselle DENTRO il
+  pannello (finiture) restano caselle: lì un tocco su una spuntata la spegne davvero.
 - Il salvataggio sostituisce in blocco le qualità della moneta
   (`CollectionDao.replaceForCoin`, transazione) e conserva `addedAt` delle
   voci già esistenti.
