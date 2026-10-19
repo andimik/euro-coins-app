@@ -118,8 +118,7 @@ import com.michele.eurocoins.ui.components.PurchaseDateLine
 import com.michele.eurocoins.data.RegularIssueImage
 import com.michele.eurocoins.data.RegularIssueSeries
 import com.michele.eurocoins.data.displayCoinDescription
-import com.michele.eurocoins.data.displayDesigner
-import com.michele.eurocoins.data.displayEngraver
+import com.michele.eurocoins.data.designerCredit
 import com.michele.eurocoins.data.displayImageLicense
 import com.michele.eurocoins.data.displayMint
 import com.michele.eurocoins.data.displaySourceName
@@ -421,10 +420,11 @@ private fun RegularMintageCard(image: RegularIssueImage, onViewByYear: () -> Uni
         )
         SectionLabel("DETAILS")
         Spacer(Modifier.height(10.dp))
+        val designer = image.designerCredit()
         DetailsSection(
             mint = image.displayMint() ?: NO_VALUE,
-            engraver = image.displayEngraver() ?: NO_VALUE,
-            designer = image.displayDesigner() ?: NO_VALUE,
+            designer = designer?.name ?: NO_VALUE,
+            designerProbable = designer?.probable == true,
         )
     }
 }

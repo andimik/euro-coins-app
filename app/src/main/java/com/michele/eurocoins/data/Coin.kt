@@ -23,9 +23,14 @@ data class Coin(
     val zeccaEmittente: String,
     val zeccaRaw: String,
     val zeccaFisicaRaw: String?,
-    /** Incisore del disegno commemorativo (chi ha inciso il conio); vedi [displayEngraver]. */
+    /** Incisore del disegno commemorativo (chi ha inciso il conio); non si mostra (vedi [displayDesigner]). */
     val incisoreRetroRaw: String?,
-    /** Disegnatore del disegno commemorativo (chi ha ideato il soggetto), ripiego se manca [incisoreRetroRaw]. */
+    /**
+     * Disegnatore del disegno commemorativo (chi ha ideato il soggetto). Ruolo distinto da
+     * [incisoreRetroRaw], non un ripiego. Nonostante il nome è il valore CONSOLIDATO dalla pipeline
+     * quando c'è (`CoinJson.autoreRetro`), altrimenti il grezzo Numista: il nome della colonna
+     * resta per non fare una migrazione Room per un cambio di significato.
+     */
     val disegnatoreRetroRaw: String?,
     val noteStoriche: String?,
     val urlImmagineFonte: String?,
@@ -45,4 +50,10 @@ data class Coin(
     val tiraturaNumistaProof: Int?,
     /** N# del type Numista da cui vengono tirature, zecca e incisore: attribuzione obbligatoria nei crediti (Termini API, par. 4). Null per le poche monete senza abbinamento. */
     val numistaId: Int? = null,
+    /**
+     * Livello di [disegnatoreRetroRaw] quando il nome viene da `autore_retro` della pipeline: "certo" o
+     * "probabile" (l'incisore Numista usato come ipotesi: l'interfaccia lo mostra in corsivo con la nota
+     * «ruolo approssimativo»). Null = valore del grezzo Numista o nessun nome. Colonna dalla v12.
+     */
+    val autoreRetroLivello: String? = null,
 )

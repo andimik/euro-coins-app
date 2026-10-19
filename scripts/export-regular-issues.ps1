@@ -237,6 +237,20 @@ function Clean([string]$text) {
     return $text.Trim()
 }
 
+# Autore del lato nazionale: il campo consolidato della pipeline (`autore_retro`: tabella ufficiale
+# EC/BCE/BSI/banche centrali > Numista designers > incisore Numista). Il livello 'certo' vince sul grezzo
+# Numista; il 'probabile' (l'incisore Numista usato come ipotesi) si esporta solo se Numista non ha un
+# designer suo e con `disegnatore_probabile = $true`: l'app lo mostra in corsivo con la nota "ruolo
+# approssimativo" (scelta del proprietario, 2026-10-18; prima non si mostrava affatto). Senza il campo
+# (file vecchio) si ripiega sul grezzo Numista.
+function Get-DesignerInfo($type) {
+    $name = Clean $type.autore_retro
+    if ($name -and $type.autore_retro_livello -eq 'certo') { return @{ name = $name; probable = $false } }
+    $raw = Clean $type.disegnatore_retro_raw
+    if ($name -and $type.autore_retro_livello -eq 'probabile' -and -not $raw) { return @{ name = $name; probable = $true } }
+    return @{ name = $raw; probable = $false }
+}
+
 function Clean-Mints([string]$raw) {
     if ([string]::IsNullOrWhiteSpace($raw)) { return $null }
     $parts = @($raw -split ';' | ForEach-Object { $_.Trim() } | Where-Object { $_ } | Select-Object -Unique)
@@ -323,6 +337,7 @@ foreach ($s in $series) {
         }
 
         $yearRange = Get-YearRange $s.paese $img.taglio $s.ordine_cronologico
+        $designer = if ($main) { Get-DesignerInfo $main } else { @{ name = $null; probable = $false } }
         $extra = [ordered]@{
             descrizione      = $descrizione
             descrizione_fonte = $descFonte
@@ -330,7 +345,8 @@ foreach ($s in $series) {
             numista_id       = if ($main) { [int]$main.numista_id } else { $null }
             zecca_fisica_raw = if ($main) { Clean-Mints $main.zecca_fisica_raw } else { $null }
             incisore_raw     = if ($main) { Clean $main.incisore_retro_raw } else { $null }
-            disegnatore_raw  = if ($main) { Clean $main.disegnatore_retro_raw } else { $null }
+            disegnatore_raw  = if ($main) { $designer.name } else { $null }
+            disegnatore_probabile = if ($main) { [bool]$designer.probable } else { $false }
             tirature         = $tirature
             zecche_per_anno  = $zecchePerAnno
             anno_inizio      = $yearRange[0]

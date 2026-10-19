@@ -14,10 +14,19 @@ fun Coin.displayMint(): String? = formatMints(zeccaFisicaRaw)
 /** Stesso criterio di [Coin.displayMint], per la zecca di un taglio delle Regular Issues. */
 fun RegularIssueImage.displayMint(): String? = formatMints(zeccaFisicaRaw)
 
-/** Incisore del lato nazionale del taglio; ruolo distinto da [displayDesigner], vedi [Coin.displayEngraver]. */
-fun RegularIssueImage.displayEngraver(): String? = incisoreRaw?.takeIf { it.isNotBlank() }
-
+/** Designer del lato nazionale del taglio; l'incisore non si mostra (vedi [Coin.displayDesigner]). */
 fun RegularIssueImage.displayDesigner(): String? = disegnatoreRaw?.takeIf { it.isNotBlank() }
+
+/** Un nome di designer e se è solo probabile (corsivo + nota nell'interfaccia). */
+data class DesignerCredit(val name: String, val probable: Boolean)
+
+/** Come [displayDesigner], con il livello: null se non c'è nessun nome. */
+fun RegularIssueImage.designerCredit(): DesignerCredit? =
+    displayDesigner()?.let { DesignerCredit(it, disegnatoreProbabile) }
+
+/** Come [Coin.displayDesigner], con il livello: null se non c'è nessun nome. */
+fun Coin.designerCredit(): DesignerCredit? =
+    displayDesigner()?.let { DesignerCredit(it, autoreRetroLivello == LEVEL_PROBABLE) }
 
 private fun formatMints(raw: String?): String? {
     // distinct() DOPO la mappatura: Berlin/Munich/... sono cinque stringhe e un solo "Germany"
@@ -27,14 +36,11 @@ private fun formatMints(raw: String?): String? {
 }
 
 /**
- * Chi ha inciso il conio del disegno commemorativo (non il lato comune europeo, quasi sempre
- * "Luc Luycx" e non mostrato in UI). Ruolo distinto da [displayDesigner] (chi ha ideato il
- * soggetto): la pipeline dati li tiene separati apposta, spesso persone diverse — 25 monete su
- * 584 hanno entrambi i campi valorizzati con nomi diversi (es. Lettonia 2014-2017: incisore
- * sempre "Jānis Strupulis", disegnatore diverso ogni anno). NON un ripiego l'uno dell'altro:
- * mostrarne solo uno perderebbe l'informazione su quelle monete.
+ * Chi ha ideato il disegno del lato nazionale (2026-10-18: è l'UNICO ruolo che l'app espone). Il valore è
+ * l'`autore_retro` della pipeline (al livello "certo", o "probabile" se Numista non ha un designer, con il
+ * livello in [Coin.autoreRetroLivello]), altrimenti il designer grezzo di Numista (vedi
+ * `CoinJson.toEntity`). L'incisore resta nel database (`incisoreRetroRaw`) ma non si mostra: nel dato è quasi
+ * sempre la stessa persona del designer (251 commemorative su 328 con entrambi i nomi) e per il
+ * collezionista conta chi ha creato il disegno.
  */
-fun Coin.displayEngraver(): String? = incisoreRetroRaw?.takeIf { it.isNotBlank() }
-
-/** Chi ha ideato il soggetto del disegno commemorativo; vedi [displayEngraver]. */
 fun Coin.displayDesigner(): String? = disegnatoreRetroRaw?.takeIf { it.isNotBlank() }

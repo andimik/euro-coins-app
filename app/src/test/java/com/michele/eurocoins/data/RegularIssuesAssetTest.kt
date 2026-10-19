@@ -40,6 +40,27 @@ class RegularIssuesAssetTest {
         assertTrue(images.all { it.descrizioneFonte in listOf(null, "ecb", "numista") })
     }
 
+    /**
+     * Disegnatore consolidato (ottobre 2026): tabella ufficiale EC/BCE/BSI e banche centrali, poi Numista
+     * designers; dal 2026-10-18 anche il "probabile" (l'incisore usato come ipotesi), marcato da
+     * `disegnatoreProbabile`. Con `-ExcludeNumista` non ci sono i type e la colonna resta vuota, quindi il test salta.
+     */
+    @Test
+    fun designersComeFromTheConsolidatedField() {
+        assumeTrue(hasNumista)
+        val images = series.flatMap { it.immagini }
+        val designers = images.filter { it.disegnatoreRaw != null }
+        // 287 tagli al 2026-10-18: 257 certi + 30 probabili (erano 176 il 2026-10-15, 25 col solo campo grezzo Numista)
+        assertEquals(287, designers.size)
+        assertEquals(30, designers.count { it.disegnatoreProbabile })
+        // il flag senza nome non ha senso
+        assertTrue(images.none { it.disegnatoreProbabile && it.disegnatoreRaw == null })
+        // Croazia 10/20/50 cent: la BCE nomina Ivan Domagoj Račić, Numista dava un altro nome
+        assertEquals("Ivan Domagoj Račić", image("Croazia", 1, "10 cent").disegnatoreRaw)
+        assertEquals(false, image("Croazia", 1, "10 cent").disegnatoreProbabile)
+        // Francia 2024 10/50 cent: nessuna fonte, nemmeno l'incisore
+        assertTrue(images.any { it.disegnatoreRaw == null })
+    }
     @Test
     fun numistaDataComesWithItsAttribution() {
         assumeTrue(hasNumista)

@@ -20,6 +20,14 @@ data class CoinJson(
     @SerialName("zecca_fisica_raw") val zeccaFisicaRaw: String? = null,
     @SerialName("incisore_retro_raw") val incisoreRetroRaw: String? = null,
     @SerialName("disegnatore_retro_raw") val disegnatoreRetroRaw: String? = null,
+    /**
+     * Autore del lato nazionale consolidato dalla pipeline: il designer se una fonte ufficiale o
+     * Numista lo dichiara, altrimenti l'incisore Numista (livello "probabile"). Scritto da
+     * `scripts/merge-commemorative-designers.ps1`. In app si mostra solo il livello "certo".
+     */
+    @SerialName("autore_retro") val autoreRetro: String? = null,
+    /** "certo" | "probabile" | null (se [autoreRetro] è null). */
+    @SerialName("autore_retro_livello") val autoreRetroLivello: String? = null,
     @SerialName("note_storiche") val noteStoriche: String? = null,
     @SerialName("url_immagine_fonte") val urlImmagineFonte: String? = null,
     @SerialName("licenza_immagine") val licenzaImmagine: String,
@@ -42,7 +50,7 @@ fun CoinJson.toEntity(): Coin = Coin(
     zeccaRaw = zeccaRaw,
     zeccaFisicaRaw = zeccaFisicaRaw,
     incisoreRetroRaw = incisoreRetroRaw,
-    disegnatoreRetroRaw = disegnatoreRetroRaw,
+    disegnatoreRetroRaw = shownAuthor() ?: disegnatoreRetroRaw,
     noteStoriche = noteStoriche,
     urlImmagineFonte = urlImmagineFonte,
     licenzaImmagine = licenzaImmagine,
@@ -54,4 +62,21 @@ fun CoinJson.toEntity(): Coin = Coin(
     tiraturaNumistaBu = tiraturaNumistaBu,
     tiraturaNumistaProof = tiraturaNumistaProof,
     numistaId = numistaId,
+    autoreRetroLivello = if (shownAuthor() != null) autoreRetroLivello else null,
 )
+
+const val LEVEL_CERTAIN = "certo"
+const val LEVEL_PROBABLE = "probabile"
+
+/**
+ * Il nome di `autore_retro` che l'app mostra: il "certo" vince sempre sul grezzo Numista; il "probabile"
+ * (l'incisore come ipotesi) solo se Numista non ha un designer suo, e il livello lo marca (`Coin.autoreRetroLivello`).
+ */
+private fun CoinJson.shownAuthor(): String? {
+    val name = autoreRetro?.trim()?.takeIf { it.isNotEmpty() } ?: return null
+    return when (autoreRetroLivello) {
+        LEVEL_CERTAIN -> name
+        LEVEL_PROBABLE -> name.takeIf { disegnatoreRetroRaw.isNullOrBlank() }
+        else -> null
+    }
+}

@@ -81,6 +81,11 @@ data class RegularIssueImage(
     val incisoreRaw: String? = null,
     val disegnatoreRaw: String? = null,
     /**
+     * True se [disegnatoreRaw] è un nome solo probabile (l'incisore Numista usato come ipotesi): l'interfaccia lo
+     * mostra in corsivo con la nota «ruolo approssimativo». Default false, come ogni campo nuovo di questo blob.
+     */
+    val disegnatoreProbabile: Boolean = false,
+    /**
      * Zecca per anno (un elemento per anno con tirature e almeno una zecca nota o probabile; un
      * anno senza elemento = zecca NON nota, mai "nessuna zecca"). Lista vuota di default come i
      * campi sopra, e vuota anche nell'asset committato (export `-ExcludeNumista`): niente

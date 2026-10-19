@@ -108,8 +108,7 @@ import com.michele.eurocoins.data.NO_MINT
 import com.michele.eurocoins.data.mintLettersFor
 import com.michele.eurocoins.data.CollectionItem
 import com.michele.eurocoins.data.displayCountry
-import com.michele.eurocoins.data.displayDesigner
-import com.michele.eurocoins.data.displayEngraver
+import com.michele.eurocoins.data.designerCredit
 import com.michele.eurocoins.data.displayImageLicense
 import com.michele.eurocoins.data.displaySourceName
 import com.michele.eurocoins.data.numistaUrl
@@ -470,29 +469,26 @@ private fun MintageCard(coin: Coin) {
         )
         SectionLabel("DETAILS")
         Spacer(Modifier.height(10.dp))
-        DetailsSection(coin.displayMint() ?: NO_VALUE, coin.displayEngraver() ?: NO_VALUE, coin.displayDesigner() ?: NO_VALUE)
+        val designer = coin.designerCredit()
+        DetailsSection(coin.displayMint() ?: NO_VALUE, designer?.name ?: NO_VALUE, designerProbable = designer?.probable == true)
     }
 }
 
 /**
- * Zecca fisica, incisore e disegnatore — mai nascosti (stesso criterio di MINTAGES: "—" se il
- * dato manca, non si distingue da "il dato non esiste"). Engraver e Designer sono ruoli distinti,
- * non l'uno il ripiego dell'altro — 25 monete su 584 li hanno entrambi valorizzati con persone
- * diverse, vedi [displayEngraver]. **Non una griglia a 3 colonne pari** (scartata dopo un
- * mockup): la zecca era spesso un nome istituzionale lungo (es. "State Mint of Stuttgart / State
- * Mints of Baden-Württemberg" per la Lettonia, che usa zecche tedesche in subappalto) e si
- * schiacciava in un terzo di card; ora è il nome del paese della zecca ("Germany", vedi
- * `displayMint`), ma la struttura resta. **Mint su una riga intera** (va a capo leggibile su tutta la
- * larghezza), **Engraver/Designer affiancati sotto** in 2 colonne (nomi di persona, quasi sempre
- * corti): una sola riga in più rispetto alla griglia a 3, non il triplo come la variante a righe
- * impilate scartata per lo stesso motivo (allungava troppo la card).
+ * Zecca fisica e designer — mai nascosti (stesso criterio di MINTAGES: "—" se il dato manca, non si
+ * distingue da "il dato non esiste"). **Solo il designer** (2026-10-18, scelta del proprietario): l'incisore
+ * non si mostra, nel dato è quasi sempre la stessa persona; prima c'erano due colonne Engraver/Designer e
+ * poi una riga unica con `creditRoles()` (2026-10-16), entrambe tolte. **Non una griglia a 3 colonne pari**
+ * (scartata dopo un mockup): la zecca era spesso un nome istituzionale lungo (es. "State Mint of Stuttgart
+ * / State Mints of Baden-Württemberg" per la Lettonia) e si schiacciava in un terzo di card; ora è il nome
+ * del paese della zecca ("Germany", vedi `displayMint`). Mint e Designer su una riga intera ciascuno,
+ * centrati, nomi che vanno a capo.
  *
  * Presi come stringhe già pronte (non un `Coin`) ed esportata (non più `private`): riusata da
- * `RegularDenominationDetailScreen` con tre `NO_VALUE` fissi, perché il dataset Regular Issues
- * non ha questi campi per taglio — vedi CLAUDE.md § Regular Issues.
+ * `RegularDenominationDetailScreen`. Più persone ("A; B") → etichetta "Designers".
  */
 @Composable
-fun DetailsSection(mint: String, engraver: String, designer: String) {
+fun DetailsSection(mint: String, designer: String, designerProbable: Boolean = false) {
     ValueLabel(
         value = mint,
         // "Mints" con più paesi ("Finland, Netherlands"): sono le zecche usate nel tempo, non
@@ -501,42 +497,13 @@ fun DetailsSection(mint: String, engraver: String, designer: String) {
         modifier = Modifier.fillMaxWidth(),
     )
     Spacer(Modifier.height(14.dp))
-    // altezza comune alle due colonne (IntrinsicSize.Min = quella della colonna più alta, di
-    // solito quella con un nome su 2 righe): senza, "Engraver"/"Designer" finivano a quote
-    // diverse quando uno dei due mancava (un trattino su una riga contro un nome su due) e il
-    // trattino restava incollato in alto invece che centrato accanto al nome presente.
-    Row(modifier = Modifier.fillMaxWidth().height(IntrinsicSize.Min)) {
-        listOf(
-            "Engraver" to engraver,
-            "Designer" to designer,
-        ).forEach { (label, value) ->
-            Column(
-                modifier = Modifier.weight(1f).fillMaxHeight(),
-                horizontalAlignment = Alignment.CenterHorizontally,
-            ) {
-                Box(modifier = Modifier.weight(1f).fillMaxWidth(), contentAlignment = Alignment.Center) {
-                    Text(
-                        text = value,
-                        style = sansTitleMedium(),
-                        fontWeight = FontWeight.SemiBold,
-                        textAlign = TextAlign.Center,
-                        maxLines = 2,
-                        overflow = TextOverflow.Ellipsis,
-                        modifier = Modifier.fillMaxWidth(),
-                    )
-                }
-                Text(
-                    text = label,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    textAlign = TextAlign.Center,
-                    modifier = Modifier.fillMaxWidth(),
-                )
-            }
-        }
-    }
+    DesignerValue(
+        name = designer,
+        probable = designerProbable && designer != NO_VALUE,
+        label = if (designer.contains("; ")) "Designers" else "Designer",
+        modifier = Modifier.fillMaxWidth(),
+    )
 }
-
 /**
  * Valore in evidenza sopra, etichetta piccola sotto, entrambi centrati — usato da MINTAGES e
  * DETAILS. Esportata, vedi [DetailsSection].

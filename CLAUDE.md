@@ -45,6 +45,47 @@ interamente nella pipeline.
    che Python lascerebbe letterale — JSON valido in entrambi i casi,
    kotlinx.serialization li legge identici.
 
+   **Autore del lato nazionale (2026-10-16)**: la pipeline ha un campo unico `autore_retro` (+ `_livello`,
+   `_fonte`, `_nota`, branch `designer-lato-nazionale` della pipeline): il designer se una fonte ufficiale
+   (BCE, Commissione, Gazzetta, Banka Slovenije) o Numista `designers` lo dichiara, altrimenti l'incisore
+   Numista come livello "probabile". `disegnatore_retro_raw` e `incisore_retro_raw` restano i grezzi Numista.
+   **Non si rifà l'export di `coins.json`** per averlo (annullerebbe le correzioni a mano delle 2026, della
+   foto di Monaco 2025, ecc.): si rilancia
+
+   ```powershell
+   powershell -NoProfile -ExecutionPolicy Bypass -File scripts\merge-commemorative-designers.ps1
+   ```
+
+   che aggiunge SOLO `autore_retro` e `autore_retro_livello` a ogni record, abbinando per (paese, anno,
+   tema); lo script si ferma se il dataset non ha `autore_retro` (cartella o branch sbagliati). **Gli script
+   leggono la CARTELLA della pipeline, qualunque branch sia in checkout: nessun push serve all'app.**
+   `CoinJson.toEntity()` mostra come Designer l'`autore_retro` "certo", e il "probabile" solo se Numista non ha un designer suo (vedi sotto, "Designer incerto"); altrimenti il
+   grezzo Numista (`Coin.disegnatoreRetroRaw` tiene il valore mostrato: nessuna migrazione Room). `export-regular-issues.ps1` fa lo stesso per i tagli
+   (`Get-DesignerInfo`). **Fonti nazionali (2026-10-18)**: la pipeline (commit d2da663, branch `designer-lato-nazionale`) ha importato dalle banche
+   centrali/zecche/ministeri 58 commemorative e 89 tagli Regular (`autore_retro_fonte` = `banca_centrale`, URL e frase nella nota;
+   ricerca e CSV in `C:\Users\mik16\EuroCoins-release\designers\`, `LEGGIMI.md`). Non si citano nell'app. Risultato:
+   **525/613 commemorative con un nome (377 certi + 148 probabili)** e **287/303 tagli Regular (257 + 30 probabili)**; prima
+   319 e 176 (e 182/25 senza il campo consolidato). Buchi: 88 commemorative (le 29 del 2026 in parte, Andorra, Monaco, Francia…).
+   **Designer incerto** (2026-10-18/19, quattro giri di mockup con il proprietario): l'etichetta è SEMPRE "Designer" e il nome ha lo
+   stesso aspetto di un nome certo; un nome "probabile" (le fonti nominano l'incisore e non dicono se ha ideato il disegno) ha in più
+   un cerchio con il punto esclamativo in BRONZO (`Icons.Outlined.ErrorOutline`, `colorScheme.secondary`) accanto all'etichetta
+   (`DesignerValue`, `ui/detail/DesignerCredit.kt`); il tocco sulla riga apre il dialog "About this credit" (la stessa icona accanto al
+   titolo; "The sources credit this artist, but the role may be approximate." / "Got it", due righe con "may be approximate."
+   unito da spazi non separabili; prima erano quattro, poi tre con "approximate." da solo a capo); un'etichetta "Designer" con l'icona accanto sembrava non allineata al nome, quindi a
+   sinistra c'è uno spazio vuoto grande come l'icona che la tiene centrata; senza nome "Designer: —". **Storia**: icona ⓘ attaccata al nome (spostava il nome), poi nome in corsivo con
+   "Designer ⓘ" verdigris (troppi segnali), poi solo l'ⓘ verde: il proprietario ha notato che chi guarda la legge come "maggiori
+   informazioni sul designer" e non nota che alcuni nomi ce l'hanno e altri no. **Il bronzo era già nella palette** (`secondary`, solo
+   decorativo: euro del segnaposto, icone `€` delle righe); qui prende il significato "attenzione", è il suo unico uso (non il rosso del
+   distruttivo). Scartati: triangolo (dice "errore", ma il nome non è sbagliato), punto interrogativo verde (si confonde con un aiuto
+   generico), icona tonale, etichetta con una domanda, corsivo.
+   Dato: `Coin.autoreRetroLivello` (colonna nullable dalla v12, `MIGRATION_11_12`) e `RegularIssueImage.disegnatoreProbabile` (blob JSON,
+   default false); un probabile non cancella mai un designer Numista già presente. Scartate l'etichetta neutra "Credited to" e una nota
+   fissa sotto il nome. **zwei-euro.com NON c'è più** (2026-10-16): per ~250 monete era l'unica fonte, ma la sua
+   nota legale ammette copie solo per uso privato non commerciale e la pipeline l'ha rimossa; per una
+   settimana scarsa di prove l'app (non pubblicata) li aveva avuti (566 monete), tolti prima del push.
+   Buchi: nessuna fonte ufficiale o Numista per 109 commemorative con "—" (le 29 del 2026, Andorra, Monaco,
+   Francia, ecc.). **Solo il Designer in interfaccia** (2026-10-18, decisione del proprietario: "l'unica figura che vorrò esporre sarà quella del designer"): la scheda DETAILS mostra Mint e Designer (`DetailsSection(mint, designer)`, etichetta "Designers" con più nomi), l'Engraver NON si mostra più. Storia: prima due colonne Engraver/Designer, poi (2026-10-16, mockup) una riga unica con `creditRoles()`/`sameCredit()`, tolta perché i dati dicono che i due ruoli sono quasi sempre la stessa persona (251 commemorative su 328 con entrambi i nomi) e il proprietario vuole un solo ruolo. L'incisore resta nel database e nel JSON (`incisoreRetroRaw`, `incisore_raw`), solo non si mostra. Conseguenza accettata: dove c'è il solo incisore (17 commemorative, 111 tagli Regular) compare "—" finché la ricerca su fonti nazionali non trova il designer; ordine deciso: prima le Regular (fatto di serie, circa 20 ricerche), poi le commemorative paese per paese. Le fonti trovate si tengono nel dataset (URL e frase, in pipeline) ma non si citano nell'app.
+
 3. A ogni avvio `CoinRepository.ensureSeeded()` confronta l'hash SHA-256
    dell'asset con quello salvato (SharedPreferences `dataset`): se è il primo
    avvio o l'asset è cambiato, ripopola il database Room locale (`coins.db`)
@@ -355,8 +396,8 @@ nella card COLLECTION), così c'è un solo modo di registrare.
   resterebbero orfane; per questo ogni voce conserva anche anno/paese/tema di
   quando è stata salvata. Soluzione definitiva: un id stabile emesso dalla
   pipeline dati.
-- **Migrazioni Room esplicite** (DB versione 11 sul ramo `german-mints-phase3`: `MIGRATION_10_11` mette la zecca
-  nella chiave, § Zecche tedesche; su `main` ancora 10), `CoinDatabase.kt`), mai
+- **Migrazioni Room esplicite** (DB versione 12 sul ramo `designer-nazionali`: `MIGRATION_11_12` aggiunge `coins.autoreRetroLivello`; la 11 mette la zecca
+  nella chiave, § Zecche tedesche), `CoinDatabase.kt`), mai
   `fallbackToDestructiveMigration`: distruggerebbe anche la collezione
   dell'utente. `MIGRATION_1_2` (tabella `collection_items`), `MIGRATION_2_3`
   (`coins.emissioneComune`), `MIGRATION_3_4` (`coins.tiraturaNumista{Standard,Bu,Proof}`,
@@ -2072,7 +2113,7 @@ lingua da servire.
 Unit test JVM in `app/src/test` (`./gradlew.bat --offline :app:testDebugUnitTest`).
 `ProStateTest` (proprietà del Pro, una verifica fallita non lo toglie, pagamento in sospeso) e
 `InterstitialPolicyTest` (6 monete E 30 secondi, né una né l'altra da sole, più l'orologio portato indietro) coprono la logica pura di Pro e
-annuncio a tutto schermo; il billing e gli annunci veri non sono testabili in JVM. Oggi 284 test, nessuno saltato (`CollectionMintsTest`: salvataggio per zecca, Quick add, backup v5; `CollectionMigrationTest`: SQL della migrazione 10-11 contro lo schema di Room) (`MintLettersAssetTest` incrocia `mint_letters.json` con gli altri due asset, `MintLetterTableTest` la tabella e i numeri compatti).
+annuncio a tutto schermo; il billing e gli annunci veri non sono testabili in JVM. Oggi 290 test, nessuno saltato (`CoinDesignersTest`: autore certo vs probabile, 319 designer nel catalogo; `CollectionMintsTest`: salvataggio per zecca, Quick add, backup v5; `CollectionMigrationTest`: SQL della migrazione 10-11 contro lo schema di Room) (`MintLettersAssetTest` incrocia `mint_letters.json` con gli altri due asset, `MintLetterTableTest` la tabella e i numeri compatti).
 `UnsharpMaskTest` copre `unsharpMask()` (immagine uniforme invariata, intensità 0 = identità, bordo
 netto accentuato dai due lati e invariato lontano, valori nel campo 0-255, alfa intatta); il
 rendering con `Bitmap` di `ThumbnailSharpen` non è testabile in JVM.

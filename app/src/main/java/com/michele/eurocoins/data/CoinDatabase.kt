@@ -10,7 +10,7 @@ import androidx.sqlite.db.SupportSQLiteDatabase
 
 @Database(
     entities = [Coin::class, CollectionItem::class, RegularIssueSeries::class, RegularCollectionItem::class],
-    version = 11,
+    version = 12,
     exportSchema = false,
 )
 @TypeConverters(RegularIssueConverters::class)
@@ -153,6 +153,14 @@ abstract class CoinDatabase : RoomDatabase() {
             }
         }
 
+        // Livello del nome del designer ("certo"/"probabile") su `coins`: colonna nuova, nullable, senza DEFAULT
+        // (come 3->4 e 4->5). Il valore lo mette il ripopolamento (l'hash dell'asset cambia con i nuovi designer).
+        private val MIGRATION_11_12 = object : Migration(11, 12) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE `coins` ADD COLUMN `autoreRetroLivello` TEXT")
+            }
+        }
+
         @Volatile private var instance: CoinDatabase? = null
 
         fun getInstance(context: Context): CoinDatabase =
@@ -161,7 +169,7 @@ abstract class CoinDatabase : RoomDatabase() {
                     context.applicationContext,
                     CoinDatabase::class.java,
                     "coins.db",
-                ).addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8, MIGRATION_8_9, MIGRATION_9_10, MIGRATION_10_11).build().also { instance = it }
+                ).addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8, MIGRATION_8_9, MIGRATION_9_10, MIGRATION_10_11, MIGRATION_11_12).build().also { instance = it }
             }
     }
 }
