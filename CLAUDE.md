@@ -541,7 +541,11 @@ della sezione Collection), con 220 dp di spazio in fondo per la scheda del passo
 - **Consenso UMP**: in UE il modulo compare allo stesso avvio, quindi la scheda aspetta `AdsConsent.settled` (modulo chiuso,
   non richiesto o errore) oppure il Pro. Ordine: consenso, poi benvenuto.
 - Il testo del passo "account" non cambia se l'utente è già collegato (non succede al primo avvio). Nessun "rivedi il tutorial"
-  nelle Impostazioni (non chiesto). Non verificato a schermo: telefono bloccato durante la prova. `SetupTourTest`.
+  nelle Impostazioni (non chiesto). `SetupTourTest`. **Verificato sul telefono (2026-10-19, build debug, tema scuro, account
+  già collegato)**: scheda sulla Home, passo 1 con cornice e alone, passo 2 con il testo che passa da "off" a "on" toccando
+  l'interruttore, Done che riporta alla Home senza che la scheda ricompaia (`setup_tour` = DONE). Non verificati: tema
+  chiaro, font ingrandito, utente non collegato (la card account mostra l'invito invece dell'email), Skip e il tasto
+  indietro a metà percorso.
 
 ### Impostazioni
 
