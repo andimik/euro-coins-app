@@ -29,6 +29,7 @@ import com.michele.eurocoins.data.backup.GoogleAccountManager
 import com.michele.eurocoins.data.pro.Monetization
 import com.michele.eurocoins.ui.settings.CatalogSettingsScreen
 import com.michele.eurocoins.ui.settings.SettingsScreen
+import com.michele.eurocoins.ui.settings.SetupTour
 import com.michele.eurocoins.ui.settings.SettingsViewModel
 import com.michele.eurocoins.ui.settings.UserSettings
 import com.michele.eurocoins.ui.backup.BackupViewModel
@@ -65,6 +66,7 @@ private const val ROUTE_REGULAR_ISSUE_COUNTRY = "regular-issues/{paese}"
 private const val ROUTE_REGULAR_DENOMINATION = "regular-issues/{paese}/{ordine}/{taglio}"
 // Un taglio in tutti i paesi (elenco), non il dettaglio di un taglio di una serie.
 private const val ROUTE_REGULAR_DENOMINATION_LIST = "regular-denominations/{taglio}"
+private const val ARG_TOUR = "tour"
 private const val ARG_KIND = "kind"
 private const val ARG_VALUE = "value"
 private const val ARG_COIN_ID = "coinId"
@@ -143,6 +145,10 @@ fun EuroCoinsNavHost(
             val viewModel: HomeViewModel = viewModel(
                 factory = viewModelFactory { initializer { HomeViewModel(repository, regularIssueRepository, userSettings) } },
             )
+            // Benvenuto del primo avvio: dopo il modulo di consenso (in UE compare allo stesso momento), non sopra.
+            val tour by userSettings.setupTour.collectAsState()
+            val consentSettled by monetization.consent.settled.collectAsState()
+            val proState by monetization.billing.state.collectAsState()
             HomeScreen(
                 viewModel = viewModel,
                 onCommemorativeClick = { navController.navigate(ROUTE_BROWSE) },
@@ -150,9 +156,19 @@ fun EuroCoinsNavHost(
                 onSettingsClick = { navController.navigate(ROUTE_SETTINGS) },
                 showAds = adsEnabled,
                 banner = monetization.banner,
+                showWelcome = tour == SetupTour.PENDING && (consentSettled || proState.isPro),
+                onSetUp = {
+                    userSettings.finishSetupTour()
+                    navController.navigate("$ROUTE_SETTINGS?$ARG_TOUR=true")
+                },
+                onLater = userSettings::finishSetupTour,
             )
         }
-        composable(ROUTE_SETTINGS) {
+        composable(
+            route = "$ROUTE_SETTINGS?$ARG_TOUR={$ARG_TOUR}",
+            arguments = listOf(navArgument(ARG_TOUR) { type = NavType.BoolType; defaultValue = false }),
+        ) { backStackEntry ->
+            val tour = backStackEntry.arguments?.getBoolean(ARG_TOUR) ?: false
             val backupViewModel: BackupViewModel = viewModel(
                 factory = viewModelFactory { initializer { BackupViewModel(backupService, accountManager, autoBackup) } },
             )
@@ -163,6 +179,7 @@ fun EuroCoinsNavHost(
                 settingsViewModel = settingsViewModel,
                 backupViewModel = backupViewModel,
                 monetization = monetization,
+                tour = tour,
                 onCatalogsClick = { navController.navigate(ROUTE_SETTINGS_CATALOGS) },
                 onBack = { navController.popBackStack() },
             )

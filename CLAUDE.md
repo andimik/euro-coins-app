@@ -517,6 +517,32 @@ comparire né sparire monete; barre, filtri, Home, backup e Reset sono identici 
 - **Non fatto**: pulsante "Remove" o conferma per le voci semplici, feedback aptico (valutato e lasciato fuori), un
   modo di convertire le voci senza anno in un anno vero in blocco.
 
+### Primo avvio (2026-10-19, ramo `first-run-setup`, non unito a `main`)
+
+Un utente nuovo vede la Home come sempre e, sopra, una scheda dal basso "Welcome to Euro Coins" ("Two quick settings and
+you're ready to start your collection.", **Set up** / **Later**). "Set up" porta alle Impostazioni (`settings?tour=true`)
+con un percorso di DUE passi: (1) Account and backup evidenziata ("Sign in to back up your collection and restore it on a
+new phone.", Skip / Next), (2) la card Quick add ("Quick add is on/off: …", il testo segue l'interruttore, che si può
+provare; Back / Done). Done e Skip riportano alla Home. **Scelto dopo due giri di mockup** (`SetupTour.kt`):
+la prima idea (due schermate di benvenuto con login e scelta della modalità) è stata sostituita da questa perché usa i
+controlli veri nel posto dove si ritrovano e non lascia schermate finte da tenere allineate; il salto alle Impostazioni
+parte da un tocco ("Set up"), non da solo (un cambio di schermata senza gesto disorienta). **Evidenziazione senza
+spotlight**: bordo da 2,5 dp nel colore primario con un alone, disegnato FUORI dai limiti (4 dp, il contenuto non si sposta);
+le altre zone (card Pro, Catalogs, Appearance, Danger zone) a 38% e con i tocchi assorbiti da un `clickable` (non da un
+`pointerInput` che consuma: impedirebbe lo scorrimento da lì); la pagina scorre da sola alla zona (`positionInParent`
+della sezione Collection), con 220 dp di spazio in fondo per la scheda del passo. "Skip" chiude tutto il percorso.
+- **Stato**: `UserSettings.setupTour` (`PENDING`/`DONE`, chiave `setup_tour`), solo "da fare / fatto"; il passo vive nella
+  schermata (`rememberSaveable`). "Set up" e "Later" (anche chiudere la scheda) lo mettono a DONE subito: se il processo muore
+  a metà non ricompare. **Installazioni esistenti non vedono nulla** (te, i tester, chi aggiorna): senza valore salvato, se
+  l'hash del catalogo c'è già in SharedPreferences `dataset` è DONE (`resolveSetupTour`). Si decide alla prima lettura delle
+  preferenze, PRIMA del seeding, e si salva subito: altrimenti alla seconda apertura anche un'installazione nuova sembrerebbe
+  esistente. Verificato sul telefono: aggiornando sopra l'app esistente il valore è DONE. Per rivedere il percorso:
+  `run-as com.michele.eurocoins sed -i 's/setup_tour">DONE</setup_tour">PENDING</' shared_prefs/settings.xml` con l'app ferma.
+- **Consenso UMP**: in UE il modulo compare allo stesso avvio, quindi la scheda aspetta `AdsConsent.settled` (modulo chiuso,
+  non richiesto o errore) oppure il Pro. Ordine: consenso, poi benvenuto.
+- Il testo del passo "account" non cambia se l'utente è già collegato (non succede al primo avvio). Nessun "rivedi il tutorial"
+  nelle Impostazioni (non chiesto). Non verificato a schermo: telefono bloccato durante la prova. `SetupTourTest`.
+
 ### Impostazioni
 
 Schermata principale (`SettingsScreen`), sezioni: Account and backup (con la card Go Pro

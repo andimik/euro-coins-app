@@ -44,6 +44,12 @@ import androidx.compose.material3.VerticalDivider
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.layout.positionInParent
+import kotlin.math.roundToInt
 import androidx.compose.ui.unit.sp
 import com.michele.eurocoins.ui.components.CountsBox
 import com.michele.eurocoins.ui.components.DialogTitle
@@ -96,6 +102,8 @@ fun SettingsScreen(
     settingsViewModel: SettingsViewModel,
     backupViewModel: BackupViewModel,
     monetization: Monetization,
+    /** true = si arriva dalla scheda di benvenuto: parte il percorso guidato (account, poi Quick add). */
+    tour: Boolean = false,
     onCatalogsClick: () -> Unit,
     onBack: () -> Unit,
 ) {
@@ -111,6 +119,24 @@ fun SettingsScreen(
     val backupState by backupViewModel.state.collectAsState()
     var confirmReset by remember { mutableStateOf(false) }
 
+    // Percorso di primo avvio: il passo corrente sopravvive alla rotazione. La pagina scorre da sola alla zona
+    // evidenziata; la posizione della sezione Collection si legge dal layout (positionInParent dentro la colonna
+    // che scorre non dipende dallo scorrimento).
+    var tourStep by rememberSaveable { mutableIntStateOf(if (tour) TOUR_ACCOUNT else TOUR_OFF) }
+    val touring = tourStep != TOUR_OFF
+    val scroll = rememberScrollState()
+    var collectionTop by remember { mutableIntStateOf(0) }
+    LaunchedEffect(tourStep, collectionTop) {
+        when (tourStep) {
+            TOUR_ACCOUNT -> scroll.animateScrollTo(0)
+            TOUR_COLLECTION -> scroll.animateScrollTo(collectionTop)
+        }
+    }
+    val accountSpot = tourSpotFor(tourStep, TOUR_ACCOUNT)
+    val collectionSpot = tourSpotFor(tourStep, TOUR_COLLECTION)
+    // Tutto il resto (Pro, Catalogs, Appearance…) resta attenuato e non si tocca finché dura il percorso.
+    val otherSpot = if (touring) TourSpot.DIM else TourSpot.NONE
+
     Scaffold(
         topBar = {
             TopAppBar(
@@ -122,83 +148,118 @@ fun SettingsScreen(
             )
         },
     ) { padding ->
+        Box(modifier = Modifier.fillMaxSize().padding(padding)) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(padding)
-                .verticalScroll(rememberScrollState())
+                .verticalScroll(scroll)
                 .padding(horizontal = 16.dp, vertical = 8.dp),
         ) {
-            SectionHeader("Account and backup", first = true)
-            BackupSection(backupViewModel)
+            TourSpotBox(headerSpotFor(accountSpot)) { SectionHeader("Account and backup", first = true) }
+            TourSpotBox(accountSpot) { BackupSection(backupViewModel) }
 
             Spacer(Modifier.height(12.dp))
-            ProSection(monetization)
+            TourSpotBox(otherSpot) { ProSection(monetization) }
 
-            SectionHeader("Collection")
-            SettingsCard {
-                SwitchRow(
-                    title = "Quick add",
-                    subtitle = "Tap the box to add or remove a coin",
-                    checked = quickAdd,
-                    onCheckedChange = settingsViewModel::setQuickAdd,
-                )
-                HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f))
-                // Cosa succede con una moneta che ha dettagli: nominati uno per uno ("details" da solo non lo dice) e
-                // dentro la card, perché spiega l'interruttore. "Its details" e non "the form": il pannello si chiama My collection.
-                InfoNote(
-                    text = buildAnnotatedString {
-                        append("A coin with ")
-                        withStyle(SpanStyle(fontWeight = FontWeight.Medium, color = MaterialTheme.colorScheme.onSurface)) {
-                            append("BU or Proof, a year, a price or a date")
-                        }
-                        append(" asks you to confirm before it's removed.")
-                    },
-                    verticalAlignment = Alignment.Top,
-                )
-            }
-
-            // Microstati, scheda iniziale e zecche tedesche stanno in una sottopagina (controlli che si toccano una volta
-            // sola): qui una riga che dice COSA c'è dentro, e solo se qualcosa è nascosto lo dice sotto.
-            SectionHeader("Catalogs")
-            CatalogsRow(
-                hiddenNote = catalogsHiddenNote(
-                    hideCommemorative = hideCommemorativeMicrostates,
-                    hideRegular = hideRegularMicrostates,
-                    // Senza Pro la funzione si vede sempre (bloccata): "nascosta" vale solo con il Pro.
-                    germanMintsHidden = isPro && !showMints,
-                ),
-                onClick = onCatalogsClick,
-            )
-
-            SectionHeader("Appearance")
-            SettingsCard {
-                // Stesso ordine delle sezioni dei cataloghi: prima l'interruttore, poi il selettore a segmenti.
-                SwitchRow(
-                    title = "Rotate home coins",
-                    subtitle = "Shows a different set of coins on the home screen every day.",
-                    checked = rotateHomeCoins,
-                    onCheckedChange = settingsViewModel::setRotateHomeCoins,
-                )
-                HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f))
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text("Theme", style = MaterialTheme.typography.titleMedium)
-                    // Ordine Auto, Light, Dark = ordine dell'enum; "Auto" segue il telefono.
-                    SegmentedChoice(
-                        options = ThemeMode.entries,
-                        selected = themeMode,
-                        label = { it.label },
-                        onSelect = settingsViewModel::setThemeMode,
+            TourSpotBox(
+                spot = headerSpotFor(collectionSpot),
+                modifier = Modifier.onGloballyPositioned { collectionTop = it.positionInParent().y.roundToInt() },
+            ) { SectionHeader("Collection") }
+            TourSpotBox(collectionSpot) {
+                SettingsCard {
+                    SwitchRow(
+                        title = "Quick add",
+                        subtitle = "Tap the box to add or remove a coin",
+                        checked = quickAdd,
+                        onCheckedChange = settingsViewModel::setQuickAdd,
+                    )
+                    HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f))
+                    // Cosa succede con una moneta che ha dettagli: nominati uno per uno ("details" da solo non lo dice) e
+                    // dentro la card, perché spiega l'interruttore. "Its details" e non "the form": il pannello si chiama My collection.
+                    InfoNote(
+                        text = buildAnnotatedString {
+                            append("A coin with ")
+                            withStyle(SpanStyle(fontWeight = FontWeight.Medium, color = MaterialTheme.colorScheme.onSurface)) {
+                                append("BU or Proof, a year, a price or a date")
+                            }
+                            append(" asks you to confirm before it's removed.")
+                        },
+                        verticalAlignment = Alignment.Top,
                     )
                 }
             }
 
-            // Solo nelle build di sviluppo: nella release `BuildConfig.DEBUG` è falso e R8 toglie tutto.
-            if (BuildConfig.DEBUG) DeveloperSection(monetization)
+            TourSpotBox(otherSpot) {
+                Column {
+                    // Microstati, scheda iniziale e zecche tedesche stanno in una sottopagina (controlli che si toccano una volta
+                    // sola): qui una riga che dice COSA c'è dentro, e solo se qualcosa è nascosto lo dice sotto.
+                    SectionHeader("Catalogs")
+                    CatalogsRow(
+                        hiddenNote = catalogsHiddenNote(
+                            hideCommemorative = hideCommemorativeMicrostates,
+                            hideRegular = hideRegularMicrostates,
+                            // Senza Pro la funzione si vede sempre (bloccata): "nascosta" vale solo con il Pro.
+                            germanMintsHidden = isPro && !showMints,
+                        ),
+                        onClick = onCatalogsClick,
+                    )
 
-            SectionHeader("Danger zone")
-            ResetRow(owned = owned, onClick = { confirmReset = true })
+                    SectionHeader("Appearance")
+                    SettingsCard {
+                        // Stesso ordine delle sezioni dei cataloghi: prima l'interruttore, poi il selettore a segmenti.
+                        SwitchRow(
+                            title = "Rotate home coins",
+                            subtitle = "Shows a different set of coins on the home screen every day.",
+                            checked = rotateHomeCoins,
+                            onCheckedChange = settingsViewModel::setRotateHomeCoins,
+                        )
+                        HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f))
+                        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                            Text("Theme", style = MaterialTheme.typography.titleMedium)
+                            // Ordine Auto, Light, Dark = ordine dell'enum; "Auto" segue il telefono.
+                            SegmentedChoice(
+                                options = ThemeMode.entries,
+                                selected = themeMode,
+                                label = { it.label },
+                                onSelect = settingsViewModel::setThemeMode,
+                            )
+                        }
+                    }
+
+                    // Solo nelle build di sviluppo: nella release `BuildConfig.DEBUG` è falso e R8 toglie tutto.
+                    if (BuildConfig.DEBUG) DeveloperSection(monetization)
+
+                    SectionHeader("Danger zone")
+                    ResetRow(owned = owned, onClick = { confirmReset = true })
+                }
+            }
             Spacer(Modifier.height(24.dp))
+            // Spazio sotto l'ultima riga: la scheda del passo copre il fondo e la sezione evidenziata deve poter salire.
+            if (touring) Spacer(Modifier.height(TourCardClearance))
+        }
+
+        when (tourStep) {
+            TOUR_ACCOUNT -> SetupTourCard(
+                step = TOUR_ACCOUNT,
+                text = TOUR_ACCOUNT_TEXT,
+                hint = null,
+                leftLabel = "Skip",
+                onLeft = onBack,
+                rightLabel = "Next",
+                onRight = { tourStep = TOUR_COLLECTION },
+                modifier = Modifier.align(Alignment.BottomCenter),
+            )
+            TOUR_COLLECTION -> SetupTourCard(
+                step = TOUR_COLLECTION,
+                text = quickAddTourText(quickAdd),
+                hint = TOUR_QUICK_ADD_HINT,
+                leftLabel = "Back",
+                onLeft = { tourStep = TOUR_ACCOUNT },
+                rightLabel = "Done",
+                onRight = onBack,
+                modifier = Modifier.align(Alignment.BottomCenter),
+            )
+        }
         }
     }
 
