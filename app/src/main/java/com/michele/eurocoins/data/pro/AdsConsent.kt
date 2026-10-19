@@ -33,6 +33,14 @@ class AdsConsent(context: Context) {
     /** true = si può chiedere un annuncio (consenso a posto e SDK avviato). */
     val canRequestAds: StateFlow<Boolean> = _canRequestAds.asStateFlow()
 
+    private val _settled = MutableStateFlow(false)
+
+    /**
+     * true = il controllo del consenso di questa sessione è finito (modulo mostrato e chiuso, non richiesto, o errore).
+     * Serve a non sovrapporre la scheda di benvenuto al modulo UMP, che in UE compare al primo avvio.
+     */
+    val settled: StateFlow<Boolean> = _settled.asStateFlow()
+
     /** true = l'utente è in una regione che richiede di poter cambiare la scelta sulla privacy. */
     val privacyOptionsRequired: StateFlow<Boolean> = _privacyOptionsRequired.asStateFlow()
 
@@ -49,9 +57,15 @@ class AdsConsent(context: Context) {
             activity,
             params,
             {
-                UserMessagingPlatform.loadAndShowConsentFormIfRequired(activity) { publish() }
+                UserMessagingPlatform.loadAndShowConsentFormIfRequired(activity) {
+                    publish()
+                    _settled.value = true
+                }
             },
-            { publish() },
+            {
+                publish()
+                _settled.value = true
+            },
         )
     }
 

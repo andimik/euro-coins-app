@@ -147,8 +147,9 @@ class CoinRepository(
 
     companion object {
         private const val ASSET_FILE_NAME = "coins.json"
-        private const val PREFS_NAME = "dataset"
-        private const val KEY_ASSET_HASH = "coins_asset_sha256"
+        // internal: UserSettings legge se l'hash c'è già per riconoscere un'installazione esistente (SetupTour).
+        internal const val PREFS_NAME = "dataset"
+        internal const val KEY_ASSET_HASH = "coins_asset_sha256"
 
         /** Da incrementare quando una migrazione aggiunge colonne di `coins` che il JSON già contiene. 2 = numistaId. */
         private const val SEED_VERSION = 2

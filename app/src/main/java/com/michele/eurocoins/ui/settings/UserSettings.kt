@@ -1,6 +1,7 @@
 package com.michele.eurocoins.ui.settings
 
 import android.content.Context
+import com.michele.eurocoins.data.CoinRepository
 import com.michele.eurocoins.ui.browse.BrowseMode
 import com.michele.eurocoins.ui.regular.RegularBrowseMode
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -31,6 +32,7 @@ class UserSettings(context: Context) {
     private val _rotateHomeCoins = MutableStateFlow(prefs.getBoolean(KEY_ROTATE_HOME_COINS, true))
     private val _quickAdd = MutableStateFlow(prefs.getBoolean(KEY_QUICK_ADD, false))
     private val _showMints = MutableStateFlow(prefs.getBoolean(KEY_SHOW_MINTS, true))
+    private val _setupTour = MutableStateFlow(loadSetupTour(context))
 
     /** true = nasconde monete e card di Andorra, Monaco, San Marino e Città del Vaticano nelle commemorative. */
     val hideCommemorativeMicrostates: StateFlow<Boolean> = _hideCommemorativeMicrostates.asStateFlow()
@@ -152,6 +154,32 @@ class UserSettings(context: Context) {
         _defaultTab.value = mode
     }
 
+    /** Percorso di primo avvio (scheda di benvenuto e Impostazioni guidate): [SetupTour.PENDING] solo su un'installazione nuova. */
+    val setupTour: StateFlow<SetupTour> = _setupTour.asStateFlow()
+
+    /** Il percorso è finito, o l'utente non lo vuole: non si ripropone. */
+    fun finishSetupTour() {
+        prefs.edit().putString(KEY_SETUP_TOUR, SetupTour.DONE.name).apply()
+        _setupTour.value = SetupTour.DONE
+    }
+
+    /** Solo per la sezione Developer delle build di sviluppo: rimette il percorso a "da fare", così si rivede senza `adb`. */
+    fun restartSetupTour() {
+        prefs.edit().putString(KEY_SETUP_TOUR, SetupTour.PENDING.name).apply()
+        _setupTour.value = SetupTour.PENDING
+    }
+
+    // Si decide qui, alla prima lettura delle preferenze, perché il seeding del catalogo (che lascia l'hash) parte dopo;
+    // il risultato si salva subito, vedi resolveSetupTour.
+    private fun loadSetupTour(context: Context): SetupTour {
+        val hasPriorData = context.applicationContext
+            .getSharedPreferences(CoinRepository.PREFS_NAME, Context.MODE_PRIVATE)
+            .contains(CoinRepository.KEY_ASSET_HASH)
+        val resolved = resolveSetupTour(prefs.getString(KEY_SETUP_TOUR, null), hasPriorData)
+        prefs.edit().putString(KEY_SETUP_TOUR, resolved.name).apply()
+        return resolved
+    }
+
     // Valore sconosciuto o assente (prima installazione, enum rinominato): parte da Years.
     private fun loadDefaultTab(): BrowseMode =
         runCatching { BrowseMode.valueOf(prefs.getString(KEY_DEFAULT_TAB, null).orEmpty()) }.getOrDefault(BrowseMode.YEARS)
@@ -165,6 +193,7 @@ class UserSettings(context: Context) {
         const val KEY_ROTATE_HOME_COINS = "rotate_home_coins"
         const val KEY_QUICK_ADD = "quick_add"
         const val KEY_SHOW_MINTS = "show_mints"
+        const val KEY_SETUP_TOUR = "setup_tour"
         const val KEY_LAST_SHOWCASE = "last_showcase"
         const val KEY_SHOWCASE_DAY_PREFIX = "showcase_day_"
         const val KEY_LAST_SHOWCASE_REGULAR = "last_showcase_regular"

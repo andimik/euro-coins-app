@@ -71,6 +71,7 @@ import com.michele.eurocoins.ui.components.AdBanner
 import com.michele.eurocoins.ui.components.CollectionProgressBar
 import com.michele.eurocoins.ui.components.ProgressAnimation
 import com.michele.eurocoins.ui.components.rememberProgressAnimation
+import com.michele.eurocoins.ui.settings.WelcomeSheet
 
 /**
  * Schermata d'ingresso: due schede di pari peso che si dividono l'altezza,
@@ -88,8 +89,14 @@ fun HomeScreen(
     onSettingsClick: () -> Unit,
     showAds: Boolean,
     banner: BannerAd,
+    showWelcome: Boolean,
+    onSetUp: () -> Unit,
+    onLater: () -> Unit,
 ) {
     val state by viewModel.uiState.collectAsState()
+
+    // Primo avvio: scheda di benvenuto (è una finestra a sé, la posizione nella composizione non conta).
+    if (showWelcome) WelcomeSheet(onSetUp = onSetUp, onLater = onLater)
 
     // Animazione della barra: onda + conteggio da 0 solo al primo avvio del processo
     // (lastShownOwned del ViewModel ancora nullo); tornando da un'altra schermata o se il
