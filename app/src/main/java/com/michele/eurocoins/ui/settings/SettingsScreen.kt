@@ -227,7 +227,16 @@ fun SettingsScreen(
                     }
 
                     // Solo nelle build di sviluppo: nella release `BuildConfig.DEBUG` è falso e R8 toglie tutto.
-                    if (BuildConfig.DEBUG) DeveloperSection(monetization)
+                    if (BuildConfig.DEBUG) {
+                        DeveloperSection(
+                            monetization = monetization,
+                            // Rimette il percorso a "da fare" e torna alla Home, dove ricompare la scheda di benvenuto.
+                            onReplayTour = {
+                                settingsViewModel.restartSetupTour()
+                                onBack()
+                            },
+                        )
+                    }
 
                     SectionHeader("Danger zone")
                     ResetRow(owned = owned, onClick = { confirmReset = true })
@@ -391,7 +400,7 @@ private fun <T> SegmentedChoice(
  * vera: nessun utente la vede, il chiamante la mostra solo con `BuildConfig.DEBUG`.
  */
 @Composable
-private fun DeveloperSection(monetization: Monetization) {
+private fun DeveloperSection(monetization: Monetization, onReplayTour: () -> Unit) {
     var simulated by remember { mutableStateOf(monetization.billing.debugProSimulated) }
     Row(verticalAlignment = Alignment.CenterVertically) {
         SectionHeader("Developer")
@@ -433,6 +442,24 @@ private fun DeveloperSection(monetization: Monetization) {
                 monetization.billing.setDebugProSimulated(it)
             },
         )
+        Spacer(Modifier.height(10.dp))
+        HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f))
+        Spacer(Modifier.height(10.dp))
+        Row(
+            modifier = Modifier.fillMaxWidth().clickable(onClick = onReplayTour),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            Column(modifier = Modifier.weight(1f)) {
+                Text("Replay setup tour", style = MaterialTheme.typography.titleMedium)
+                Text(
+                    "Shows the welcome sheet again.",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+            Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
     }
 }
 

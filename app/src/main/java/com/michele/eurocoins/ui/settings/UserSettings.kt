@@ -163,6 +163,12 @@ class UserSettings(context: Context) {
         _setupTour.value = SetupTour.DONE
     }
 
+    /** Solo per la sezione Developer delle build di sviluppo: rimette il percorso a "da fare", così si rivede senza `adb`. */
+    fun restartSetupTour() {
+        prefs.edit().putString(KEY_SETUP_TOUR, SetupTour.PENDING.name).apply()
+        _setupTour.value = SetupTour.PENDING
+    }
+
     // Si decide qui, alla prima lettura delle preferenze, perché il seeding del catalogo (che lascia l'hash) parte dopo;
     // il risultato si salva subito, vedi resolveSetupTour.
     private fun loadSetupTour(context: Context): SetupTour {

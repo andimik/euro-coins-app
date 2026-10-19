@@ -536,8 +536,10 @@ della sezione Collection), con 220 dp di spazio in fondo per la scheda del passo
   a metà non ricompare. **Installazioni esistenti non vedono nulla** (te, i tester, chi aggiorna): senza valore salvato, se
   l'hash del catalogo c'è già in SharedPreferences `dataset` è DONE (`resolveSetupTour`). Si decide alla prima lettura delle
   preferenze, PRIMA del seeding, e si salva subito: altrimenti alla seconda apertura anche un'installazione nuova sembrerebbe
-  esistente. Verificato sul telefono: aggiornando sopra l'app esistente il valore è DONE. Per rivedere il percorso:
-  `run-as com.michele.eurocoins sed -i 's/setup_tour">DONE</setup_tour">PENDING</' shared_prefs/settings.xml` con l'app ferma.
+  esistente. Verificato sul telefono: aggiornando sopra l'app esistente il valore è DONE. **Per rivedere il percorso**: nella
+  sezione Developer delle Impostazioni (solo build di sviluppo) c'è "Replay setup tour": rimette il valore a PENDING
+  (`UserSettings.restartSetupTour`) e torna alla Home, dove ricompare la scheda. Senza, con `adb` e l'app ferma:
+  `run-as com.michele.eurocoins sed -i 's/setup_tour">DONE</setup_tour">PENDING</' shared_prefs/settings.xml`.
 - **Consenso UMP**: in UE il modulo compare allo stesso avvio, quindi la scheda aspetta `AdsConsent.settled` (modulo chiuso,
   non richiesto o errore) oppure il Pro. Ordine: consenso, poi benvenuto.
 - Il testo del passo "account" non cambia se l'utente è già collegato (non succede al primo avvio). Nessun "rivedi il tutorial"

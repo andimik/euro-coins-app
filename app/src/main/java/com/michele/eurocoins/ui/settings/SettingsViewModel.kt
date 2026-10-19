@@ -47,6 +47,9 @@ class SettingsViewModel(
     fun setShowMints(value: Boolean) = settings.setShowMints(value)
     fun setThemeMode(mode: ThemeMode) = themePreference.set(mode)
 
+    /** Sezione Developer (solo debug): il percorso di primo avvio ricompare sulla Home. */
+    fun restartSetupTour() = settings.restartSetupTour()
+
     /** Svuota entrambe le collezioni: commemorative e Regular Issues (il backup su Drive resta com'è). */
     fun resetCollection() {
         viewModelScope.launch {
