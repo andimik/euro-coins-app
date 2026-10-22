@@ -517,7 +517,7 @@ comparire né sparire monete; barre, filtri, Home, backup e Reset sono identici 
 - **Non fatto**: pulsante "Remove" o conferma per le voci semplici, feedback aptico (valutato e lasciato fuori), un
   modo di convertire le voci senza anno in un anno vero in blocco.
 
-### Primo avvio (2026-10-19, ramo `first-run-setup`, non unito a `main`)
+### Primo avvio (2026-10-19, unito a `main` e pubblicato il 2026-10-22; non ancora in un .aab)
 
 Un utente nuovo vede la Home come sempre e, sopra, una scheda dal basso "Welcome to Euro Coins" ("Two quick settings and
 you're ready to start your collection.", **Set up** / **Later**). "Set up" porta alle Impostazioni (`settings?tour=true`)
